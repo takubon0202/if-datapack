@@ -19,7 +19,7 @@ const STORAGE_KEY = 'mc-datapack-builder-v1';
 
 const VERSION_FORMATS = {
   '1.21.11': { min: [94, 1], max: [94, 1], useNewFormat: true },
-  '1.21.10': { min: 88, max: 88, useNewFormat: true },
+  '1.21.10': { min: [88, 0], max: [88, 0], useNewFormat: true },
   '1.21.9':  { min: [88, 0], max: [88, 0], useNewFormat: true },
   '1.21.4':  { format: 61, useNewFormat: false },
   '1.21.2':  { format: 57, useNewFormat: false },
@@ -212,18 +212,22 @@ function generatePackMcmeta(project) {
 }
 
 const isValidNamespace = (ns) => /^[a-z0-9_-]+$/.test(ns) && ns.length > 0;
-const isValidFileName = (name) => /^[a-z0-9_./-]+$/.test(name) && name.length > 0;
+const isValidFileName = (name) => /^[a-z0-9_.-]+$/.test(name) && name.length > 0 && !name.includes('..');
 
 function tryParseJSON(str) {
   try { JSON.parse(str); return { valid: true, error: null }; }
   catch (e) { return { valid: false, error: e.message }; }
 }
 
-function getFullPath(files, fileId) {
+function getFullPath(files, fileId, _visited) {
+  const seen = _visited || new Set();
+  if (seen.has(fileId)) return '';
+  seen.add(fileId);
   const file = files.find(f => f.id === fileId);
   if (!file) return '';
   if (!file.parentId) return file.name;
-  return getFullPath(files, file.parentId) + '/' + file.name;
+  const parentPath = getFullPath(files, file.parentId, seen);
+  return parentPath ? parentPath + '/' + file.name : file.name;
 }
 
 function getChildren(files, parentId) {
@@ -388,30 +392,54 @@ function validateProject(project, files) {
 
 function highlightJSON(code) {
   if (!code) return '';
-  let html = code
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-  html = html.replace(/"(?:[^"\\]|\\.)*"\s*(?=:)/g, m => `<span class="text-sky-300">${m}</span>`);
-  html = html.replace(/"(?:[^"\\]|\\.)*"/g, m => `<span class="text-green-300">${m}</span>`);
-  html = html.replace(/\b(-?\d+\.?\d*([eE][+-]?\d+)?)\b/g, '<span class="text-orange-300">$1</span>');
-  html = html.replace(/\b(true|false|null)\b/g, '<span class="text-purple-300">$&</span>');
-  return html;
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const tokenRe = /("(?:[^"\\]|\\.)*")(\s*:)?|(-?\b\d+\.?\d*(?:[eE][+-]?\d+)?\b)|\b(true|false|null)\b/g;
+  let result = '';
+  let lastIndex = 0;
+  let m;
+  while ((m = tokenRe.exec(code)) !== null) {
+    result += esc(code.slice(lastIndex, m.index));
+    if (m[1]) {
+      result += m[2]
+        ? `<span class="text-sky-300">${esc(m[1])}</span>${esc(m[2])}`
+        : `<span class="text-green-300">${esc(m[1])}</span>`;
+    } else if (m[3]) {
+      result += `<span class="text-orange-300">${esc(m[3])}</span>`;
+    } else if (m[4]) {
+      result += `<span class="text-purple-300">${esc(m[4])}</span>`;
+    }
+    lastIndex = tokenRe.lastIndex;
+  }
+  result += esc(code.slice(lastIndex));
+  return result;
 }
 
 function highlightMcfunction(code) {
   if (!code) return '';
-  let html = code
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-  html = html.replace(/(^#.*$)/gm, '<span class="text-gray-500 italic">$1</span>');
-  html = html.replace(/@[apers](\[.*?\])?/g, '<span class="text-orange-300">$&</span>');
-  html = html.replace(
-    /\b(say|give|execute|run|as|at|in|if|unless|store|summon|tp|teleport|kill|effect|gamemode|setblock|fill|clone|scoreboard|tag|function|schedule|data|title|tellraw|bossbar|team|trigger|advancement|recipe|loot|particle|playsound|clear|enchant|experience|xp|weather|time|difficulty|gamerule|defaultgamemode|worldborder|spreadplayers|spawnpoint|setworldspawn|forceload|reload|return|ride|damage|place|random|tick)\b/g,
-    '<span class="text-sky-300">$&</span>'
-  );
-  return html;
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const CMDS = new Set(['say','give','execute','run','as','at','in','if','unless','store','summon','tp','teleport','kill','effect','gamemode','setblock','fill','clone','scoreboard','tag','function','schedule','data','title','tellraw','bossbar','team','trigger','advancement','recipe','loot','particle','playsound','clear','enchant','experience','xp','weather','time','difficulty','gamerule','defaultgamemode','worldborder','spreadplayers','spawnpoint','setworldspawn','forceload','reload','return','ride','damage','place','random','tick']);
+  return code.split('\n').map(line => {
+    if (line.trimStart().startsWith('#')) {
+      return `<span class="text-gray-500 italic">${esc(line)}</span>`;
+    }
+    const tokenRe = /(@[apers](?:\[[^\]]*\])?)|(\b[a-z_]+\b)/g;
+    let result = '';
+    let last = 0;
+    let m;
+    while ((m = tokenRe.exec(line)) !== null) {
+      result += esc(line.slice(last, m.index));
+      if (m[1]) {
+        result += `<span class="text-orange-300">${esc(m[1])}</span>`;
+      } else if (m[2] && CMDS.has(m[2])) {
+        result += `<span class="text-sky-300">${esc(m[2])}</span>`;
+      } else {
+        result += esc(m[0]);
+      }
+      last = tokenRe.lastIndex;
+    }
+    result += esc(line.slice(last));
+    return result;
+  }).join('\n');
 }
 
 async function generateZip(project, files) {
@@ -1309,6 +1337,9 @@ export default function App() {
   // ── Keyboard shortcuts ──
   useEffect(() => {
     const handler = (e) => {
+      const tag = e.target.tagName;
+      const isEditing = tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable;
+
       if (e.ctrlKey || e.metaKey) {
         if (e.key === 's') {
           e.preventDefault();
@@ -1321,6 +1352,7 @@ export default function App() {
           generateZip(project, files);
         }
       }
+      if (isEditing) return;
       if (e.key === 'F2' && selectedId) {
         e.preventDefault();
         setFiles(prev => prev.map(f => f.id === selectedId ? { ...f, _startRename: Date.now() } : f));
@@ -1369,6 +1401,19 @@ export default function App() {
     });
   }, []);
 
+  const isDescendantOf = useCallback((files, nodeId, ancestorId) => {
+    let current = nodeId;
+    const seen = new Set();
+    while (current) {
+      if (seen.has(current)) return false;
+      seen.add(current);
+      if (current === ancestorId) return true;
+      const node = files.find(f => f.id === current);
+      current = node?.parentId || null;
+    }
+    return false;
+  }, []);
+
   const handleContextMenu = useCallback((e, file) => {
     e.preventDefault();
     const menuItems = [];
@@ -1381,18 +1426,36 @@ export default function App() {
     menuItems.push({ label: 'リネーム', icon: Edit3, action: () => {
       setFiles(prev => prev.map(f => f.id === file.id ? { ...f, _startRename: Date.now() } : f));
     }});
-    menuItems.push({ label: '複製', icon: Copy, action: () => duplicateFile(file.id) });
+    menuItems.push({ label: '複製', icon: Copy, action: () => {
+      setFiles(prev => {
+        const original = prev.find(f => f.id === file.id);
+        if (!original) return prev;
+        const newId = genId();
+        const nameParts = original.name.split('.');
+        const ext = nameParts.length > 1 ? '.' + nameParts.pop() : '';
+        const baseName = nameParts.join('.');
+        const newName = `${baseName}_copy${ext}`;
+        return [...prev, { id: newId, name: newName, type: original.type, content: original.content ?? null, parentId: original.parentId }];
+      });
+    }});
     if (file.parentId) {
       menuItems.push({ separator: true });
       menuItems.push({ label: '削除', icon: Trash2, danger: true, action: () => {
         if (confirm(`"${file.name}" を削除しますか？`)) {
-          setFiles(prev => deleteRecursive(prev, file.id));
-          if (selectedId === file.id) setSelectedId(null);
+          setFiles(prev => {
+            const newFiles = deleteRecursive(prev, file.id);
+            return newFiles;
+          });
+          setSelectedId(prev => {
+            if (!prev) return null;
+            if (prev === file.id) return null;
+            return isDescendantOf(files, prev, file.id) ? null : prev;
+          });
         }
       }});
     }
     setContextMenu({ x: e.clientX, y: e.clientY, items: menuItems });
-  }, [selectedId]);
+  }, [files, isDescendantOf]);
 
   const handleRename = useCallback((id, newName, clearFlag) => {
     setFiles(prev => prev.map(f => {
@@ -1430,21 +1493,6 @@ export default function App() {
     setSelectedId(id);
   };
 
-  const duplicateFile = (id) => {
-    const original = files.find(f => f.id === id);
-    if (!original) return;
-    const newId = genId();
-    const nameParts = original.name.split('.');
-    const ext = nameParts.length > 1 ? '.' + nameParts.pop() : '';
-    const baseName = nameParts.join('.');
-    const newName = `${baseName}_copy${ext}`;
-
-    if (original.type === 'folder') {
-      setFiles(prev => [...prev, { id: newId, name: newName, type: 'folder', content: null, parentId: original.parentId }]);
-    } else {
-      setFiles(prev => [...prev, { id: newId, name: newName, type: original.type, content: original.content, parentId: original.parentId }]);
-    }
-  };
 
   const handleTemplateSelect = ({ category, fileName, content, parentId }) => {
     const targetParent = parentId || selectedId;
@@ -1494,10 +1542,14 @@ export default function App() {
 
   const handleReset = () => {
     if (confirm('プロジェクトをリセットして初期設定ウィザードを開きますか？\n現在のデータは失われます。')) {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      setInitialized(false);
       localStorage.removeItem(STORAGE_KEY);
+      setProject({ name: 'my-datapack', description: 'カスタムデータパック', targetVersion: '1.21.11', namespace: 'mypack', packIcon: null });
       setFiles([]);
       setSelectedId(null);
       setShowWizard(true);
+      requestAnimationFrame(() => setInitialized(true));
     }
   };
 
