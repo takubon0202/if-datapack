@@ -416,6 +416,281 @@ const COMMAND_SNIPPETS = [
 ];
 
 // ════════════════════════════════════════════════════════════
+// MINECRAFT COMMAND AUTOCOMPLETE DATABASE
+// ════════════════════════════════════════════════════════════
+
+const MC_AUTO = {
+  _root: [
+    { l: 'execute', d: '条件付きコマンド実行' }, { l: 'scoreboard', d: 'スコアボード操作' },
+    { l: 'team', d: 'チーム管理' }, { l: 'tag', d: 'タグ操作' },
+    { l: 'effect', d: 'エフェクト操作' }, { l: 'give', d: 'アイテム付与' },
+    { l: 'clear', d: 'アイテム消去' }, { l: 'tp', d: 'テレポート' },
+    { l: 'teleport', d: 'テレポート' }, { l: 'kill', d: 'エンティティ消去' },
+    { l: 'summon', d: 'エンティティ召喚' }, { l: 'setblock', d: 'ブロック設置' },
+    { l: 'fill', d: '範囲ブロック設置' }, { l: 'clone', d: 'ブロック複製' },
+    { l: 'gamemode', d: 'ゲームモード変更' }, { l: 'difficulty', d: '難易度変更' },
+    { l: 'title', d: 'タイトル表示' }, { l: 'tellraw', d: 'JSONテキスト表示' },
+    { l: 'say', d: 'チャットメッセージ' }, { l: 'bossbar', d: 'ボスバー操作' },
+    { l: 'function', d: '関数実行' }, { l: 'schedule', d: '遅延実行' },
+    { l: 'data', d: 'NBTデータ操作' }, { l: 'particle', d: 'パーティクル表示' },
+    { l: 'playsound', d: 'サウンド再生' }, { l: 'stopsound', d: 'サウンド停止' },
+    { l: 'advancement', d: '進捗操作' }, { l: 'recipe', d: 'レシピ操作' },
+    { l: 'weather', d: '天候変更' }, { l: 'time', d: '時刻操作' },
+    { l: 'gamerule', d: 'ゲームルール変更' }, { l: 'worldborder', d: 'ワールドボーダー' },
+    { l: 'spawnpoint', d: 'スポーンポイント設定' }, { l: 'setworldspawn', d: 'ワールドスポーン設定' },
+    { l: 'spreadplayers', d: 'プレイヤー散布' }, { l: 'forceload', d: 'チャンク強制読込' },
+    { l: 'reload', d: 'データパック再読込' }, { l: 'attribute', d: '属性操作' },
+    { l: 'enchant', d: 'エンチャント付与' }, { l: 'experience', d: '経験値操作' },
+    { l: 'xp', d: '経験値操作' }, { l: 'item', d: 'アイテム操作' },
+    { l: 'loot', d: 'ルートテーブル実行' }, { l: 'trigger', d: 'トリガー操作' },
+    { l: 'ride', d: '騎乗操作' }, { l: 'damage', d: 'ダメージ付与' },
+    { l: 'return', d: '関数戻り値' }, { l: 'random', d: '乱数生成' },
+    { l: 'place', d: '構造物配置' }, { l: 'tick', d: 'ティック操作' },
+    { l: 'defaultgamemode', d: 'デフォルトゲームモード' },
+  ],
+  execute: [
+    { l: 'as', d: 'エンティティとして実行' }, { l: 'at', d: 'エンティティの位置で' },
+    { l: 'positioned', d: '指定座標で' }, { l: 'rotated', d: '回転を変更' },
+    { l: 'facing', d: '方向を変更' }, { l: 'in', d: 'ディメンション指定' },
+    { l: 'if', d: '条件が真なら実行' }, { l: 'unless', d: '条件が偽なら実行' },
+    { l: 'store', d: '結果を保存' }, { l: 'run', d: 'コマンドを実行' },
+    { l: 'anchored', d: 'アンカー位置' }, { l: 'align', d: '座標を整列' },
+    { l: 'on', d: '関係エンティティ' }, { l: 'summon', d: '召喚して実行' },
+  ],
+  'execute.if': [
+    { l: 'entity', d: 'エンティティ存在判定' }, { l: 'block', d: 'ブロック判定' },
+    { l: 'blocks', d: 'ブロック範囲判定' }, { l: 'score', d: 'スコア条件判定' },
+    { l: 'predicate', d: '条件判定' }, { l: 'data', d: 'NBTデータ存在判定' },
+    { l: 'biome', d: 'バイオーム判定' }, { l: 'loaded', d: 'チャンクロード判定' },
+    { l: 'function', d: '関数戻り値判定' }, { l: 'items', d: 'アイテム判定' },
+  ],
+  'execute.store': [
+    { l: 'result', d: '結果を保存' }, { l: 'success', d: '成功フラグを保存' },
+  ],
+  'execute.store.result': [
+    { l: 'score', d: 'スコアに保存' }, { l: 'bossbar', d: 'ボスバーに保存' },
+    { l: 'storage', d: 'ストレージに保存' }, { l: 'entity', d: 'エンティティに保存' },
+    { l: 'block', d: 'ブロックに保存' },
+  ],
+  scoreboard: [
+    { l: 'objectives', d: '目的管理' }, { l: 'players', d: 'プレイヤースコア管理' },
+  ],
+  'scoreboard.objectives': [
+    { l: 'add', d: '目的を追加' }, { l: 'remove', d: '目的を削除' },
+    { l: 'list', d: '目的一覧' }, { l: 'setdisplay', d: '表示設定' },
+    { l: 'modify', d: '目的を変更' },
+  ],
+  'scoreboard.players': [
+    { l: 'set', d: 'スコア設定' }, { l: 'add', d: 'スコア加算' },
+    { l: 'remove', d: 'スコア減算' }, { l: 'reset', d: 'スコアリセット' },
+    { l: 'get', d: 'スコア取得' }, { l: 'operation', d: 'スコア演算' },
+    { l: 'enable', d: 'トリガー有効化' }, { l: 'display', d: '表示設定' },
+  ],
+  team: [
+    { l: 'add', d: 'チーム追加' }, { l: 'remove', d: 'チーム削除' },
+    { l: 'join', d: 'チーム参加' }, { l: 'leave', d: 'チーム脱退' },
+    { l: 'modify', d: 'チーム設定変更' }, { l: 'empty', d: '全員脱退' },
+    { l: 'list', d: 'チーム一覧' },
+  ],
+  'team.modify': [
+    { l: 'color', d: 'チーム色' }, { l: 'friendlyFire', d: '味方攻撃' },
+    { l: 'seeFriendlyInvisibles', d: '味方透明表示' }, { l: 'nametagVisibility', d: 'ネームタグ' },
+    { l: 'deathMessageVisibility', d: '死亡メッセージ' }, { l: 'collisionRule', d: '当たり判定' },
+    { l: 'prefix', d: 'プレフィックス' }, { l: 'suffix', d: 'サフィックス' },
+  ],
+  effect: [{ l: 'give', d: 'エフェクト付与' }, { l: 'clear', d: 'エフェクト解除' }],
+  bossbar: [
+    { l: 'add', d: '追加' }, { l: 'remove', d: '削除' },
+    { l: 'set', d: '設定' }, { l: 'get', d: '取得' }, { l: 'list', d: '一覧' },
+  ],
+  'bossbar.set': [
+    { l: 'name', d: '表示名' }, { l: 'color', d: '色' },
+    { l: 'style', d: 'スタイル' }, { l: 'max', d: '最大値' },
+    { l: 'value', d: '値' }, { l: 'visible', d: '表示/非表示' },
+    { l: 'players', d: '表示対象' },
+  ],
+  gamemode: [
+    { l: 'survival', d: 'サバイバル' }, { l: 'creative', d: 'クリエイティブ' },
+    { l: 'adventure', d: 'アドベンチャー' }, { l: 'spectator', d: 'スペクテイター' },
+  ],
+  data: [
+    { l: 'get', d: 'データ取得' }, { l: 'merge', d: 'データ統合' },
+    { l: 'modify', d: 'データ変更' }, { l: 'remove', d: 'データ削除' },
+  ],
+  title: [
+    { l: 'title', d: 'タイトル表示' }, { l: 'subtitle', d: 'サブタイトル' },
+    { l: 'actionbar', d: 'アクションバー' }, { l: 'clear', d: 'クリア' },
+    { l: 'reset', d: 'リセット' }, { l: 'times', d: '表示時間設定' },
+  ],
+  advancement: [{ l: 'grant', d: '進捗付与' }, { l: 'revoke', d: '進捗取消' }],
+  time: [{ l: 'set', d: '時刻設定' }, { l: 'add', d: '時刻加算' }, { l: 'query', d: '時刻取得' }],
+  weather: [{ l: 'clear', d: '晴れ' }, { l: 'rain', d: '雨' }, { l: 'thunder', d: '雷雨' }],
+  difficulty: [
+    { l: 'peaceful', d: 'ピースフル' }, { l: 'easy', d: 'イージー' },
+    { l: 'normal', d: 'ノーマル' }, { l: 'hard', d: 'ハード' },
+  ],
+  schedule: [{ l: 'function', d: '関数遅延実行' }, { l: 'clear', d: 'スケジュール解除' }],
+  item: [{ l: 'modify', d: 'アイテム変更' }, { l: 'replace', d: 'アイテム置換' }],
+  _selectors: [
+    { l: '@a', d: '全プレイヤー' }, { l: '@p', d: '最寄りプレイヤー' },
+    { l: '@r', d: 'ランダムプレイヤー' }, { l: '@s', d: '実行者' },
+    { l: '@e', d: '全エンティティ' }, { l: '@n', d: '最寄りエンティティ' },
+  ],
+  _selector_args: [
+    { l: 'tag=', d: 'タグフィルター' }, { l: 'scores=', d: 'スコアフィルター' },
+    { l: 'distance=', d: '距離フィルター' }, { l: 'type=', d: 'エンティティタイプ' },
+    { l: 'name=', d: '名前フィルター' }, { l: 'limit=', d: '数量制限' },
+    { l: 'sort=', d: 'ソート' }, { l: 'level=', d: 'レベルフィルター' },
+    { l: 'gamemode=', d: 'ゲームモードフィルター' }, { l: 'nbt=', d: 'NBTフィルター' },
+    { l: 'x=', d: 'X座標' }, { l: 'y=', d: 'Y座標' }, { l: 'z=', d: 'Z座標' },
+    { l: 'dx=', d: 'X範囲' }, { l: 'dy=', d: 'Y範囲' }, { l: 'dz=', d: 'Z範囲' },
+    { l: 'predicate=', d: '条件フィルター' },
+  ],
+  _gamerules: [
+    { l: 'doDaylightCycle', d: '昼夜サイクル' }, { l: 'doMobSpawning', d: 'モブスポーン' },
+    { l: 'keepInventory', d: '死亡時インベントリ保持' }, { l: 'doWeatherCycle', d: '天候サイクル' },
+    { l: 'commandBlockOutput', d: 'コマンドブロック出力' }, { l: 'sendCommandFeedback', d: 'コマンドフィードバック' },
+    { l: 'doFireTick', d: '火の延焼' }, { l: 'mobGriefing', d: 'モブの破壊' },
+    { l: 'naturalRegeneration', d: '自然回復' }, { l: 'pvp', d: 'PvP' },
+    { l: 'showDeathMessages', d: '死亡メッセージ' }, { l: 'doInsomnia', d: 'ファントム出現' },
+    { l: 'doImmediateRespawn', d: '即時リスポーン' }, { l: 'randomTickSpeed', d: 'ランダムティック速度' },
+    { l: 'maxCommandChainLength', d: 'コマンドチェーン最大長' },
+    { l: 'spawnRadius', d: 'スポーン半径' }, { l: 'doTileDrops', d: 'ブロックドロップ' },
+  ],
+};
+
+const MC_VALID_COMMANDS = new Set(MC_AUTO._root.map(c => c.l));
+
+function getAutocompleteSuggestions(lineText, cursorCol) {
+  const text = lineText.substring(0, cursorCol).trimStart();
+  if (!text || text.startsWith('#')) return [];
+
+  const tokens = text.split(/\s+/);
+  const currentWord = tokens[tokens.length - 1] || '';
+  const completed = tokens.slice(0, -1);
+
+  // Inside selector brackets
+  const lastOpen = text.lastIndexOf('[');
+  const lastClose = text.lastIndexOf(']');
+  if (lastOpen > lastClose) {
+    const inside = text.substring(lastOpen + 1);
+    const parts = inside.split(',');
+    const lastPart = parts[parts.length - 1].trim();
+    return MC_AUTO._selector_args.filter(s => s.l.startsWith(lastPart.toLowerCase()));
+  }
+
+  // Selector (@)
+  if (currentWord.startsWith('@') && currentWord.length <= 2) {
+    return MC_AUTO._selectors.filter(s => s.l.startsWith(currentWord));
+  }
+
+  // Determine context
+  if (completed.length === 0) {
+    return MC_AUTO._root.filter(s => s.l.startsWith(currentWord.toLowerCase()));
+  }
+
+  const cmd = completed[0].toLowerCase();
+
+  // Execute chain: find last meaningful subcommand
+  if (cmd === 'execute') {
+    let ctx = 'execute';
+    for (let i = 1; i < completed.length; i++) {
+      const tok = completed[i].toLowerCase();
+      if (tok === 'run') { ctx = '_root'; continue; }
+      if (tok === 'if' || tok === 'unless') { ctx = 'execute.if'; continue; }
+      if (tok === 'store') { ctx = 'execute.store'; continue; }
+      if (tok === 'result' || tok === 'success') { ctx = 'execute.store.result'; continue; }
+      if (['as', 'at', 'positioned', 'rotated', 'facing', 'in', 'anchored', 'align', 'on', 'summon'].includes(tok)) {
+        ctx = 'execute'; // After argument, back to execute subcommands
+      }
+    }
+    const items = MC_AUTO[ctx] || [];
+    if (!currentWord) return items.slice(0, 15);
+    return items.filter(s => s.l.toLowerCase().startsWith(currentWord.toLowerCase()));
+  }
+
+  // Gamerule: show gamerule names
+  if (cmd === 'gamerule' && completed.length === 1) {
+    return MC_AUTO._gamerules.filter(s => s.l.toLowerCase().startsWith(currentWord.toLowerCase()));
+  }
+
+  // Title: skip selector token
+  if (cmd === 'title' && completed.length >= 2 && completed[1].startsWith('@')) {
+    const items = MC_AUTO.title || [];
+    return items.filter(s => s.l.toLowerCase().startsWith(currentWord.toLowerCase()));
+  }
+
+  // General: build context key from completed tokens
+  let contextKey = cmd;
+  if (completed.length >= 2) {
+    const sub = completed[1].toLowerCase();
+    if (MC_AUTO[`${cmd}.${sub}`]) contextKey = `${cmd}.${sub}`;
+  }
+  if (completed.length >= 3 && MC_AUTO[`${contextKey}.${completed[2]?.toLowerCase()}`]) {
+    contextKey = `${contextKey}.${completed[2].toLowerCase()}`;
+  }
+
+  const items = MC_AUTO[contextKey] || [];
+  if (!currentWord) return items.slice(0, 15);
+  return items.filter(s => s.l.toLowerCase().startsWith(currentWord.toLowerCase()));
+}
+
+function validateMcfunctionLine(line, lineNum) {
+  const trimmed = line.trim();
+  if (!trimmed || trimmed.startsWith('#')) return null;
+
+  // Handle $ prefix (macro lines in 1.20.2+)
+  const cmdLine = trimmed.startsWith('$') ? trimmed.substring(1).trim() : trimmed;
+  const tokens = cmdLine.split(/\s+/);
+  const cmd = tokens[0]?.toLowerCase();
+
+  if (!cmd) return null;
+  if (!MC_VALID_COMMANDS.has(cmd)) {
+    return { line: lineNum, msg: `不明なコマンド: ${cmd}`, type: 'error' };
+  }
+
+  // Check unmatched brackets
+  let squareDepth = 0, curlyDepth = 0;
+  for (const ch of trimmed) {
+    if (ch === '[') squareDepth++;
+    if (ch === ']') squareDepth--;
+    if (ch === '{') curlyDepth++;
+    if (ch === '}') curlyDepth--;
+    if (squareDepth < 0) return { line: lineNum, msg: '"]" に対応する "[" がありません', type: 'error' };
+    if (curlyDepth < 0) return { line: lineNum, msg: '"}" に対応する "{" がありません', type: 'error' };
+  }
+  if (squareDepth !== 0) return { line: lineNum, msg: '"[" が閉じられていません', type: 'error' };
+  if (curlyDepth !== 0) return { line: lineNum, msg: '"{" が閉じられていません', type: 'error' };
+
+  // Check selector format
+  const selectorMatch = trimmed.match(/@[^aeprsn\s\[]/);
+  if (selectorMatch) {
+    return { line: lineNum, msg: `不正なセレクター: ${selectorMatch[0]} (@a/@e/@p/@r/@s/@n が有効)`, type: 'warning' };
+  }
+
+  return null;
+}
+
+// ════════════════════════════════════════════════════════════
+// MULTI-PROJECT STORAGE
+// ════════════════════════════════════════════════════════════
+
+const PROJECTS_KEY = 'mc-dp-projects';
+const projectDataKey = (id) => `mc-dp-proj-${id}`;
+
+function loadProjectsList() {
+  try { return JSON.parse(localStorage.getItem(PROJECTS_KEY)) || []; }
+  catch { return []; }
+}
+function saveProjectsList(list) { localStorage.setItem(PROJECTS_KEY, JSON.stringify(list)); }
+function loadProjectData(id) {
+  try { return JSON.parse(localStorage.getItem(projectDataKey(id))); }
+  catch { return null; }
+}
+function saveProjectData(id, data) { localStorage.setItem(projectDataKey(id), JSON.stringify(data)); }
+function deleteProjectData(id) { localStorage.removeItem(projectDataKey(id)); }
+
+// ════════════════════════════════════════════════════════════
 // UTILITIES
 // ════════════════════════════════════════════════════════════
 
@@ -1686,6 +1961,12 @@ function CodeEditor({ file, onChange }) {
   const preRef = useRef(null);
   const lineNumRef = useRef(null);
 
+  // Autocomplete state
+  const [acItems, setAcItems] = useState([]);
+  const [acIndex, setAcIndex] = useState(0);
+  const [acPos, setAcPos] = useState({ top: 0, left: 0 });
+  const acRafRef = useRef(null);
+
   const content = file?.content ?? '';
   const lines = content.split('\n');
   const lineCount = lines.length;
@@ -1693,11 +1974,28 @@ function CodeEditor({ file, onChange }) {
   const isJSON = file?.type === 'json' || file?.type === 'mcmeta';
   const isMcfunction = file?.type === 'mcfunction';
 
+  // Reset autocomplete when file changes
+  useEffect(() => { setAcItems([]); }, [file?.id]);
+
   const jsonError = useMemo(() => {
     if (!isJSON || !content.trim()) return null;
     const r = tryParseJSON(content);
     return r.valid ? null : r.error;
   }, [content, isJSON]);
+
+  // mcfunction line validation
+  const lineErrors = useMemo(() => {
+    if (!isMcfunction || !content) return {};
+    const errs = {};
+    content.split('\n').forEach((line, i) => {
+      const result = validateMcfunctionLine(line, i + 1);
+      if (result) errs[i + 1] = result;
+    });
+    return errs;
+  }, [content, isMcfunction]);
+
+  const mcfErrorCount = useMemo(() => Object.values(lineErrors).filter(e => e.type === 'error').length, [lineErrors]);
+  const mcfWarnCount = useMemo(() => Object.values(lineErrors).filter(e => e.type === 'warning').length, [lineErrors]);
 
   const highlighted = useMemo(() => {
     if (isJSON) return highlightJSON(content);
@@ -1713,9 +2011,95 @@ function CodeEditor({ file, onChange }) {
     if (lineNumRef.current && textareaRef.current) {
       lineNumRef.current.scrollTop = textareaRef.current.scrollTop;
     }
+    setAcItems(prev => prev.length > 0 ? [] : prev);
   };
 
+  // Calculate cursor pixel position for autocomplete popup
+  const getCursorPixelPos = useCallback(() => {
+    const ta = textareaRef.current;
+    if (!ta) return { top: 0, left: 0 };
+    const val = ta.value.substring(0, ta.selectionStart);
+    const rowLines = val.split('\n');
+    const row = rowLines.length - 1;
+    const col = rowLines[rowLines.length - 1].length;
+    const lineH = 20.8; // 13px font * 1.6 line-height
+    const charW = 7.8;  // ~13px monospace char width
+    return {
+      top: (row + 1) * lineH - ta.scrollTop,
+      left: Math.min(col * charW + 8 - ta.scrollLeft, ta.clientWidth - 200),
+    };
+  }, []);
+
+  // Trigger autocomplete from current cursor position
+  const triggerAutocomplete = useCallback(() => {
+    if (!isMcfunction) { setAcItems([]); return; }
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const pos = ta.selectionStart;
+    const before = ta.value.substring(0, pos);
+    const lineStart = before.lastIndexOf('\n') + 1;
+    const lineText = before.substring(lineStart);
+    const col = pos - lineStart;
+    const suggestions = getAutocompleteSuggestions(lineText, col);
+    if (suggestions.length > 0) {
+      setAcItems(suggestions.slice(0, 10));
+      setAcIndex(0);
+      setAcPos(getCursorPixelPos());
+    } else {
+      setAcItems([]);
+    }
+  }, [isMcfunction, getCursorPixelPos]);
+
+  // Insert the selected autocomplete item
+  const insertCompletion = useCallback((text) => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const pos = ta.selectionStart;
+    const val = ta.value;
+    const before = val.substring(0, pos);
+    const match = before.match(/[\w@._:-]*$/);
+    const wordStart = pos - (match ? match[0].length : 0);
+    // Don't add trailing space for selector args (tag=, scores=, etc.) or inside brackets
+    const inBracket = before.lastIndexOf('[') > before.lastIndexOf(']');
+    const suffix = (text.endsWith('=') || inBracket) ? '' : ' ';
+    const newVal = val.substring(0, wordStart) + text + suffix + val.substring(pos);
+    onChange(newVal);
+    const newPos = wordStart + text.length + suffix.length;
+    requestAnimationFrame(() => {
+      ta.selectionStart = ta.selectionEnd = newPos;
+      ta.focus();
+    });
+    setAcItems([]);
+  }, [onChange]);
+
   const handleKeyDown = (e) => {
+    // Autocomplete navigation
+    if (acItems.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setAcIndex(i => (i + 1) % acItems.length);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setAcIndex(i => (i - 1 + acItems.length) % acItems.length);
+        return;
+      }
+      if (e.key === 'Tab' || e.key === 'Enter') {
+        if (acItems[acIndex]) {
+          e.preventDefault();
+          insertCompletion(acItems[acIndex].l);
+          return;
+        }
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setAcItems([]);
+        return;
+      }
+    }
+
+    // Tab indent (when no autocomplete)
     if (e.key === 'Tab') {
       e.preventDefault();
       const ta = e.target;
@@ -1789,6 +2173,26 @@ function CodeEditor({ file, onChange }) {
             <span>{jsonError ? 'JSON構文エラー' : 'JSON OK'}</span>
           </div>
         )}
+        {isMcfunction && (
+          <div className="flex items-center gap-2">
+            {mcfErrorCount > 0 && (
+              <span className="flex items-center gap-1 text-mc-accent">
+                <AlertTriangle size={12} /> {mcfErrorCount}エラー
+              </span>
+            )}
+            {mcfWarnCount > 0 && (
+              <span className="flex items-center gap-1 text-mc-warning">
+                <Info size={12} /> {mcfWarnCount}警告
+              </span>
+            )}
+            {mcfErrorCount === 0 && mcfWarnCount === 0 && content.trim() && (
+              <span className="flex items-center gap-1 text-mc-success">
+                <CheckCircle size={12} /> 構文OK
+              </span>
+            )}
+            <span className="text-mc-muted/50 text-[10px]">補完: 入力中に候補表示</span>
+          </div>
+        )}
       </div>
 
       {/* Editor body */}
@@ -1799,9 +2203,20 @@ function CodeEditor({ file, onChange }) {
           className="bg-mc-darker/50 py-2 pr-2 pl-3 text-right select-none overflow-hidden border-r border-mc-border/50 flex-shrink-0"
           style={{ width: `${Math.max(3, String(lineCount).length) * 10 + 24}px` }}
         >
-          {Array.from({ length: lineCount }, (_, i) => (
-            <div key={i} className="line-num text-mc-muted/40">{i + 1}</div>
-          ))}
+          {Array.from({ length: lineCount }, (_, i) => {
+            const err = lineErrors[i + 1];
+            return (
+              <div
+                key={i}
+                className={`line-num ${
+                  err ? (err.type === 'error' ? 'text-mc-accent' : 'text-mc-warning') : 'text-mc-muted/40'
+                }`}
+                title={err ? err.msg : undefined}
+              >
+                {err ? (err.type === 'error' ? '●' : '▲') : (i + 1)}
+              </div>
+            );
+          })}
         </div>
 
         {/* Code area with overlay */}
@@ -1818,14 +2233,39 @@ function CodeEditor({ file, onChange }) {
               jsonError ? 'ring-1 ring-mc-accent/50' : ''
             }`}
             value={content}
-            onChange={e => onChange(e.target.value)}
+            onChange={e => { onChange(e.target.value); if (acRafRef.current) cancelAnimationFrame(acRafRef.current); acRafRef.current = requestAnimationFrame(triggerAutocomplete); }}
             onScroll={handleScroll}
             onKeyDown={handleKeyDown}
+            onClick={() => setAcItems([])}
             spellCheck={false}
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"
           />
+
+          {/* Autocomplete popup */}
+          {acItems.length > 0 && (
+            <div
+              className="absolute z-50 bg-mc-panel border border-mc-border rounded shadow-xl max-h-52 overflow-y-auto anim-scale"
+              style={{ top: acPos.top, left: Math.max(0, acPos.left) }}
+            >
+              {acItems.map((item, i) => (
+                <div
+                  key={item.l}
+                  className={`px-3 py-1.5 text-xs cursor-pointer flex items-center gap-3 min-w-[200px] ${
+                    i === acIndex ? 'bg-mc-info/30 text-white' : 'text-mc-text hover:bg-mc-dark'
+                  }`}
+                  onMouseDown={(e) => { e.preventDefault(); insertCompletion(item.l); }}
+                >
+                  <span className="font-mono text-sky-300 font-medium">{item.l}</span>
+                  <span className="text-mc-muted text-[10px] truncate">{item.d}</span>
+                </div>
+              ))}
+              <div className="px-3 py-1 text-[9px] text-mc-muted/50 border-t border-mc-border/30">
+                ↑↓選択 Tab/Enter確定 Esc閉じる
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1834,6 +2274,19 @@ function CodeEditor({ file, onChange }) {
         <div className="px-3 py-1.5 bg-mc-accent/10 border-t border-mc-accent/30 text-xs text-mc-accent flex items-center gap-2">
           <AlertTriangle size={12} />
           <span className="truncate">{jsonError}</span>
+        </div>
+      )}
+      {isMcfunction && (mcfErrorCount > 0 || mcfWarnCount > 0) && (
+        <div className="px-3 py-1 bg-mc-dark/50 border-t border-mc-border/30 text-[10px] text-mc-muted max-h-20 overflow-y-auto">
+          {Object.entries(lineErrors).slice(0, 8).map(([ln, e]) => (
+            <div key={ln} className={`flex items-center gap-2 py-0.5 ${e.type === 'error' ? 'text-mc-accent' : 'text-mc-warning'}`}>
+              <span className="font-mono w-8 text-right">{ln}行</span>
+              <span className="truncate">{e.msg}</span>
+            </div>
+          ))}
+          {Object.keys(lineErrors).length > 8 && (
+            <div className="text-mc-muted/50 py-0.5">...他 {Object.keys(lineErrors).length - 8}件</div>
+          )}
         </div>
       )}
     </div>
@@ -2330,11 +2783,80 @@ function CommandReference({ namespace }) {
 }
 
 // ════════════════════════════════════════════════════════════
+// PROJECT TABS
+// ════════════════════════════════════════════════════════════
+
+function ProjectTabs({ projects, currentId, onSwitch, onCreate, onDelete, onRename }) {
+  const [renamingId, setRenamingId] = useState(null);
+  const [renameVal, setRenameVal] = useState('');
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (renamingId && inputRef.current) inputRef.current.focus();
+  }, [renamingId]);
+
+  return (
+    <div className="flex items-center bg-mc-darker border-b border-mc-border/50 px-1 h-8 flex-shrink-0 overflow-x-auto gap-0.5">
+      {projects.map(p => (
+        <div
+          key={p.id}
+          className={`group flex items-center gap-1 px-2.5 py-1 text-[11px] rounded-t cursor-pointer min-w-0 max-w-[160px] transition-colors ${
+            p.id === currentId
+              ? 'bg-mc-sidebar text-mc-bright border-t border-x border-mc-border/50'
+              : 'text-mc-muted hover:text-mc-text hover:bg-mc-dark/50'
+          }`}
+          onClick={() => onSwitch(p.id)}
+          onDoubleClick={() => { setRenamingId(p.id); setRenameVal(p.name); }}
+        >
+          <Package size={10} className="flex-shrink-0" />
+          {renamingId === p.id ? (
+            <input
+              ref={inputRef}
+              className="bg-mc-dark border border-mc-border rounded px-1 text-[11px] w-20 outline-none text-mc-bright"
+              value={renameVal}
+              onChange={e => setRenameVal(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') { onRename(p.id, renameVal); setRenamingId(null); }
+                if (e.key === 'Escape') setRenamingId(null);
+              }}
+              onBlur={() => { if (renameVal.trim()) onRename(p.id, renameVal); setRenamingId(null); }}
+              onClick={e => e.stopPropagation()}
+            />
+          ) : (
+            <span className="truncate">{p.name}</span>
+          )}
+          {projects.length > 1 && (
+            <button
+              className="opacity-0 group-hover:opacity-100 text-mc-muted hover:text-mc-accent transition-opacity flex-shrink-0"
+              onClick={e => { e.stopPropagation(); onDelete(p.id); }}
+              title="プロジェクトを削除"
+            >
+              <X size={10} />
+            </button>
+          )}
+        </div>
+      ))}
+      <button
+        onClick={onCreate}
+        className="flex items-center gap-1 px-2 py-1 text-[11px] text-mc-muted hover:text-mc-success transition-colors flex-shrink-0"
+        title="新規プロジェクト"
+      >
+        <Plus size={11} />
+      </button>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
 // MAIN APP
 // ════════════════════════════════════════════════════════════
 
 export default function App() {
-  // ── State ──
+  // ── Multi-project state ──
+  const [projectsList, setProjectsList] = useState([]);
+  const [currentProjectId, setCurrentProjectId] = useState(null);
+
+  // ── Current project state ──
   const [project, setProject] = useState({
     name: 'my-datapack',
     description: 'カスタムデータパック',
@@ -2355,46 +2877,162 @@ export default function App() {
   const [initialized, setInitialized] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
   const saveTimerRef = useRef(null);
+  const saveStatusTimerRef = useRef(null);
 
-  // ── Load from localStorage ──
+  // ── Load from localStorage (with migration) ──
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const data = JSON.parse(raw);
-        if (data.project) setProject(data.project);
-        if (data.files && data.files.length > 0) {
-          setFiles(data.files);
-          const ids = new Set();
-          data.files.filter(f => f.type === 'folder').forEach(f => ids.add(f.id));
-          setExpanded(ids);
-          setInitialized(true);
-        } else {
-          setShowWizard(true);
+    let list = loadProjectsList();
+
+    // Migration: convert old single-project format to multi-project
+    if (list.length === 0) {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const data = JSON.parse(raw);
+          const id = `proj_${++_idCounter}`;
+          const entry = { id, name: data.project?.name || 'my-datapack', createdAt: Date.now() };
+          list = [entry];
+          saveProjectsList(list);
+          saveProjectData(id, { project: data.project, files: data.files });
+          localStorage.removeItem(STORAGE_KEY);
         }
-      } else {
-        setShowWizard(true);
-      }
-    } catch {
+      } catch {}
+    }
+
+    if (list.length > 0) {
+      setProjectsList(list);
+      const firstId = list[0].id;
+      setCurrentProjectId(firstId);
+      loadProject(firstId);
+    } else {
+      // No projects at all - show wizard
+      const id = `proj_${++_idCounter}`;
+      const entry = { id, name: 'my-datapack', createdAt: Date.now() };
+      setProjectsList([entry]);
+      setCurrentProjectId(id);
+      saveProjectsList([entry]);
       setShowWizard(true);
     }
     setInitialized(true);
   }, []);
 
-  // ── Save to localStorage (debounced) ──
+  // Load a project's data from localStorage
+  const loadProject = (id) => {
+    const data = loadProjectData(id);
+    if (data && data.project) {
+      setProject(data.project);
+      if (data.files && data.files.length > 0) {
+        setFiles(data.files);
+        const ids = new Set();
+        data.files.filter(f => f.type === 'folder').forEach(f => ids.add(f.id));
+        setExpanded(ids);
+        setShowWizard(false);
+      } else {
+        setFiles([]);
+        setExpanded(new Set());
+        setShowWizard(true);
+      }
+    } else {
+      setProject({ name: 'my-datapack', description: 'カスタムデータパック', targetVersion: '1.21.11', namespace: 'mypack', packIcon: null });
+      setFiles([]);
+      setExpanded(new Set());
+      setShowWizard(true);
+    }
+    setSelectedId(null);
+  };
+
+  // ── Save current project to localStorage (debounced) ──
   useEffect(() => {
-    if (!initialized) return;
+    if (!initialized || !currentProjectId) return;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ project, files, savedAt: Date.now() }));
+        saveProjectData(currentProjectId, { project, files, savedAt: Date.now() });
+        // Update project name in list if it changed
+        setProjectsList(prev => {
+          const updated = prev.map(p => p.id === currentProjectId ? { ...p, name: project.name } : p);
+          saveProjectsList(updated);
+          return updated;
+        });
         setSaveStatus('saved');
-        setTimeout(() => setSaveStatus(null), 2000);
+        if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
+        saveStatusTimerRef.current = setTimeout(() => setSaveStatus(null), 2000);
       } catch (e) {
         console.error('Save failed:', e);
       }
     }, 500);
-  }, [project, files, initialized]);
+  }, [project, files, initialized, currentProjectId]);
+
+  // ── Cleanup debounce timer on unmount ──
+  useEffect(() => {
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
+  }, []);
+
+  // ── Project switching ──
+  const switchProject = useCallback((id) => {
+    if (id === currentProjectId) return;
+    // Cancel pending debounce save
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    // Save current before switching
+    if (currentProjectId) {
+      saveProjectData(currentProjectId, { project, files, savedAt: Date.now() });
+    }
+    setCurrentProjectId(id);
+    loadProject(id);
+  }, [currentProjectId, project, files]);
+
+  const createNewProject = useCallback(() => {
+    // Cancel pending debounce save and save current first
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    if (currentProjectId) {
+      saveProjectData(currentProjectId, { project, files, savedAt: Date.now() });
+    }
+    const id = `proj_${++_idCounter}`;
+    const entry = { id, name: '新規プロジェクト', createdAt: Date.now() };
+    const newList = [...projectsList, entry];
+    setProjectsList(newList);
+    saveProjectsList(newList);
+    setCurrentProjectId(id);
+    setProject({ name: '新規プロジェクト', description: 'カスタムデータパック', targetVersion: '1.21.11', namespace: 'mypack', packIcon: null });
+    setFiles([]);
+    setExpanded(new Set());
+    setSelectedId(null);
+    setShowWizard(true);
+  }, [currentProjectId, project, files, projectsList]);
+
+  const deleteProject = useCallback((id) => {
+    if (projectsList.length <= 1) return;
+    if (!confirm('このプロジェクトを削除しますか？')) return;
+    // Cancel pending debounce save before deleting
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    deleteProjectData(id);
+    const newList = projectsList.filter(p => p.id !== id);
+    setProjectsList(newList);
+    saveProjectsList(newList);
+    if (id === currentProjectId) {
+      const nextId = newList[0].id;
+      setCurrentProjectId(nextId);
+      loadProject(nextId);
+    }
+  }, [projectsList, currentProjectId]);
+
+  const renameProject = useCallback((id, newName) => {
+    if (!newName.trim()) return;
+    const trimmed = newName.trim();
+    const newList = projectsList.map(p => p.id === id ? { ...p, name: trimmed } : p);
+    setProjectsList(newList);
+    saveProjectsList(newList);
+    if (id === currentProjectId) {
+      setProject(prev => ({ ...prev, name: trimmed }));
+    } else {
+      // Also update stored project data for non-active projects
+      const data = loadProjectData(id);
+      if (data && data.project) {
+        data.project.name = trimmed;
+        saveProjectData(id, data);
+      }
+    }
+  }, [projectsList, currentProjectId]);
 
   // ── Validation ──
   const errors = useMemo(() => validateProject(project, files), [project, files]);
@@ -2418,9 +3056,12 @@ export default function App() {
       if (e.ctrlKey || e.metaKey) {
         if (e.key === 's') {
           e.preventDefault();
-          localStorage.setItem(STORAGE_KEY, JSON.stringify({ project, files, savedAt: Date.now() }));
+          if (currentProjectId) {
+            saveProjectData(currentProjectId, { project, files, savedAt: Date.now() });
+          }
           setSaveStatus('saved');
-          setTimeout(() => setSaveStatus(null), 2000);
+          if (saveStatusTimerRef.current) clearTimeout(saveStatusTimerRef.current);
+          saveStatusTimerRef.current = setTimeout(() => setSaveStatus(null), 2000);
         }
         if (e.shiftKey && e.key === 'D') {
           e.preventDefault();
@@ -2466,6 +3107,14 @@ export default function App() {
     newFiles.filter(f => f.type === 'folder').forEach(f => allIds.add(f.id));
     setExpanded(allIds);
     setShowWizard(false);
+    // Update project name in projects list
+    if (currentProjectId) {
+      setProjectsList(prev => {
+        const updated = prev.map(p => p.id === currentProjectId ? { ...p, name: config.name } : p);
+        saveProjectsList(updated);
+        return updated;
+      });
+    }
   };
 
   const toggleExpand = useCallback((id) => {
@@ -2626,10 +3275,10 @@ export default function App() {
   };
 
   const handleReset = () => {
-    if (confirm('プロジェクトをリセットして初期設定ウィザードを開きますか？\n現在のデータは失われます。')) {
+    if (confirm('このプロジェクトをリセットして初期設定ウィザードを開きますか？\n現在のデータは失われます。')) {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       setInitialized(false);
-      localStorage.removeItem(STORAGE_KEY);
+      if (currentProjectId) deleteProjectData(currentProjectId);
       setProject({ name: 'my-datapack', description: 'カスタムデータパック', targetVersion: '1.21.11', namespace: 'mypack', packIcon: null });
       setFiles([]);
       setSelectedId(null);
@@ -2709,6 +3358,18 @@ export default function App() {
           </button>
         </div>
       </header>
+
+      {/* ═══ PROJECT TABS ═══ */}
+      {projectsList.length > 0 && (
+        <ProjectTabs
+          projects={projectsList}
+          currentId={currentProjectId}
+          onSwitch={switchProject}
+          onCreate={createNewProject}
+          onDelete={deleteProject}
+          onRename={renameProject}
+        />
+      )}
 
       {/* ═══ MAIN CONTENT ═══ */}
       <div className="flex-1 flex min-h-0">
