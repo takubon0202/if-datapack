@@ -9,6 +9,8 @@ import {
   Copy, ArrowRight, Image, MoreVertical, RefreshCcw,
   Layers, BookOpen, Zap, Terminal, Gift, Tag,
   HelpCircle, ExternalLink, Menu, PanelLeftClose, PanelLeftOpen,
+  Gamepad2, Users, Timer, Trophy, Sword, Target, Play, Square,
+  Clipboard, Sparkles, Crown, Flag, Shield, Heart,
 } from 'lucide-react';
 
 // ════════════════════════════════════════════════════════════
@@ -181,6 +183,236 @@ const TEMPLATE_CATEGORIES = [
   { key: 'predicate', label: '条件', icon: HelpCircle, templates: ['predicate'] },
   { key: 'timeline', label: 'タイムライン', icon: Layers, templates: ['timeline'] },
   { key: 'damage_type', label: 'ダメージタイプ', icon: Zap, templates: ['damage_type'] },
+  { key: 'minigame', label: 'ミニゲーム部品', icon: Gamepad2, templates: ['mg_game_loop', 'mg_timer', 'mg_team_setup', 'mg_death_detect', 'mg_bossbar'] },
+];
+
+// ════════════════════════════════════════════════════════════
+// MINIGAME SNIPPET TEMPLATES
+// ════════════════════════════════════════════════════════════
+
+const MG_TEMPLATES = {
+  mg_game_loop: {
+    category: 'function', label: 'ゲームループ（ゲート式）', ext: '.mcfunction',
+    content: (name, ns) => `# === ゲームループ ゲート ===
+# game_state が 1 のときだけ処理を実行する仕組み
+# tick.json から毎tick呼ばれる main.mcfunction に書く
+
+execute if score #game game_state matches 1 run function ${ns}:game_loop
+`,
+  },
+  mg_timer: {
+    category: 'function', label: 'タイマーシステム', ext: '.mcfunction',
+    content: (name, ns) => `# === タイマーシステム ===
+# tick単位のカウンターを秒に変換するパターン
+# 20tick = 1秒
+
+# tick カウンターを加算
+scoreboard players add #timer timer_tick 1
+
+# 20tickごとに秒を減算
+execute if score #timer timer_tick matches 20.. run scoreboard players set #timer timer_tick 0
+execute if score #timer timer_tick matches 0 if score #timer timer_sec matches 1.. run scoreboard players remove #timer timer_sec 1
+
+# ボスバーに反映
+execute store result bossbar ${ns}:timer value run scoreboard players get #timer timer_sec
+bossbar set ${ns}:timer name ["",{"text":"残り ","color":"yellow"},{"score":{"name":"#timer","objective":"timer_sec"},"color":"aqua"},{"text":" 秒","color":"yellow"}]
+`,
+  },
+  mg_team_setup: {
+    category: 'function', label: 'チームセットアップ', ext: '.mcfunction',
+    content: (name, ns) => `# === チーム作成 ===
+# reload（初期化）関数で実行
+
+# チーム作成
+team add team_red "赤チーム"
+team add team_blue "青チーム"
+
+# チーム色設定
+team modify team_red color red
+team modify team_blue color blue
+
+# 味方の透明が見えるか
+team modify team_red seeFriendlyInvisibles true
+team modify team_blue seeFriendlyInvisibles true
+
+# フレンドリーファイア（味方への攻撃）
+team modify team_red friendlyFire false
+team modify team_blue friendlyFire false
+`,
+  },
+  mg_death_detect: {
+    category: 'function', label: '死亡検知パターン', ext: '.mcfunction',
+    content: (name, ns) => `# === 死亡検知 ===
+# deathCount スコアボードで死亡を検知するパターン
+# 初期化時: scoreboard objectives add deaths deathCount "死亡"
+
+# 死亡したプレイヤーを検知
+execute as @a[tag=player,scores={deaths=1..}] run tellraw @a[tag=player] [{"selector":"@s","color":"red"},{"text":" がやられた！","color":"gray"}]
+
+# 死亡したプレイヤーをスペクテイターに
+execute as @a[tag=player,scores={deaths=1..}] run gamemode spectator @s
+execute as @a[tag=player,scores={deaths=1..}] run scoreboard players set @s alive 0
+
+# カウンターリセット（毎tick）
+scoreboard players set @a deaths 0
+`,
+  },
+  mg_bossbar: {
+    category: 'function', label: 'ボスバー操作', ext: '.mcfunction',
+    content: (name, ns) => `# === ボスバー ===
+# タイマーや情報表示に使うボスバー
+
+# 作成
+bossbar add ${ns}:timer "タイマー"
+
+# 設定
+bossbar set ${ns}:timer players @a[tag=player]
+bossbar set ${ns}:timer max 300
+bossbar set ${ns}:timer value 300
+bossbar set ${ns}:timer color yellow
+bossbar set ${ns}:timer style notched_10
+
+# テキスト更新（ゲームループ内で）
+# bossbar set ${ns}:timer name ["",{"text":"残り","color":"yellow"},{"score":{"name":"#timer","objective":"timer_sec"},"color":"aqua"},{"text":"秒","color":"yellow"}]
+
+# 削除（ゲーム終了時）
+# bossbar remove ${ns}:timer
+`,
+  },
+};
+
+// Add MG templates to TEMPLATES
+Object.assign(TEMPLATES, MG_TEMPLATES);
+
+// ════════════════════════════════════════════════════════════
+// MINIGAME TYPES (for MinigameWizard)
+// ════════════════════════════════════════════════════════════
+
+const MINIGAME_TYPES = [
+  {
+    id: 'tag_game',
+    name: '鬼ごっこ',
+    icon: '👹',
+    description: '鬼チームが逃走者を追いかけて倒すゲーム。制限時間内に全員捕まえれば鬼の勝ち、逃げ切れば逃走者の勝ち。',
+    color: 'text-red-400',
+    defaults: { gameTime: 300, teamA: '鬼', teamB: '逃走者', colorA: 'red', colorB: 'blue' },
+  },
+  {
+    id: 'pvp_arena',
+    name: 'PvPアリーナ',
+    icon: '⚔️',
+    description: 'チーム対抗の戦闘ゲーム。目標キル数に先に到達したチームが勝利。',
+    color: 'text-orange-400',
+    defaults: { gameTime: 300, teamA: '赤チーム', teamB: '青チーム', colorA: 'red', colorB: 'blue', targetKills: 10 },
+  },
+  {
+    id: 'spleef',
+    name: 'スプリーフ',
+    icon: '🧊',
+    description: '足元のブロックを壊して相手を落とすゲーム。最後まで残ったプレイヤーが勝利。',
+    color: 'text-cyan-400',
+    defaults: { gameTime: 180, fallY: 50 },
+  },
+  {
+    id: 'race',
+    name: 'レース / パルクール',
+    icon: '🏃',
+    description: 'スタートからゴールまでの速さを競うゲーム。チェックポイント付き。',
+    color: 'text-green-400',
+    defaults: { gameTime: 600 },
+  },
+  {
+    id: 'treasure_hunt',
+    name: '宝探し',
+    icon: '💎',
+    description: '制限時間内にアイテムをたくさん集めるゲーム。最も多く集めたプレイヤーが勝利。',
+    color: 'text-purple-400',
+    defaults: { gameTime: 300, targetItem: 'minecraft:diamond' },
+  },
+];
+
+// ════════════════════════════════════════════════════════════
+// COMMAND SNIPPETS (for CommandReference)
+// ════════════════════════════════════════════════════════════
+
+const COMMAND_SNIPPETS = [
+  {
+    category: 'スコアボード',
+    icon: Target,
+    items: [
+      { label: 'ダミースコア作成', code: 'scoreboard objectives add <名前> dummy "表示名"', desc: '数値を保存するスコアボード' },
+      { label: '死亡カウント作成', code: 'scoreboard objectives add deaths deathCount "死亡"', desc: '死亡回数を自動カウント' },
+      { label: 'スコア設定', code: 'scoreboard players set @s <目的> <値>', desc: 'プレイヤーのスコアを設定' },
+      { label: 'スコア加算', code: 'scoreboard players add @s <目的> 1', desc: 'スコアを1加算' },
+      { label: 'フェイクプレイヤー', code: 'scoreboard players set #変数名 <目的> 0', desc: '#で始まる名前は非表示の変数として使える' },
+    ],
+  },
+  {
+    category: 'チーム',
+    icon: Users,
+    items: [
+      { label: 'チーム作成', code: 'team add <名前> "表示名"', desc: 'チームを新規作成' },
+      { label: 'チーム色設定', code: 'team modify <名前> color red', desc: 'red/blue/green/yellow等' },
+      { label: 'チーム参加', code: 'team join <名前> @a[tag=team1]', desc: 'タグ付きプレイヤーを参加させる' },
+      { label: 'FF無効化', code: 'team modify <名前> friendlyFire false', desc: '味方への攻撃を無効化' },
+      { label: 'ネームタグ非表示', code: 'team modify <名前> nametagVisibility hideForOtherTeams', desc: '敵チームからネームタグを隠す' },
+    ],
+  },
+  {
+    category: 'execute（条件実行）',
+    icon: Zap,
+    items: [
+      { label: 'スコア条件', code: 'execute if score #game state matches 1 run ...', desc: 'スコアが条件を満たすとき実行' },
+      { label: 'エンティティ条件', code: 'execute if entity @a[tag=winner] run ...', desc: '条件に合うエンティティが存在するとき' },
+      { label: 'プレイヤーとして実行', code: 'execute as @a[tag=player] run ...', desc: '各プレイヤーとして実行' },
+      { label: '位置で実行', code: 'execute at @a[tag=player] run ...', desc: 'プレイヤーの位置で実行' },
+      { label: '結果を保存', code: 'execute store result score #count obj run ...', desc: 'コマンド結果をスコアに保存' },
+    ],
+  },
+  {
+    category: 'ボスバー',
+    icon: Layers,
+    items: [
+      { label: 'ボスバー作成', code: 'bossbar add <ns>:timer "タイマー"', desc: 'ボスバーを作成' },
+      { label: '表示対象設定', code: 'bossbar set <ns>:timer players @a', desc: '表示するプレイヤーを設定' },
+      { label: '最大値/値設定', code: 'bossbar set <ns>:timer max 300', desc: '最大値を設定' },
+      { label: '色・スタイル', code: 'bossbar set <ns>:timer color yellow', desc: 'red/blue/green/yellow/purple/pink/white' },
+      { label: '削除', code: 'bossbar remove <ns>:timer', desc: 'ボスバーを削除' },
+    ],
+  },
+  {
+    category: 'エフェクト・テレポート',
+    icon: Sparkles,
+    items: [
+      { label: 'エフェクト付与', code: 'effect give @a[tag=player] speed 10 1 true', desc: '10秒間スピードLv2（trueで粒子非表示）' },
+      { label: 'エフェクト解除', code: 'effect clear @a[tag=player]', desc: '全エフェクトを解除' },
+      { label: 'テレポート', code: 'tp @a[tag=player] ~ ~ ~', desc: '指定座標にテレポート' },
+      { label: 'スポーン設定', code: 'spawnpoint @a[tag=player] ~ ~ ~', desc: 'リスポーン地点を設定' },
+      { label: '属性変更', code: 'attribute @s movement_speed base set 0.1', desc: '移動速度を変更（デフォルト0.1）' },
+    ],
+  },
+  {
+    category: 'テキスト表示',
+    icon: BookOpen,
+    items: [
+      { label: 'タイトル表示', code: 'title @a title {"text":"タイトル","bold":true,"color":"gold"}', desc: '画面中央に大きく表示' },
+      { label: 'サブタイトル', code: 'title @a subtitle {"text":"説明文","color":"yellow"}', desc: 'タイトルの下に表示' },
+      { label: 'アクションバー', code: 'title @a actionbar {"text":"情報","color":"white"}', desc: '画面下部に情報表示' },
+      { label: 'チャットメッセージ', code: 'tellraw @a {"text":"メッセージ","color":"green"}', desc: 'チャット欄に装飾テキスト' },
+      { label: 'セレクター表示', code: 'tellraw @a [{"selector":"@s"},{"text":"がゴール！"}]', desc: 'プレイヤー名を含むメッセージ' },
+    ],
+  },
+  {
+    category: 'ゲーム管理',
+    icon: Settings,
+    items: [
+      { label: 'ゲームモード変更', code: 'gamemode adventure @a[tag=player]', desc: 'adventure/survival/spectator/creative' },
+      { label: 'アイテム消去', code: 'clear @a[tag=player]', desc: '全アイテムを消去' },
+      { label: 'アイテム付与', code: 'give @a[tag=player] diamond_sword 1', desc: 'アイテムを付与' },
+      { label: 'サウンド再生', code: 'execute at @s run playsound minecraft:ui.toast.challenge_complete master @s', desc: '進捗達成音を再生' },
+      { label: 'タグ管理', code: 'tag @a[distance=..5] add player', desc: '近くのプレイヤーにタグ付与' },
+    ],
+  },
 ];
 
 // ════════════════════════════════════════════════════════════
@@ -468,6 +700,570 @@ async function generateZip(project, files) {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// ════════════════════════════════════════════════════════════
+// MINIGAME FILE GENERATORS
+// ════════════════════════════════════════════════════════════
+
+function addFilesFromPaths(existingFiles, pathContents) {
+  let files = [...existingFiles];
+  for (const { path, content, merge } of pathContents) {
+    const parts = path.split('/');
+    const fileName = parts.pop();
+    let parentId = null;
+    for (const folderName of parts) {
+      const existing = files.find(f => f.parentId === parentId && f.name === folderName && f.type === 'folder');
+      if (existing) {
+        parentId = existing.id;
+      } else {
+        const id = genId();
+        files.push({ id, name: folderName, type: 'folder', content: null, parentId });
+        parentId = id;
+      }
+    }
+    // Check if file already exists at this location
+    const existingFile = files.find(f => f.parentId === parentId && f.name === fileName && f.type !== 'folder');
+    if (existingFile) {
+      if (merge && existingFile.content) {
+        // Merge JSON arrays (for load.json/tick.json)
+        try {
+          const oldData = JSON.parse(existingFile.content);
+          const newData = JSON.parse(content);
+          if (oldData.values && newData.values) {
+            const merged = [...new Set([...oldData.values, ...newData.values])];
+            existingFile.content = JSON.stringify({ ...oldData, values: merged }, null, 2);
+          } else {
+            existingFile.content = content;
+          }
+        } catch { existingFile.content = content; }
+      } else {
+        existingFile.content = content;
+      }
+    } else {
+      const id = genId();
+      const type = getFileType(fileName);
+      files.push({ id, name: fileName, type, content, parentId });
+    }
+  }
+  return files;
+}
+
+function generateMinigameFiles(ns, gameType, settings) {
+  const gt = settings.gameTime || 300;
+  const files = [];
+
+  // ── Common: load.json / tick.json (merge with existing) ──
+  files.push({ path: `data/minecraft/tags/function/load.json`, content: JSON.stringify({ values: [`${ns}:reload`] }, null, 2), merge: true });
+  files.push({ path: `data/minecraft/tags/function/tick.json`, content: JSON.stringify({ values: [`${ns}:main`] }, null, 2), merge: true });
+
+  if (gameType === 'tag_game') {
+    const tA = settings.teamA || '鬼';
+    const tB = settings.teamB || '逃走者';
+    files.push({ path: `data/${ns}/function/reload.mcfunction`, content:
+`# ═══ 初期化（データパック読み込み時） ═══
+# スコアボード作成
+scoreboard objectives add game_state dummy "ゲーム状態"
+scoreboard objectives add timer_tick dummy "tick"
+scoreboard objectives add timer_sec dummy "秒"
+scoreboard objectives add pre_count dummy "カウントダウン"
+scoreboard objectives add alive dummy "生存"
+scoreboard objectives add deaths deathCount "死亡検知"
+scoreboard objectives add team_count dummy "人数"
+
+# チーム作成
+team add chaser "${tA}"
+team add runner "${tB}"
+team modify chaser color ${settings.colorA || 'red'}
+team modify runner color ${settings.colorB || 'blue'}
+team modify chaser seeFriendlyInvisibles true
+
+scoreboard players set #game game_state 0
+say [${tA}ごっこ] データパックが読み込まれました！` });
+
+    files.push({ path: `data/${ns}/function/main.mcfunction`, content:
+`# ═══ メインループ（毎tick実行） ═══
+# ゲーム中のみ game_loop を呼び出す
+execute if score #game game_state matches 1 run function ${ns}:game_loop` });
+
+    files.push({ path: `data/${ns}/function/start.mcfunction`, content:
+`# ═══ ゲーム開始 ═══
+# 事前準備:
+#   tag @a add player    (参加者全員)
+#   tag <鬼> add chaser_pick (鬼に選ばれたプレイヤー)
+
+# チーム振り分け
+tag @a[tag=chaser_pick] add chaser_tag
+tag @a[tag=player,tag=!chaser_tag] add runner_tag
+team join chaser @a[tag=chaser_tag]
+team join runner @a[tag=runner_tag]
+tag @a remove chaser_pick
+
+# リセット
+clear @a[tag=player]
+effect clear @a[tag=player]
+scoreboard players set @a[tag=player] alive 1
+scoreboard players set @a[tag=player] deaths 0
+gamemode adventure @a[tag=player]
+
+# タイマー設定（${gt}秒）
+scoreboard players set #timer timer_tick 0
+scoreboard players set #timer timer_sec ${gt}
+scoreboard players set #timer pre_count 60
+
+# ボスバー
+bossbar add ${ns}:timer ""
+bossbar set ${ns}:timer players @a[tag=player]
+bossbar set ${ns}:timer max ${gt}
+bossbar set ${ns}:timer value ${gt}
+bossbar set ${ns}:timer color yellow
+bossbar set ${ns}:timer style notched_10
+
+# ゲーム開始
+scoreboard players set #game game_state 1
+title @a[tag=player] title {"text":"${tA}ごっこ","bold":true,"color":"gold"}
+title @a[tag=player] subtitle {"text":"まもなく開始...","color":"yellow"}
+playsound minecraft:block.note_block.pling master @a[tag=player]` });
+
+    files.push({ path: `data/${ns}/function/game_loop.mcfunction`, content:
+`# ═══ ゲームループ（ゲーム中毎tick） ═══
+
+# ── ゲームモード管理 ──
+gamemode adventure @a[tag=player,scores={alive=1}]
+gamemode spectator @a[tag=player,scores={alive=0}]
+
+# ── 死亡検知（${tB}が死亡→捕まった） ──
+execute as @a[tag=runner_tag,scores={deaths=1..}] run scoreboard players set @s alive 0
+execute as @a[tag=runner_tag,scores={deaths=1..}] run tellraw @a[tag=player] [{"selector":"@s","color":"${settings.colorB || 'blue'}"},{"text":" が捕まった！","color":"yellow"}]
+scoreboard players set @a[tag=player] deaths 0
+
+# ── 開始カウントダウン（3秒） ──
+execute if score #timer pre_count matches 60 run title @a[tag=player] title {"text":"3","bold":true,"color":"light_purple"}
+execute if score #timer pre_count matches 40 run title @a[tag=player] title {"text":"2","bold":true,"color":"yellow"}
+execute if score #timer pre_count matches 20 run title @a[tag=player] title {"text":"1","bold":true,"color":"red"}
+execute if score #timer pre_count matches 1 run title @a[tag=player] title {"text":"スタート！","bold":true,"color":"green"}
+execute if score #timer pre_count matches 1 run tellraw @a[tag=chaser_tag] {"text":"あなたは${tA}です！全員捕まえろ！","color":"${settings.colorA || 'red'}","bold":true}
+execute if score #timer pre_count matches 1 run tellraw @a[tag=runner_tag] {"text":"あなたは${tB}です！逃げろ！","color":"${settings.colorB || 'blue'}","bold":true}
+execute if score #timer pre_count matches 1.. run scoreboard players remove #timer pre_count 1
+
+# ── タイマー処理（カウントダウン後） ──
+execute if score #timer pre_count matches 0 run scoreboard players add #timer timer_tick 1
+execute if score #timer pre_count matches 0 if score #timer timer_tick matches 20.. run scoreboard players set #timer timer_tick 0
+execute if score #timer pre_count matches 0 if score #timer timer_tick matches 0 if score #timer timer_sec matches 1.. run scoreboard players remove #timer timer_sec 1
+
+# ── ボスバー更新 ──
+execute store result bossbar ${ns}:timer value run scoreboard players get #timer timer_sec
+bossbar set ${ns}:timer name ["",{"text":"残り ","color":"yellow"},{"score":{"name":"#timer","objective":"timer_sec"},"color":"aqua"},{"text":" 秒","color":"yellow"}]
+
+# ── HUD表示 ──
+scoreboard players set #runner_count team_count 0
+execute as @a[tag=runner_tag,scores={alive=1}] run scoreboard players add #runner_count team_count 1
+title @a[tag=player] actionbar ["",{"text":"${tA} ","bold":true,"color":"${settings.colorA || 'red'}"},{"text":"vs ","color":"gray"},{"text":"${tB} 残り","color":"${settings.colorB || 'blue'}"},{"score":{"name":"#runner_count","objective":"team_count"},"color":"white"},{"text":"人","color":"${settings.colorB || 'blue'}"}]
+
+# ── 勝利判定 ──
+execute if score #runner_count team_count matches 0 run function ${ns}:win_chaser
+execute if score #timer pre_count matches 0 if score #timer timer_sec matches 0 run function ${ns}:win_runner` });
+
+    files.push({ path: `data/${ns}/function/win_chaser.mcfunction`, content:
+`# ═══ ${tA}の勝利 ═══
+title @a[tag=player] title {"text":"${tA}の勝利！","bold":true,"color":"${settings.colorA || 'red'}"}
+title @a[tag=player] subtitle {"text":"全員捕まえた！","color":"yellow"}
+tellraw @a[tag=player] {"text":"═══ ゲーム終了 ═══","color":"gold","bold":true}
+execute as @a[tag=chaser_tag] at @s run playsound minecraft:ui.toast.challenge_complete master @s
+function ${ns}:end` });
+
+    files.push({ path: `data/${ns}/function/win_runner.mcfunction`, content:
+`# ═══ ${tB}の勝利 ═══
+title @a[tag=player] title {"text":"逃走成功！","bold":true,"color":"${settings.colorB || 'blue'}"}
+title @a[tag=player] subtitle {"text":"${tB}の勝利！","color":"yellow"}
+tellraw @a[tag=player] {"text":"═══ ゲーム終了 ═══","color":"gold","bold":true}
+execute as @a[tag=runner_tag,scores={alive=1}] at @s run playsound minecraft:ui.toast.challenge_complete master @s
+function ${ns}:end` });
+
+    files.push({ path: `data/${ns}/function/end.mcfunction`, content:
+`# ═══ ゲーム終了 & リセット ═══
+scoreboard players set #game game_state 0
+bossbar remove ${ns}:timer
+gamemode adventure @a[tag=player]
+clear @a[tag=player]
+effect clear @a[tag=player]
+scoreboard players set @a[tag=player] alive 0
+tag @a remove chaser_tag
+tag @a remove runner_tag
+team empty chaser
+team empty runner
+tellraw @a[tag=player] {"text":"ゲームがリセットされました","color":"gray"}` });
+
+  } else if (gameType === 'pvp_arena') {
+    const tA = settings.teamA || '赤チーム';
+    const tB = settings.teamB || '青チーム';
+    const tk = settings.targetKills || 10;
+    files.push({ path: `data/${ns}/function/reload.mcfunction`, content:
+`# ═══ PvPアリーナ 初期化 ═══
+scoreboard objectives add game_state dummy "ゲーム状態"
+scoreboard objectives add timer_tick dummy "tick"
+scoreboard objectives add timer_sec dummy "秒"
+scoreboard objectives add pre_count dummy "カウントダウン"
+scoreboard objectives add kills dummy "キル数"
+scoreboard objectives add deaths deathCount "死亡検知"
+
+team add team_a "${tA}"
+team add team_b "${tB}"
+team modify team_a color ${settings.colorA || 'red'}
+team modify team_b color ${settings.colorB || 'blue'}
+team modify team_a friendlyFire false
+team modify team_b friendlyFire false
+
+scoreboard players set #game game_state 0
+say [PvPアリーナ] 読み込み完了！` });
+
+    files.push({ path: `data/${ns}/function/main.mcfunction`, content:
+`execute if score #game game_state matches 1 run function ${ns}:game_loop` });
+
+    files.push({ path: `data/${ns}/function/start.mcfunction`, content:
+`# ═══ PvPアリーナ 開始 ═══
+# 事前: tag @a add player / tag <赤> add team_a_pick
+team join team_a @a[tag=team_a_pick]
+team join team_b @a[tag=player,tag=!team_a_pick]
+tag @a[tag=player,tag=!team_a_pick] add team_b_tag
+tag @a[tag=team_a_pick] add team_a_tag
+tag @a remove team_a_pick
+
+clear @a[tag=player]
+effect clear @a[tag=player]
+scoreboard players set @a[tag=player] kills 0
+scoreboard players set @a[tag=player] deaths 0
+scoreboard players set #team_a kills 0
+scoreboard players set #team_b kills 0
+gamemode adventure @a[tag=player]
+
+scoreboard players set #timer timer_tick 0
+scoreboard players set #timer timer_sec ${gt}
+scoreboard players set #timer pre_count 60
+
+bossbar add ${ns}:timer ""
+bossbar set ${ns}:timer players @a[tag=player]
+bossbar set ${ns}:timer max ${gt}
+bossbar set ${ns}:timer value ${gt}
+bossbar set ${ns}:timer color yellow
+
+give @a[tag=player] iron_sword
+give @a[tag=player] bow
+give @a[tag=player] arrow 16
+
+scoreboard players set #game game_state 1
+title @a[tag=player] title {"text":"PvPアリーナ","bold":true,"color":"gold"}` });
+
+    files.push({ path: `data/${ns}/function/game_loop.mcfunction`, content:
+`# ═══ PvPアリーナ ゲームループ ═══
+
+# カウントダウン
+execute if score #timer pre_count matches 60 run title @a[tag=player] title {"text":"3","bold":true,"color":"light_purple"}
+execute if score #timer pre_count matches 40 run title @a[tag=player] title {"text":"2","bold":true,"color":"yellow"}
+execute if score #timer pre_count matches 20 run title @a[tag=player] title {"text":"1","bold":true,"color":"red"}
+execute if score #timer pre_count matches 1 run title @a[tag=player] title {"text":"戦え！","bold":true,"color":"green"}
+execute if score #timer pre_count matches 1.. run scoreboard players remove #timer pre_count 1
+
+# タイマー
+execute if score #timer pre_count matches 0 run scoreboard players add #timer timer_tick 1
+execute if score #timer pre_count matches 0 if score #timer timer_tick matches 20.. run scoreboard players set #timer timer_tick 0
+execute if score #timer pre_count matches 0 if score #timer timer_tick matches 0 if score #timer timer_sec matches 1.. run scoreboard players remove #timer timer_sec 1
+execute store result bossbar ${ns}:timer value run scoreboard players get #timer timer_sec
+
+# キル検知
+execute as @a[tag=team_a_tag,scores={deaths=1..}] run scoreboard players add #team_b kills 1
+execute as @a[tag=team_b_tag,scores={deaths=1..}] run scoreboard players add #team_a kills 1
+execute as @a[scores={deaths=1..}] run tellraw @a[tag=player] [{"selector":"@s"},{"text":" がやられた！","color":"gray"}]
+scoreboard players set @a deaths 0
+
+# HUD
+bossbar set ${ns}:timer name ["",{"text":"${tA}: ","color":"${settings.colorA || 'red'}"},{"score":{"name":"#team_a","objective":"kills"}},{"text":" | ${tB}: ","color":"${settings.colorB || 'blue'}"},{"score":{"name":"#team_b","objective":"kills"}},{"text":" (${tk}キルで勝利)","color":"gray"}]
+
+# 勝利判定
+execute if score #team_a kills matches ${tk}.. run function ${ns}:win_a
+execute if score #team_b kills matches ${tk}.. run function ${ns}:win_b
+execute if score #timer pre_count matches 0 if score #timer timer_sec matches 0 run function ${ns}:win_check` });
+
+    files.push({ path: `data/${ns}/function/win_a.mcfunction`, content:
+`title @a[tag=player] title {"text":"${tA}の勝利！","bold":true,"color":"${settings.colorA || 'red'}"}
+execute as @a[tag=team_a_tag] at @s run playsound minecraft:ui.toast.challenge_complete master @s
+function ${ns}:end` });
+
+    files.push({ path: `data/${ns}/function/win_b.mcfunction`, content:
+`title @a[tag=player] title {"text":"${tB}の勝利！","bold":true,"color":"${settings.colorB || 'blue'}"}
+execute as @a[tag=team_b_tag] at @s run playsound minecraft:ui.toast.challenge_complete master @s
+function ${ns}:end` });
+
+    files.push({ path: `data/${ns}/function/win_check.mcfunction`, content:
+`# 時間切れ: キル数が多いチームが勝利
+execute if score #team_a kills > #team_b kills run function ${ns}:win_a
+execute if score #team_b kills > #team_a kills run function ${ns}:win_b
+execute if score #team_a kills = #team_b kills run tellraw @a[tag=player] {"text":"引き分け！","color":"yellow","bold":true}
+execute if score #team_a kills = #team_b kills run function ${ns}:end` });
+
+    files.push({ path: `data/${ns}/function/end.mcfunction`, content:
+`scoreboard players set #game game_state 0
+bossbar remove ${ns}:timer
+gamemode adventure @a[tag=player]
+clear @a[tag=player]
+effect clear @a[tag=player]
+tag @a remove team_a_tag
+tag @a remove team_b_tag
+team empty team_a
+team empty team_b
+tellraw @a[tag=player] {"text":"ゲームリセット完了","color":"gray"}` });
+
+  } else if (gameType === 'spleef') {
+    const fallY = settings.fallY || 50;
+    files.push({ path: `data/${ns}/function/reload.mcfunction`, content:
+`# ═══ スプリーフ 初期化 ═══
+scoreboard objectives add game_state dummy "ゲーム状態"
+scoreboard objectives add timer_tick dummy "tick"
+scoreboard objectives add timer_sec dummy "秒"
+scoreboard objectives add pre_count dummy "カウントダウン"
+scoreboard objectives add alive dummy "生存"
+scoreboard players set #game game_state 0
+say [スプリーフ] 読み込み完了！` });
+
+    files.push({ path: `data/${ns}/function/main.mcfunction`, content:
+`execute if score #game game_state matches 1 run function ${ns}:game_loop` });
+
+    files.push({ path: `data/${ns}/function/start.mcfunction`, content:
+`# ═══ スプリーフ 開始 ═══
+# 事前: tag @a add player
+clear @a[tag=player]
+effect clear @a[tag=player]
+scoreboard players set @a[tag=player] alive 1
+gamemode adventure @a[tag=player]
+
+scoreboard players set #timer timer_tick 0
+scoreboard players set #timer timer_sec ${gt}
+scoreboard players set #timer pre_count 60
+scoreboard players set #alive_count alive 0
+
+bossbar add ${ns}:timer ""
+bossbar set ${ns}:timer players @a[tag=player]
+bossbar set ${ns}:timer max ${gt}
+bossbar set ${ns}:timer value ${gt}
+bossbar set ${ns}:timer color aqua
+
+# プレイヤーにシャベルを配布
+give @a[tag=player] diamond_shovel
+
+scoreboard players set #game game_state 1
+title @a[tag=player] title {"text":"スプリーフ","bold":true,"color":"aqua"}` });
+
+    files.push({ path: `data/${ns}/function/game_loop.mcfunction`, content:
+`# ═══ スプリーフ ゲームループ ═══
+
+# カウントダウン
+execute if score #timer pre_count matches 60 run title @a[tag=player] title {"text":"3","bold":true,"color":"light_purple"}
+execute if score #timer pre_count matches 40 run title @a[tag=player] title {"text":"2","bold":true,"color":"yellow"}
+execute if score #timer pre_count matches 20 run title @a[tag=player] title {"text":"1","bold":true,"color":"red"}
+execute if score #timer pre_count matches 1 run title @a[tag=player] title {"text":"掘れ！","bold":true,"color":"aqua"}
+execute if score #timer pre_count matches 1.. run scoreboard players remove #timer pre_count 1
+
+# タイマー
+execute if score #timer pre_count matches 0 run scoreboard players add #timer timer_tick 1
+execute if score #timer pre_count matches 0 if score #timer timer_tick matches 20.. run scoreboard players set #timer timer_tick 0
+execute if score #timer pre_count matches 0 if score #timer timer_tick matches 0 if score #timer timer_sec matches 1.. run scoreboard players remove #timer timer_sec 1
+execute store result bossbar ${ns}:timer value run scoreboard players get #timer timer_sec
+
+# 落下検知（Y=${fallY}以下で脱落）
+execute as @a[tag=player,scores={alive=1}] at @s if entity @s[y=-64,dy=${fallY + 64}] run scoreboard players set @s alive 0
+execute as @a[tag=player,scores={alive=0}] run gamemode spectator @s
+
+# 生存者カウント
+scoreboard players set #alive_count alive 0
+execute as @a[tag=player,scores={alive=1}] run scoreboard players add #alive_count alive 1
+
+# HUD
+bossbar set ${ns}:timer name ["",{"text":"生存者: ","color":"aqua"},{"score":{"name":"#alive_count","objective":"alive"},"color":"white"},{"text":"人 | 残り","color":"aqua"},{"score":{"name":"#timer","objective":"timer_sec"},"color":"white"},{"text":"秒","color":"aqua"}]
+
+# 勝利判定（残り1人）
+execute if score #alive_count alive matches ..1 run function ${ns}:win` });
+
+    files.push({ path: `data/${ns}/function/win.mcfunction`, content:
+`# ═══ 勝者決定 ═══
+execute as @a[tag=player,scores={alive=1}] run title @a[tag=player] title [{"selector":"@s","bold":true,"color":"gold"},{"text":"の勝利！","bold":true,"color":"yellow"}]
+execute as @a[tag=player,scores={alive=1}] at @s run playsound minecraft:ui.toast.challenge_complete master @s
+function ${ns}:end` });
+
+    files.push({ path: `data/${ns}/function/end.mcfunction`, content:
+`scoreboard players set #game game_state 0
+bossbar remove ${ns}:timer
+gamemode adventure @a[tag=player]
+clear @a[tag=player]
+effect clear @a[tag=player]
+scoreboard players set @a[tag=player] alive 0
+tag @a remove player
+tellraw @a {"text":"ゲームリセット完了","color":"gray"}` });
+
+  } else if (gameType === 'race') {
+    files.push({ path: `data/${ns}/function/reload.mcfunction`, content:
+`# ═══ レース 初期化 ═══
+scoreboard objectives add game_state dummy "ゲーム状態"
+scoreboard objectives add timer_tick dummy "tick"
+scoreboard objectives add timer_sec dummy "経過秒数"
+scoreboard objectives add pre_count dummy "カウントダウン"
+scoreboard objectives add checkpoint dummy "チェックポイント"
+scoreboard objectives add finished dummy "ゴール済み"
+scoreboard players set #game game_state 0
+say [レース] 読み込み完了！` });
+
+    files.push({ path: `data/${ns}/function/main.mcfunction`, content:
+`execute if score #game game_state matches 1 run function ${ns}:game_loop` });
+
+    files.push({ path: `data/${ns}/function/start.mcfunction`, content:
+`# ═══ レース 開始 ═══
+# 事前: tag @a add player
+clear @a[tag=player]
+effect clear @a[tag=player]
+scoreboard players set @a[tag=player] checkpoint 0
+scoreboard players set @a[tag=player] finished 0
+gamemode adventure @a[tag=player]
+
+scoreboard players set #timer timer_tick 0
+scoreboard players set #timer timer_sec 0
+scoreboard players set #timer pre_count 60
+
+bossbar add ${ns}:timer ""
+bossbar set ${ns}:timer players @a[tag=player]
+bossbar set ${ns}:timer max ${gt}
+bossbar set ${ns}:timer value 0
+bossbar set ${ns}:timer color green
+
+scoreboard players set #game game_state 1
+title @a[tag=player] title {"text":"レース","bold":true,"color":"green"}` });
+
+    files.push({ path: `data/${ns}/function/game_loop.mcfunction`, content:
+`# ═══ レース ゲームループ ═══
+
+# カウントダウン
+execute if score #timer pre_count matches 60 run title @a[tag=player] title {"text":"3","bold":true,"color":"light_purple"}
+execute if score #timer pre_count matches 40 run title @a[tag=player] title {"text":"2","bold":true,"color":"yellow"}
+execute if score #timer pre_count matches 20 run title @a[tag=player] title {"text":"1","bold":true,"color":"red"}
+execute if score #timer pre_count matches 1 run title @a[tag=player] title {"text":"GO！","bold":true,"color":"green"}
+execute if score #timer pre_count matches 1.. run scoreboard players remove #timer pre_count 1
+
+# タイマー（経過時間カウントアップ）
+execute if score #timer pre_count matches 0 run scoreboard players add #timer timer_tick 1
+execute if score #timer pre_count matches 0 if score #timer timer_tick matches 20.. run scoreboard players set #timer timer_tick 0
+execute if score #timer pre_count matches 0 if score #timer timer_tick matches 0 run scoreboard players add #timer timer_sec 1
+execute store result bossbar ${ns}:timer value run scoreboard players get #timer timer_sec
+
+# チェックポイント検知（エンティティにタグを付けて座標に置く）
+# 例: /summon marker ~ ~ ~ {Tags:["cp1"]} をコース上に配置
+# execute as @a[tag=player,scores={checkpoint=0}] at @s if entity @e[tag=cp1,distance=..3] run function ${ns}:checkpoint
+
+# HUD
+bossbar set ${ns}:timer name ["",{"text":"経過: ","color":"green"},{"score":{"name":"#timer","objective":"timer_sec"},"color":"white"},{"text":"秒","color":"green"}]
+title @a[tag=player] actionbar ["",{"text":"チェックポイント: ","color":"green"},{"score":{"name":"@s","objective":"checkpoint"},"color":"white"}]
+
+# 制限時間チェック
+execute if score #timer timer_sec matches ${gt}.. run function ${ns}:end` });
+
+    files.push({ path: `data/${ns}/function/goal.mcfunction`, content:
+`# ═══ ゴール処理 ═══
+# ゴール地点で: execute as @a[tag=player,scores={finished=0}] at @s if entity @e[tag=goal,distance=..3] run function ${ns}:goal
+scoreboard players set @s finished 1
+tellraw @a[tag=player] [{"selector":"@s","color":"gold","bold":true},{"text":" がゴール！ （","color":"green"},{"score":{"name":"#timer","objective":"timer_sec"},"color":"white"},{"text":"秒）","color":"green"}]
+title @s title {"text":"ゴール！","bold":true,"color":"gold"}
+playsound minecraft:ui.toast.challenge_complete master @s` });
+
+    files.push({ path: `data/${ns}/function/end.mcfunction`, content:
+`scoreboard players set #game game_state 0
+bossbar remove ${ns}:timer
+gamemode adventure @a[tag=player]
+tag @a remove player
+tellraw @a {"text":"レース終了！","color":"gold","bold":true}` });
+
+  } else if (gameType === 'treasure_hunt') {
+    const item = settings.targetItem || 'minecraft:diamond';
+    const itemName = item.replace('minecraft:', '');
+    files.push({ path: `data/${ns}/function/reload.mcfunction`, content:
+`# ═══ 宝探し 初期化 ═══
+scoreboard objectives add game_state dummy "ゲーム状態"
+scoreboard objectives add timer_tick dummy "tick"
+scoreboard objectives add timer_sec dummy "秒"
+scoreboard objectives add pre_count dummy "カウントダウン"
+scoreboard objectives add score dummy "スコア"
+scoreboard objectives add pickup minecraft.picked_up:${item} "アイテム取得"
+scoreboard players set #game game_state 0
+say [宝探し] 読み込み完了！` });
+
+    files.push({ path: `data/${ns}/function/main.mcfunction`, content:
+`execute if score #game game_state matches 1 run function ${ns}:game_loop` });
+
+    files.push({ path: `data/${ns}/function/start.mcfunction`, content:
+`# ═══ 宝探し 開始 ═══
+clear @a[tag=player]
+effect clear @a[tag=player]
+scoreboard players set @a[tag=player] score 0
+scoreboard players set @a[tag=player] pickup 0
+gamemode adventure @a[tag=player]
+
+scoreboard players set #timer timer_tick 0
+scoreboard players set #timer timer_sec ${gt}
+scoreboard players set #timer pre_count 60
+
+bossbar add ${ns}:timer ""
+bossbar set ${ns}:timer players @a[tag=player]
+bossbar set ${ns}:timer max ${gt}
+bossbar set ${ns}:timer value ${gt}
+bossbar set ${ns}:timer color purple
+
+scoreboard players set #game game_state 1
+title @a[tag=player] title {"text":"宝探し","bold":true,"color":"light_purple"}
+title @a[tag=player] subtitle {"text":"${itemName}を集めろ！","color":"yellow"}` });
+
+    files.push({ path: `data/${ns}/function/game_loop.mcfunction`, content:
+`# ═══ 宝探し ゲームループ ═══
+
+# カウントダウン
+execute if score #timer pre_count matches 60 run title @a[tag=player] title {"text":"3","bold":true,"color":"light_purple"}
+execute if score #timer pre_count matches 40 run title @a[tag=player] title {"text":"2","bold":true,"color":"yellow"}
+execute if score #timer pre_count matches 20 run title @a[tag=player] title {"text":"1","bold":true,"color":"red"}
+execute if score #timer pre_count matches 1 run title @a[tag=player] title {"text":"探せ！","bold":true,"color":"light_purple"}
+execute if score #timer pre_count matches 1.. run scoreboard players remove #timer pre_count 1
+
+# タイマー
+execute if score #timer pre_count matches 0 run scoreboard players add #timer timer_tick 1
+execute if score #timer pre_count matches 0 if score #timer timer_tick matches 20.. run scoreboard players set #timer timer_tick 0
+execute if score #timer pre_count matches 0 if score #timer timer_tick matches 0 if score #timer timer_sec matches 1.. run scoreboard players remove #timer timer_sec 1
+execute store result bossbar ${ns}:timer value run scoreboard players get #timer timer_sec
+
+# アイテム取得検知
+execute as @a[tag=player,scores={pickup=1..}] run scoreboard players operation @s score += @s pickup
+execute as @a[tag=player,scores={pickup=1..}] run tellraw @a[tag=player] [{"selector":"@s","color":"gold"},{"text":" が${itemName}を見つけた！(計","color":"yellow"},{"score":{"name":"@s","objective":"score"},"color":"white"},{"text":"個)","color":"yellow"}]
+scoreboard players set @a[tag=player] pickup 0
+
+# HUD
+bossbar set ${ns}:timer name ["",{"text":"残り ","color":"yellow"},{"score":{"name":"#timer","objective":"timer_sec"},"color":"aqua"},{"text":"秒","color":"yellow"}]
+title @a[tag=player] actionbar ["",{"text":"スコア: ","color":"light_purple"},{"score":{"name":"@s","objective":"score"},"color":"white"},{"text":"個","color":"light_purple"}]
+
+# 時間切れ
+execute if score #timer pre_count matches 0 if score #timer timer_sec matches 0 run function ${ns}:result` });
+
+    files.push({ path: `data/${ns}/function/result.mcfunction`, content:
+`# ═══ 結果発表 ═══
+tellraw @a[tag=player] {"text":"═══ 宝探し終了！ ═══","color":"gold","bold":true}
+tellraw @a[tag=player] {"text":"--- スコアボード ---","color":"yellow"}
+execute as @a[tag=player] run tellraw @a[tag=player] [{"selector":"@s"},{"text":": ","color":"gray"},{"score":{"name":"@s","objective":"score"},"color":"white"},{"text":"個","color":"gray"}]
+title @a[tag=player] title {"text":"終了！","bold":true,"color":"gold"}
+function ${ns}:end` });
+
+    files.push({ path: `data/${ns}/function/end.mcfunction`, content:
+`scoreboard players set #game game_state 0
+bossbar remove ${ns}:timer
+gamemode adventure @a[tag=player]
+clear @a[tag=player]
+effect clear @a[tag=player]
+tag @a remove player
+tellraw @a {"text":"ゲームリセット完了","color":"gray"}` });
+  }
+
+  return files;
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1256,6 +2052,284 @@ function SettingsPanel({ project, setProject, onClose }) {
 }
 
 // ════════════════════════════════════════════════════════════
+// MINIGAME WIZARD
+// ════════════════════════════════════════════════════════════
+
+function MinigameWizard({ namespace, onComplete, onClose }) {
+  const [step, setStep] = useState(0);
+  const [selectedType, setSelectedType] = useState('tag_game');
+  const [settings, setSettings] = useState({ gameTime: 300, teamA: '鬼', teamB: '逃走者', colorA: 'red', colorB: 'blue', targetKills: 10, fallY: 50, targetItem: 'minecraft:diamond' });
+
+  const gameType = MINIGAME_TYPES.find(t => t.id === selectedType);
+
+  const handleComplete = () => {
+    const mergedSettings = { ...gameType.defaults, ...settings };
+    onComplete(selectedType, mergedSettings);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="bg-mc-sidebar border border-mc-border rounded-lg w-full max-w-2xl mx-4 anim-scale overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-mc-border">
+          <h3 className="text-sm font-semibold flex items-center gap-2"><Gamepad2 size={16} /> ミニゲーム作成ウィザード</h3>
+          <button onClick={onClose} className="text-mc-muted hover:text-mc-text"><X size={16} /></button>
+        </div>
+
+        {/* Steps indicator */}
+        <div className="flex border-b border-mc-border">
+          {['ゲーム選択', '設定', '確認'].map((s, i) => (
+            <div key={i} className={`flex-1 px-4 py-2 text-center text-xs font-medium transition-colors ${
+              i === step ? 'bg-mc-info text-white' : i < step ? 'bg-mc-success/20 text-mc-success' : 'text-mc-muted'
+            }`}>
+              <div className="text-[10px] opacity-60">STEP {i + 1}</div>{s}
+            </div>
+          ))}
+        </div>
+
+        <div className="p-5" style={{ minHeight: '340px' }}>
+          {/* Step 0: Game type selection */}
+          {step === 0 && (
+            <div className="space-y-2 anim-fade">
+              <p className="text-xs text-mc-muted mb-3">作りたいミニゲームのタイプを選んでください</p>
+              {MINIGAME_TYPES.map(gt => (
+                <button key={gt.id}
+                  onClick={() => { setSelectedType(gt.id); setSettings(s => ({ ...s, ...gt.defaults })); }}
+                  className={`w-full text-left p-3 rounded border transition-colors flex items-start gap-3 ${
+                    selectedType === gt.id ? 'border-mc-info bg-mc-info/10' : 'border-mc-border/50 hover:border-mc-border bg-mc-dark/20'
+                  }`}
+                >
+                  <span className="text-2xl">{gt.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-sm font-semibold ${gt.color}`}>{gt.name}</div>
+                    <div className="text-xs text-mc-muted mt-0.5 leading-relaxed">{gt.description}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Step 1: Settings */}
+          {step === 1 && gameType && (
+            <div className="space-y-4 anim-fade">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xl">{gameType.icon}</span>
+                <span className="text-sm font-semibold">{gameType.name} の設定</span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-mc-muted mb-1">制限時間（秒）</label>
+                <input type="number" min={30} max={3600}
+                  className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                  value={settings.gameTime}
+                  onChange={e => setSettings(s => ({ ...s, gameTime: parseInt(e.target.value) || 300 }))}
+                />
+                <p className="text-[10px] text-mc-muted mt-1">{settings.gameTime}秒 = {Math.floor(settings.gameTime / 60)}分{settings.gameTime % 60}秒</p>
+              </div>
+
+              {(selectedType === 'tag_game' || selectedType === 'pvp_arena') && (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-mc-muted mb-1">チームA名</label>
+                      <input className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                        value={settings.teamA} onChange={e => setSettings(s => ({ ...s, teamA: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-mc-muted mb-1">チームB名</label>
+                      <input className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                        value={settings.teamB} onChange={e => setSettings(s => ({ ...s, teamB: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-mc-muted mb-1">チームA色</label>
+                      <select className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                        value={settings.colorA} onChange={e => setSettings(s => ({ ...s, colorA: e.target.value }))}>
+                        {['red','blue','green','yellow','aqua','gold','light_purple','dark_red','dark_blue','dark_green','white'].map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-mc-muted mb-1">チームB色</label>
+                      <select className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                        value={settings.colorB} onChange={e => setSettings(s => ({ ...s, colorB: e.target.value }))}>
+                        {['red','blue','green','yellow','aqua','gold','light_purple','dark_red','dark_blue','dark_green','white'].map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {selectedType === 'pvp_arena' && (
+                <div>
+                  <label className="block text-xs font-medium text-mc-muted mb-1">目標キル数</label>
+                  <input type="number" min={1} max={100}
+                    className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                    value={settings.targetKills}
+                    onChange={e => setSettings(s => ({ ...s, targetKills: parseInt(e.target.value) || 10 }))} />
+                </div>
+              )}
+
+              {selectedType === 'spleef' && (
+                <div>
+                  <label className="block text-xs font-medium text-mc-muted mb-1">落下判定Y座標</label>
+                  <input type="number"
+                    className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                    value={settings.fallY}
+                    onChange={e => setSettings(s => ({ ...s, fallY: parseInt(e.target.value) || 50 }))} />
+                  <p className="text-[10px] text-mc-muted mt-1">この高さ以下に落ちたプレイヤーは脱落</p>
+                </div>
+              )}
+
+              {selectedType === 'treasure_hunt' && (
+                <div>
+                  <label className="block text-xs font-medium text-mc-muted mb-1">収集アイテム</label>
+                  <input className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm font-mono focus:border-mc-info focus:outline-none"
+                    value={settings.targetItem}
+                    onChange={e => setSettings(s => ({ ...s, targetItem: e.target.value }))} />
+                  <p className="text-[10px] text-mc-muted mt-1">例: minecraft:diamond, minecraft:gold_ingot</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Step 2: Confirm */}
+          {step === 2 && gameType && (
+            <div className="anim-fade">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-2xl">{gameType.icon}</span>
+                <div>
+                  <div className="text-sm font-semibold">{gameType.name}</div>
+                  <div className="text-xs text-mc-muted">名前空間: {namespace}</div>
+                </div>
+              </div>
+
+              <div className="bg-mc-dark rounded p-3 space-y-2 text-xs mb-4">
+                <div className="flex justify-between"><span className="text-mc-muted">制限時間</span><span>{settings.gameTime}秒（{Math.floor(settings.gameTime / 60)}分{settings.gameTime % 60}秒）</span></div>
+                {(selectedType === 'tag_game' || selectedType === 'pvp_arena') && (
+                  <>
+                    <div className="flex justify-between"><span className="text-mc-muted">チームA</span><span style={{color: settings.colorA === 'gold' ? '#FFD700' : settings.colorA}}>{settings.teamA}</span></div>
+                    <div className="flex justify-between"><span className="text-mc-muted">チームB</span><span style={{color: settings.colorB === 'gold' ? '#FFD700' : settings.colorB}}>{settings.teamB}</span></div>
+                  </>
+                )}
+                {selectedType === 'pvp_arena' && <div className="flex justify-between"><span className="text-mc-muted">目標キル数</span><span>{settings.targetKills}キル</span></div>}
+                {selectedType === 'spleef' && <div className="flex justify-between"><span className="text-mc-muted">落下判定Y</span><span>Y={settings.fallY}</span></div>}
+                {selectedType === 'treasure_hunt' && <div className="flex justify-between"><span className="text-mc-muted">収集アイテム</span><span className="font-mono">{settings.targetItem}</span></div>}
+              </div>
+
+              <div className="bg-mc-dark/50 rounded p-3 text-xs text-mc-muted">
+                <p className="font-medium text-mc-text mb-2">生成されるファイル:</p>
+                <div className="space-y-1 font-mono text-[11px]">
+                  <p>data/minecraft/tags/function/load.json</p>
+                  <p>data/minecraft/tags/function/tick.json</p>
+                  <p>data/{namespace}/function/reload.mcfunction</p>
+                  <p>data/{namespace}/function/main.mcfunction</p>
+                  <p>data/{namespace}/function/start.mcfunction</p>
+                  <p>data/{namespace}/function/game_loop.mcfunction</p>
+                  <p>data/{namespace}/function/end.mcfunction</p>
+                  <p className="text-mc-muted italic">+ ゲーム固有のファイル</p>
+                </div>
+              </div>
+
+              <div className="mt-3 p-3 bg-mc-warning/10 border border-mc-warning/30 rounded text-xs text-mc-warning flex items-start gap-2">
+                <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+                <span>既存のファイルがある場合は上書きされます。新しいプロジェクトで使用することを推奨します。</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Navigation */}
+        <div className="flex justify-between items-center px-5 pb-5">
+          <button onClick={step === 0 ? onClose : () => setStep(s => s - 1)}
+            className="px-4 py-2 text-sm text-mc-muted hover:text-mc-text transition-colors">
+            {step === 0 ? 'キャンセル' : '戻る'}
+          </button>
+          <button onClick={() => { if (step < 2) setStep(s => s + 1); else handleComplete(); }}
+            className="px-6 py-2 text-sm font-medium rounded bg-mc-info hover:bg-mc-info/80 transition-colors flex items-center gap-2">
+            {step < 2 ? (<>次へ <ArrowRight size={14} /></>) : (<>ミニゲームを作成 <Gamepad2 size={14} /></>)}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+// COMMAND REFERENCE PANEL
+// ════════════════════════════════════════════════════════════
+
+function CommandReference({ namespace }) {
+  const [openCat, setOpenCat] = useState(COMMAND_SNIPPETS[0]?.category);
+  const [copied, setCopied] = useState(null);
+  const copyTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => { if (copyTimerRef.current) clearTimeout(copyTimerRef.current); };
+  }, []);
+
+  const copyCode = (code, idx) => {
+    const resolved = code.replace(/<ns>/g, namespace || 'mypack');
+    try {
+      navigator.clipboard.writeText(resolved).then(() => {
+        setCopied(idx);
+        if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+        copyTimerRef.current = setTimeout(() => setCopied(null), 1500);
+      });
+    } catch {
+      // Fallback: select text via prompt
+      prompt('コピーしてください:', resolved);
+    }
+  };
+
+  return (
+    <div className="flex-1 flex flex-col min-h-0">
+      <div className="px-3 py-2 border-b border-mc-border bg-mc-dark/30">
+        <div className="flex items-center gap-2 text-xs font-semibold text-mc-muted">
+          <BookOpen size={12} />
+          コマンドリファレンス
+          <span className="text-[10px] text-mc-muted/60 ml-auto">クリックでコピー</span>
+        </div>
+      </div>
+      <div className="flex flex-1 min-h-0">
+        {/* Category list */}
+        <div className="w-36 border-r border-mc-border overflow-y-auto py-1 flex-shrink-0">
+          {COMMAND_SNIPPETS.map(cat => {
+            const Icon = cat.icon;
+            return (
+              <button key={cat.category}
+                onClick={() => setOpenCat(cat.category)}
+                className={`w-full text-left px-2 py-1.5 text-[11px] flex items-center gap-1.5 transition-colors ${
+                  openCat === cat.category ? 'bg-mc-info/20 text-white' : 'text-mc-muted hover:bg-mc-dark/50'
+                }`}>
+                <Icon size={12} /> {cat.category}
+              </button>
+            );
+          })}
+        </div>
+        {/* Snippets */}
+        <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
+          {COMMAND_SNIPPETS.find(c => c.category === openCat)?.items.map((item, idx) => (
+            <div key={idx}
+              onClick={() => copyCode(item.code, `${openCat}-${idx}`)}
+              className="bg-mc-dark/50 rounded p-2 cursor-pointer hover:bg-mc-dark/80 transition-colors group">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-medium text-mc-text">{item.label}</span>
+                <span className="text-[10px] text-mc-muted group-hover:text-mc-success transition-colors">
+                  {copied === `${openCat}-${idx}` ? '✓ コピー済み' : <Clipboard size={10} />}
+                </span>
+              </div>
+              <pre className="text-[11px] font-mono text-sky-300/80 whitespace-pre-wrap break-all">{item.code}</pre>
+              <p className="text-[10px] text-mc-muted mt-1">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
 // MAIN APP
 // ════════════════════════════════════════════════════════════
 
@@ -1274,6 +2348,7 @@ export default function App() {
   const [showWizard, setShowWizard] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const [showMinigameWizard, setShowMinigameWizard] = useState(false);
   const [contextMenu, setContextMenu] = useState(null);
   const [activeTab, setActiveTab] = useState('editor');
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -1532,6 +2607,16 @@ export default function App() {
     setShowTemplateSelector(false);
   };
 
+  const handleMinigameComplete = (gameType, settings) => {
+    const mgFiles = generateMinigameFiles(project.namespace, gameType, settings);
+    const newFiles = addFilesFromPaths(files, mgFiles);
+    setFiles(newFiles);
+    const allFolderIds = new Set();
+    newFiles.filter(f => f.type === 'folder').forEach(f => allFolderIds.add(f.id));
+    setExpanded(allFolderIds);
+    setShowMinigameWizard(false);
+  };
+
   const handleDownload = async () => {
     const errs = errors.filter(e => e.type === 'error');
     if (errs.length > 0) {
@@ -1592,6 +2677,12 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-2">
+          <button onClick={() => setShowMinigameWizard(true)}
+            className="text-xs px-2.5 py-1.5 text-emerald-400 hover:text-emerald-300 hover:bg-mc-dark rounded transition-colors flex items-center gap-1.5"
+            title="ミニゲーム作成"
+          >
+            <Gamepad2 size={13} /> <span className="hidden sm:inline">ミニゲーム</span>
+          </button>
           <button onClick={() => setShowWizard(true)}
             className="text-xs px-2.5 py-1.5 text-mc-muted hover:text-mc-text hover:bg-mc-dark rounded transition-colors flex items-center gap-1.5"
             title="セットアップウィザード"
@@ -1703,6 +2794,7 @@ export default function App() {
             {[
               { key: 'editor', label: 'エディター', icon: Code },
               { key: 'preview', label: 'プレビュー', icon: Eye },
+              { key: 'commands', label: 'コマンド', icon: BookOpen },
             ].map(t => (
               <button
                 key={t.key}
@@ -1732,6 +2824,8 @@ export default function App() {
           <div className="flex-1 flex min-h-0">
             {activeTab === 'editor' ? (
               <CodeEditor file={selectedFile} onChange={handleFileContentChange} />
+            ) : activeTab === 'commands' ? (
+              <CommandReference namespace={project.namespace} />
             ) : (
               <PreviewPanel project={project} files={files} errors={errors} />
             )}
@@ -1785,6 +2879,13 @@ export default function App() {
           parentId={nsFolder?.id}
           onSelect={handleTemplateSelect}
           onClose={() => setShowTemplateSelector(false)}
+        />
+      )}
+      {showMinigameWizard && (
+        <MinigameWizard
+          namespace={project.namespace}
+          onComplete={handleMinigameComplete}
+          onClose={() => setShowMinigameWizard(false)}
         />
       )}
       {contextMenu && (
