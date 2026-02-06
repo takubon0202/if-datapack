@@ -1813,12 +1813,14 @@ function SetupWizard({ onComplete, onCancel }) {
 
         {/* Navigation */}
         <div className="flex justify-between items-center px-6 pb-6">
-          <button
-            onClick={step === 0 ? onCancel : () => setStep(s => s - 1)}
-            className="px-4 py-2 text-sm text-mc-muted hover:text-mc-text transition-colors"
-          >
-            {step === 0 ? 'キャンセル' : '戻る'}
-          </button>
+          {(step > 0 || onCancel) ? (
+            <button
+              onClick={step === 0 ? onCancel : () => setStep(s => s - 1)}
+              className="px-4 py-2 text-sm text-mc-muted hover:text-mc-text transition-colors"
+            >
+              {step === 0 ? 'キャンセル' : '戻る'}
+            </button>
+          ) : <div />}
           <button
             onClick={() => {
               if (step < 2) setStep(s => s + 1);
@@ -3537,14 +3539,16 @@ export default function App() {
             <div className="flex items-center gap-1">
               <button
                 onClick={() => nsFolder && setShowTemplateSelector(true)}
-                className="w-6 h-6 flex items-center justify-center text-mc-muted hover:text-mc-success hover:bg-mc-dark rounded transition-colors"
+                disabled={!nsFolder}
+                className={`w-6 h-6 flex items-center justify-center rounded transition-colors ${nsFolder ? 'text-mc-muted hover:text-mc-success hover:bg-mc-dark' : 'text-mc-muted/30 cursor-not-allowed'}`}
                 title="テンプレートから追加"
               >
                 <Plus size={14} />
               </button>
               <button
                 onClick={() => { const root = files.find(f => !f.parentId); if (root) addFolder(root.id); }}
-                className="w-6 h-6 flex items-center justify-center text-mc-muted hover:text-yellow-400 hover:bg-mc-dark rounded transition-colors"
+                disabled={!files.some(f => !f.parentId)}
+                className={`w-6 h-6 flex items-center justify-center rounded transition-colors ${files.some(f => !f.parentId) ? 'text-mc-muted hover:text-yellow-400 hover:bg-mc-dark' : 'text-mc-muted/30 cursor-not-allowed'}`}
                 title="フォルダを追加"
               >
                 <FolderPlus size={14} />
@@ -3587,7 +3591,8 @@ export default function App() {
           <div className="border-t border-mc-border/50 p-2 space-y-1">
             <button
               onClick={() => nsFolder && setShowTemplateSelector(true)}
-              className="w-full text-left px-2 py-1.5 text-xs text-mc-muted hover:text-mc-text hover:bg-mc-dark rounded transition-colors flex items-center gap-2"
+              disabled={!nsFolder}
+              className={`w-full text-left px-2 py-1.5 text-xs rounded transition-colors flex items-center gap-2 ${nsFolder ? 'text-mc-muted hover:text-mc-text hover:bg-mc-dark' : 'text-mc-muted/30 cursor-not-allowed'}`}
             >
               <FilePlus size={12} /> テンプレートからファイル作成
             </button>
@@ -3680,7 +3685,7 @@ export default function App() {
       {showWizard && (
         <SetupWizard
           onComplete={handleWizardComplete}
-          onCancel={() => { if (files.length > 0) setShowWizard(false); }}
+          onCancel={files.length > 0 ? () => setShowWizard(false) : null}
         />
       )}
       {showSettings && (
