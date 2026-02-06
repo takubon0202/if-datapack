@@ -23,39 +23,54 @@ const VERSION_FORMATS = {
   '1.21.11': { min: [94, 1], max: [94, 1], useNewFormat: true },
   '1.21.10': { min: [88, 0], max: [88, 0], useNewFormat: true },
   '1.21.9':  { min: [88, 0], max: [88, 0], useNewFormat: true },
+  '1.21.6':  { format: 80, useNewFormat: false },
+  '1.21.5':  { format: 71, useNewFormat: false },
   '1.21.4':  { format: 61, useNewFormat: false },
   '1.21.2':  { format: 57, useNewFormat: false },
   '1.21':    { format: 48, useNewFormat: false },
   '1.20.6':  { format: 41, useNewFormat: false },
+  '1.20.5':  { format: 41, useNewFormat: false },
   '1.20.4':  { format: 26, useNewFormat: false },
+  '1.20.3':  { format: 26, useNewFormat: false },
   '1.20.2':  { format: 18, useNewFormat: false },
+  '1.20':    { format: 15, useNewFormat: false },
+  '1.19.4':  { format: 12, useNewFormat: false },
+  '1.19.3':  { format: 10, useNewFormat: false },
+  '1.19':    { format: 10, useNewFormat: false },
+  '1.18.2':  { format: 9, useNewFormat: false },
+  '1.18':    { format: 8, useNewFormat: false },
+  '1.17':    { format: 7, useNewFormat: false },
+  '1.16':    { format: 6, useNewFormat: false },
+  '1.15':    { format: 5, useNewFormat: false },
+  '1.14':    { format: 4, useNewFormat: false },
+  '1.13':    { format: 4, useNewFormat: false },
 };
 
 const VERSION_LIST = Object.keys(VERSION_FORMATS);
 
 const DATAPACK_FOLDERS = [
   { name: 'advancement', label: '進捗' },
-  { name: 'banner_pattern', label: '旗の模様' },
-  { name: 'cat_variant', label: 'ネコの亜種' },
-  { name: 'chat_type', label: 'チャットタイプ' },
-  { name: 'damage_type', label: 'ダメージタイプ' },
+  { name: 'banner_pattern', label: '旗の模様', v: '1.20.5' },
+  { name: 'cat_variant', label: 'ネコの亜種', v: '1.20.5' },
+  { name: 'chat_type', label: 'チャットタイプ', v: '1.19' },
+  { name: 'damage_type', label: 'ダメージタイプ', v: '1.19.4' },
   { name: 'dimension', label: 'ディメンション' },
   { name: 'dimension_type', label: 'ディメンションタイプ' },
-  { name: 'enchantment', label: 'エンチャント' },
-  { name: 'enchantment_provider', label: 'エンチャントプロバイダー' },
+  { name: 'enchantment', label: 'エンチャント', v: '1.21' },
+  { name: 'enchantment_provider', label: 'エンチャントプロバイダー', v: '1.21' },
   { name: 'function', label: '関数' },
-  { name: 'instrument', label: '楽器' },
-  { name: 'item_modifier', label: 'アイテム修飾子' },
+  { name: 'instrument', label: '楽器', v: '1.20.5' },
+  { name: 'item_modifier', label: 'アイテム修飾子', v: '1.17' },
   { name: 'loot_table', label: 'ルートテーブル' },
-  { name: 'painting_variant', label: '絵画の亜種' },
-  { name: 'predicate', label: '条件' },
+  { name: 'painting_variant', label: '絵画の亜種', v: '1.20.5' },
+  { name: 'predicate', label: '条件', v: '1.15' },
   { name: 'recipe', label: 'レシピ' },
   { name: 'structure', label: '構造物' },
   { name: 'tags', label: 'タグ' },
-  { name: 'timeline', label: 'タイムライン', minVersion: '1.21.11' },
-  { name: 'trim_material', label: '装飾の素材' },
-  { name: 'trim_pattern', label: '装飾の模様' },
-  { name: 'wolf_variant', label: 'オオカミの亜種' },
+  { name: 'timeline', label: 'タイムライン', v: '1.21.11' },
+  { name: 'trim_material', label: '装飾の素材', v: '1.19.4' },
+  { name: 'trim_pattern', label: '装飾の模様', v: '1.19.4' },
+  { name: 'wolf_variant', label: 'オオカミの亜種', v: '1.20.5' },
   { name: 'worldgen', label: 'ワールド生成' },
 ];
 
@@ -388,7 +403,7 @@ const COMMAND_SNIPPETS = [
       { label: 'エフェクト解除', code: 'effect clear @a[tag=player]', desc: '全エフェクトを解除' },
       { label: 'テレポート', code: 'tp @a[tag=player] ~ ~ ~', desc: '指定座標にテレポート' },
       { label: 'スポーン設定', code: 'spawnpoint @a[tag=player] ~ ~ ~', desc: 'リスポーン地点を設定' },
-      { label: '属性変更', code: 'attribute @s movement_speed base set 0.1', desc: '移動速度を変更（デフォルト0.1）' },
+      { label: '属性変更', code: 'attribute @s movement_speed base set 0.1', desc: '移動速度を変更（デフォルト0.1）', v: '1.16' },
     ],
   },
   {
@@ -413,6 +428,19 @@ const COMMAND_SNIPPETS = [
       { label: 'タグ管理', code: 'tag @a[distance=..5] add player', desc: '近くのプレイヤーにタグ付与' },
     ],
   },
+  {
+    category: 'バージョン別の注意',
+    icon: Info,
+    items: [
+      { label: 'マクロ ($)', code: '$execute if score #var obj matches 1 run say $(name)', desc: 'マクロ構文は1.20.2以降で使用可能', v: '1.20.2' },
+      { label: 'return コマンド', code: 'return 1', desc: '関数の戻り値。1.20以降', v: '1.20' },
+      { label: 'ride コマンド', code: 'ride @s mount @e[type=horse,limit=1,sort=nearest]', desc: '騎乗操作。1.19.4以降', v: '1.19.4' },
+      { label: 'damage コマンド', code: 'damage @s 5 minecraft:generic', desc: 'ダメージ付与。1.19.4以降', v: '1.19.4' },
+      { label: '@n セレクター', code: '@n[type=zombie]', desc: '最寄りエンティティ。1.21以降', v: '1.21' },
+      { label: 'tick コマンド', code: 'tick rate 40', desc: 'ティック操作。1.20.3以降', v: '1.20.3' },
+      { label: 'random コマンド', code: 'random value 1..6', desc: '乱数生成。1.20.2以降', v: '1.20.2' },
+    ],
+  },
 ];
 
 // ════════════════════════════════════════════════════════════
@@ -431,7 +459,7 @@ const MC_AUTO = {
     { l: 'gamemode', d: 'ゲームモード変更' }, { l: 'difficulty', d: '難易度変更' },
     { l: 'title', d: 'タイトル表示' }, { l: 'tellraw', d: 'JSONテキスト表示' },
     { l: 'say', d: 'チャットメッセージ' }, { l: 'bossbar', d: 'ボスバー操作' },
-    { l: 'function', d: '関数実行' }, { l: 'schedule', d: '遅延実行' },
+    { l: 'function', d: '関数実行' }, { l: 'schedule', d: '遅延実行', v: '1.14' },
     { l: 'data', d: 'NBTデータ操作' }, { l: 'particle', d: 'パーティクル表示' },
     { l: 'playsound', d: 'サウンド再生' }, { l: 'stopsound', d: 'サウンド停止' },
     { l: 'advancement', d: '進捗操作' }, { l: 'recipe', d: 'レシピ操作' },
@@ -439,13 +467,26 @@ const MC_AUTO = {
     { l: 'gamerule', d: 'ゲームルール変更' }, { l: 'worldborder', d: 'ワールドボーダー' },
     { l: 'spawnpoint', d: 'スポーンポイント設定' }, { l: 'setworldspawn', d: 'ワールドスポーン設定' },
     { l: 'spreadplayers', d: 'プレイヤー散布' }, { l: 'forceload', d: 'チャンク強制読込' },
-    { l: 'reload', d: 'データパック再読込' }, { l: 'attribute', d: '属性操作' },
+    { l: 'reload', d: 'データパック再読込' }, { l: 'attribute', d: '属性操作', v: '1.16' },
     { l: 'enchant', d: 'エンチャント付与' }, { l: 'experience', d: '経験値操作' },
-    { l: 'xp', d: '経験値操作' }, { l: 'item', d: 'アイテム操作' },
-    { l: 'loot', d: 'ルートテーブル実行' }, { l: 'trigger', d: 'トリガー操作' },
-    { l: 'ride', d: '騎乗操作' }, { l: 'damage', d: 'ダメージ付与' },
-    { l: 'return', d: '関数戻り値' }, { l: 'random', d: '乱数生成' },
-    { l: 'place', d: '構造物配置' }, { l: 'tick', d: 'ティック操作' },
+    { l: 'xp', d: '経験値操作' },
+    { l: 'replaceitem', d: 'アイテム置換', rm: '1.17' },
+    { l: 'item', d: 'アイテム操作', v: '1.17' },
+    { l: 'loot', d: 'ルートテーブル実行', v: '1.14' }, { l: 'trigger', d: 'トリガー操作' },
+    { l: 'spectate', d: 'スペクテイター操作', v: '1.15' },
+    { l: 'locatebiome', d: 'バイオーム検索', v: '1.16', rm: '1.19' },
+    { l: 'placefeature', d: '地物配置', v: '1.18.2', rm: '1.19' },
+    { l: 'place', d: '構造物配置', v: '1.19' },
+    { l: 'fillbiome', d: 'バイオーム充填', v: '1.19.3' },
+    { l: 'ride', d: '騎乗操作', v: '1.19.4' }, { l: 'damage', d: 'ダメージ付与', v: '1.19.4' },
+    { l: 'return', d: '関数戻り値', v: '1.20' }, { l: 'random', d: '乱数生成', v: '1.20.2' },
+    { l: 'tick', d: 'ティック操作', v: '1.20.3' },
+    { l: 'transfer', d: 'サーバー転送', v: '1.20.5' },
+    { l: 'rotate', d: 'エンティティ回転', v: '1.21.2' },
+    { l: 'test', d: 'テスト実行', v: '1.21.5' },
+    { l: 'dialog', d: 'ダイアログ表示', v: '1.21.6' },
+    { l: 'fetchprofile', d: 'プロフィール取得', v: '1.21.9' },
+    { l: 'stopwatch', d: 'ストップウォッチ', v: '1.21.11' },
     { l: 'defaultgamemode', d: 'デフォルトゲームモード' },
   ],
   execute: [
@@ -455,14 +496,14 @@ const MC_AUTO = {
     { l: 'if', d: '条件が真なら実行' }, { l: 'unless', d: '条件が偽なら実行' },
     { l: 'store', d: '結果を保存' }, { l: 'run', d: 'コマンドを実行' },
     { l: 'anchored', d: 'アンカー位置' }, { l: 'align', d: '座標を整列' },
-    { l: 'on', d: '関係エンティティ' }, { l: 'summon', d: '召喚して実行' },
+    { l: 'on', d: '関係エンティティ', v: '1.19.4' }, { l: 'summon', d: '召喚して実行', v: '1.19.4' },
   ],
   'execute.if': [
     { l: 'entity', d: 'エンティティ存在判定' }, { l: 'block', d: 'ブロック判定' },
     { l: 'blocks', d: 'ブロック範囲判定' }, { l: 'score', d: 'スコア条件判定' },
-    { l: 'predicate', d: '条件判定' }, { l: 'data', d: 'NBTデータ存在判定' },
-    { l: 'biome', d: 'バイオーム判定' }, { l: 'loaded', d: 'チャンクロード判定' },
-    { l: 'function', d: '関数戻り値判定' }, { l: 'items', d: 'アイテム判定' },
+    { l: 'predicate', d: '条件判定', v: '1.15' }, { l: 'data', d: 'NBTデータ存在判定' },
+    { l: 'biome', d: 'バイオーム判定', v: '1.19' }, { l: 'loaded', d: 'チャンクロード判定', v: '1.19.4' },
+    { l: 'function', d: '関数戻り値判定', v: '1.20.3' }, { l: 'items', d: 'アイテム判定', v: '1.20.5' },
   ],
   'execute.store': [
     { l: 'result', d: '結果を保存' }, { l: 'success', d: '成功フラグを保存' },
@@ -534,7 +575,7 @@ const MC_AUTO = {
   _selectors: [
     { l: '@a', d: '全プレイヤー' }, { l: '@p', d: '最寄りプレイヤー' },
     { l: '@r', d: 'ランダムプレイヤー' }, { l: '@s', d: '実行者' },
-    { l: '@e', d: '全エンティティ' }, { l: '@n', d: '最寄りエンティティ' },
+    { l: '@e', d: '全エンティティ' }, { l: '@n', d: '最寄りエンティティ', v: '1.21' },
   ],
   _selector_args: [
     { l: 'tag=', d: 'タグフィルター' }, { l: 'scores=', d: 'スコアフィルター' },
@@ -544,7 +585,7 @@ const MC_AUTO = {
     { l: 'gamemode=', d: 'ゲームモードフィルター' }, { l: 'nbt=', d: 'NBTフィルター' },
     { l: 'x=', d: 'X座標' }, { l: 'y=', d: 'Y座標' }, { l: 'z=', d: 'Z座標' },
     { l: 'dx=', d: 'X範囲' }, { l: 'dy=', d: 'Y範囲' }, { l: 'dz=', d: 'Z範囲' },
-    { l: 'predicate=', d: '条件フィルター' },
+    { l: 'predicate=', d: '条件フィルター', v: '1.15' },
   ],
   _gamerules: [
     { l: 'doDaylightCycle', d: '昼夜サイクル' }, { l: 'doMobSpawning', d: 'モブスポーン' },
@@ -552,16 +593,37 @@ const MC_AUTO = {
     { l: 'commandBlockOutput', d: 'コマンドブロック出力' }, { l: 'sendCommandFeedback', d: 'コマンドフィードバック' },
     { l: 'doFireTick', d: '火の延焼' }, { l: 'mobGriefing', d: 'モブの破壊' },
     { l: 'naturalRegeneration', d: '自然回復' }, { l: 'pvp', d: 'PvP' },
-    { l: 'showDeathMessages', d: '死亡メッセージ' }, { l: 'doInsomnia', d: 'ファントム出現' },
-    { l: 'doImmediateRespawn', d: '即時リスポーン' }, { l: 'randomTickSpeed', d: 'ランダムティック速度' },
+    { l: 'showDeathMessages', d: '死亡メッセージ' },
+    { l: 'doInsomnia', d: 'ファントム出現', v: '1.15' },
+    { l: 'doImmediateRespawn', d: '即時リスポーン', v: '1.15' },
+    { l: 'drowningDamage', d: '溺死ダメージ', v: '1.15' },
+    { l: 'fallDamage', d: '落下ダメージ', v: '1.15' },
+    { l: 'fireDamage', d: '火災ダメージ', v: '1.15' },
+    { l: 'randomTickSpeed', d: 'ランダムティック速度' },
     { l: 'maxCommandChainLength', d: 'コマンドチェーン最大長' },
     { l: 'spawnRadius', d: 'スポーン半径' }, { l: 'doTileDrops', d: 'ブロックドロップ' },
+    { l: 'doPatrolSpawning', d: 'パトロールスポーン', v: '1.14' },
+    { l: 'doTraderSpawning', d: '行商人スポーン', v: '1.14' },
+    { l: 'forgiveDeadPlayers', d: '死亡プレイヤー許し', v: '1.16' },
+    { l: 'universalAnger', d: '集団敵対', v: '1.16' },
+    { l: 'freezeDamage', d: '凍結ダメージ', v: '1.17' },
+    { l: 'playersSleepingPercentage', d: '睡眠割合', v: '1.17' },
+    { l: 'doWardenSpawning', d: 'ウォーデンスポーン', v: '1.19' },
+    { l: 'commandModificationBlockLimit', d: 'ブロック変更制限', v: '1.19.4' },
+    { l: 'doVinesSpread', d: 'ツタの伸長', v: '1.19.4' },
+    { l: 'enderPearlsVanishOnDeath', d: 'エンダーパール消失', v: '1.20.2' },
+    { l: 'maxCommandForkCount', d: 'コマンドフォーク上限', v: '1.20.2' },
+    { l: 'spawnChunkRadius', d: 'スポーンチャンク半径', v: '1.20.5' },
   ],
 };
 
-const MC_VALID_COMMANDS = new Set(MC_AUTO._root.map(c => c.l));
+const MC_ALL_COMMANDS = new Set(MC_AUTO._root.map(c => c.l));
 
-function getAutocompleteSuggestions(lineText, cursorCol) {
+function getValidCommands(targetVersion) {
+  return new Set(filterByVersion(MC_AUTO._root, targetVersion).map(c => c.l));
+}
+
+function getAutocompleteSuggestions(lineText, cursorCol, targetVersion) {
   const text = lineText.substring(0, cursorCol).trimStart();
   if (!text || text.startsWith('#')) return [];
 
@@ -576,17 +638,17 @@ function getAutocompleteSuggestions(lineText, cursorCol) {
     const inside = text.substring(lastOpen + 1);
     const parts = inside.split(',');
     const lastPart = parts[parts.length - 1].trim();
-    return MC_AUTO._selector_args.filter(s => s.l.startsWith(lastPart.toLowerCase()));
+    return filterByVersion(MC_AUTO._selector_args, targetVersion).filter(s => s.l.startsWith(lastPart.toLowerCase()));
   }
 
   // Selector (@)
   if (currentWord.startsWith('@') && currentWord.length <= 2) {
-    return MC_AUTO._selectors.filter(s => s.l.startsWith(currentWord));
+    return filterByVersion(MC_AUTO._selectors, targetVersion).filter(s => s.l.startsWith(currentWord));
   }
 
   // Determine context
   if (completed.length === 0) {
-    return MC_AUTO._root.filter(s => s.l.startsWith(currentWord.toLowerCase()));
+    return filterByVersion(MC_AUTO._root, targetVersion).filter(s => s.l.startsWith(currentWord.toLowerCase()));
   }
 
   const cmd = completed[0].toLowerCase();
@@ -604,19 +666,19 @@ function getAutocompleteSuggestions(lineText, cursorCol) {
         ctx = 'execute'; // After argument, back to execute subcommands
       }
     }
-    const items = MC_AUTO[ctx] || [];
+    const items = filterByVersion(MC_AUTO[ctx] || [], targetVersion);
     if (!currentWord) return items.slice(0, 15);
     return items.filter(s => s.l.toLowerCase().startsWith(currentWord.toLowerCase()));
   }
 
   // Gamerule: show gamerule names
   if (cmd === 'gamerule' && completed.length === 1) {
-    return MC_AUTO._gamerules.filter(s => s.l.toLowerCase().startsWith(currentWord.toLowerCase()));
+    return filterByVersion(MC_AUTO._gamerules, targetVersion).filter(s => s.l.toLowerCase().startsWith(currentWord.toLowerCase()));
   }
 
   // Title: skip selector token
   if (cmd === 'title' && completed.length >= 2 && completed[1].startsWith('@')) {
-    const items = MC_AUTO.title || [];
+    const items = filterByVersion(MC_AUTO.title || [], targetVersion);
     return items.filter(s => s.l.toLowerCase().startsWith(currentWord.toLowerCase()));
   }
 
@@ -630,23 +692,44 @@ function getAutocompleteSuggestions(lineText, cursorCol) {
     contextKey = `${contextKey}.${completed[2].toLowerCase()}`;
   }
 
-  const items = MC_AUTO[contextKey] || [];
+  const items = filterByVersion(MC_AUTO[contextKey] || [], targetVersion);
   if (!currentWord) return items.slice(0, 15);
   return items.filter(s => s.l.toLowerCase().startsWith(currentWord.toLowerCase()));
 }
 
-function validateMcfunctionLine(line, lineNum) {
+function validateMcfunctionLine(line, lineNum, targetVersion) {
   const trimmed = line.trim();
   if (!trimmed || trimmed.startsWith('#')) return null;
 
   // Handle $ prefix (macro lines in 1.20.2+)
-  const cmdLine = trimmed.startsWith('$') ? trimmed.substring(1).trim() : trimmed;
+  const isMacro = trimmed.startsWith('$');
+  const cmdLine = isMacro ? trimmed.substring(1).trim() : trimmed;
   const tokens = cmdLine.split(/\s+/);
   const cmd = tokens[0]?.toLowerCase();
 
   if (!cmd) return null;
-  if (!MC_VALID_COMMANDS.has(cmd)) {
+
+  // Check macro version compatibility
+  if (isMacro && targetVersion && !versionAtLeast(targetVersion, '1.20.2')) {
+    return { line: lineNum, msg: `マクロ($)は 1.20.2 以降で使用可能です（現在: ${targetVersion}）`, type: 'error' };
+  }
+
+  // Check if command exists at all
+  if (!MC_ALL_COMMANDS.has(cmd)) {
     return { line: lineNum, msg: `不明なコマンド: ${cmd}`, type: 'error' };
+  }
+
+  // Check version-specific command availability
+  if (targetVersion) {
+    const cmdEntry = MC_AUTO._root.find(c => c.l === cmd);
+    if (cmdEntry) {
+      if (cmdEntry.v && !versionAtLeast(targetVersion, cmdEntry.v)) {
+        return { line: lineNum, msg: `${cmd} は ${cmdEntry.v} 以降で使用可能です（現在: ${targetVersion}）`, type: 'error' };
+      }
+      if (cmdEntry.rm && versionAtLeast(targetVersion, cmdEntry.rm)) {
+        return { line: lineNum, msg: `${cmd} は ${cmdEntry.rm} で削除されました（現在: ${targetVersion}）`, type: 'error' };
+      }
+    }
   }
 
   // Check unmatched brackets
@@ -662,10 +745,21 @@ function validateMcfunctionLine(line, lineNum) {
   if (squareDepth !== 0) return { line: lineNum, msg: '"[" が閉じられていません', type: 'error' };
   if (curlyDepth !== 0) return { line: lineNum, msg: '"{" が閉じられていません', type: 'error' };
 
-  // Check selector format
-  const selectorMatch = trimmed.match(/@[^aeprsn\s\[]/);
-  if (selectorMatch) {
-    return { line: lineNum, msg: `不正なセレクター: ${selectorMatch[0]} (@a/@e/@p/@r/@s/@n が有効)`, type: 'warning' };
+  // Check selector format - version-aware for @n
+  if (targetVersion && !versionAtLeast(targetVersion, '1.21')) {
+    const nSelectorMatch = trimmed.match(/@n(?:\[|\s|$)/);
+    if (nSelectorMatch) {
+      return { line: lineNum, msg: `@n セレクターは 1.21 以降で使用可能です（現在: ${targetVersion}）`, type: 'warning' };
+    }
+    const selectorMatch = trimmed.match(/@[^aeprs\s\[]/);
+    if (selectorMatch) {
+      return { line: lineNum, msg: `不正なセレクター: ${selectorMatch[0]} (@a/@e/@p/@r/@s が有効)`, type: 'warning' };
+    }
+  } else {
+    const selectorMatch = trimmed.match(/@[^aeprsn\s\[]/);
+    if (selectorMatch) {
+      return { line: lineNum, msg: `不正なセレクター: ${selectorMatch[0]} (@a/@e/@p/@r/@s/@n が有効)`, type: 'warning' };
+    }
   }
 
   return null;
@@ -696,6 +790,26 @@ function deleteProjectData(id) { localStorage.removeItem(projectDataKey(id)); }
 
 let _idCounter = Date.now();
 const genId = () => `f${++_idCounter}`;
+
+function compareVersions(a, b) {
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const na = pa[i] || 0;
+    const nb = pb[i] || 0;
+    if (na !== nb) return na - nb;
+  }
+  return 0;
+}
+function versionAtLeast(target, min) { return compareVersions(target, min) >= 0; }
+function filterByVersion(items, ver) {
+  if (!ver) return items;
+  return items.filter(item => {
+    if (item.v && !versionAtLeast(ver, item.v)) return false;
+    if (item.rm && versionAtLeast(ver, item.rm)) return false;
+    return true;
+  });
+}
 
 function generatePackMcmeta(project) {
   const ver = VERSION_FORMATS[project.targetVersion];
@@ -1956,7 +2070,7 @@ function FileTreeNode({ file, files, depth, selectedId, expanded, onSelect, onTo
 // CODE EDITOR with syntax highlighting overlay
 // ════════════════════════════════════════════════════════════
 
-function CodeEditor({ file, onChange }) {
+function CodeEditor({ file, onChange, targetVersion }) {
   const textareaRef = useRef(null);
   const preRef = useRef(null);
   const lineNumRef = useRef(null);
@@ -1988,11 +2102,11 @@ function CodeEditor({ file, onChange }) {
     if (!isMcfunction || !content) return {};
     const errs = {};
     content.split('\n').forEach((line, i) => {
-      const result = validateMcfunctionLine(line, i + 1);
+      const result = validateMcfunctionLine(line, i + 1, targetVersion);
       if (result) errs[i + 1] = result;
     });
     return errs;
-  }, [content, isMcfunction]);
+  }, [content, isMcfunction, targetVersion]);
 
   const mcfErrorCount = useMemo(() => Object.values(lineErrors).filter(e => e.type === 'error').length, [lineErrors]);
   const mcfWarnCount = useMemo(() => Object.values(lineErrors).filter(e => e.type === 'warning').length, [lineErrors]);
@@ -2040,7 +2154,7 @@ function CodeEditor({ file, onChange }) {
     const lineStart = before.lastIndexOf('\n') + 1;
     const lineText = before.substring(lineStart);
     const col = pos - lineStart;
-    const suggestions = getAutocompleteSuggestions(lineText, col);
+    const suggestions = getAutocompleteSuggestions(lineText, col, targetVersion);
     if (suggestions.length > 0) {
       setAcItems(suggestions.slice(0, 10));
       setAcIndex(0);
@@ -2048,7 +2162,7 @@ function CodeEditor({ file, onChange }) {
     } else {
       setAcItems([]);
     }
-  }, [isMcfunction, getCursorPixelPos]);
+  }, [isMcfunction, getCursorPixelPos, targetVersion]);
 
   // Insert the selected autocomplete item
   const insertCompletion = useCallback((text) => {
@@ -2258,6 +2372,7 @@ function CodeEditor({ file, onChange }) {
                   onMouseDown={(e) => { e.preventDefault(); insertCompletion(item.l); }}
                 >
                   <span className="font-mono text-sky-300 font-medium">{item.l}</span>
+                  {item.v && <span className="text-[9px] px-1 py-0.5 rounded bg-mc-info/20 text-mc-info flex-shrink-0">{item.v}+</span>}
                   <span className="text-mc-muted text-[10px] truncate">{item.d}</span>
                 </div>
               ))}
@@ -2712,7 +2827,7 @@ function MinigameWizard({ namespace, onComplete, onClose }) {
 // COMMAND REFERENCE PANEL
 // ════════════════════════════════════════════════════════════
 
-function CommandReference({ namespace }) {
+function CommandReference({ namespace, targetVersion }) {
   const [openCat, setOpenCat] = useState(COMMAND_SNIPPETS[0]?.category);
   const [copied, setCopied] = useState(null);
   const copyTimerRef = useRef(null);
@@ -2720,6 +2835,16 @@ function CommandReference({ namespace }) {
   useEffect(() => {
     return () => { if (copyTimerRef.current) clearTimeout(copyTimerRef.current); };
   }, []);
+
+  const filteredSnippets = useMemo(() => {
+    return COMMAND_SNIPPETS.map(cat => ({
+      ...cat,
+      items: cat.items.filter(item => {
+        if (!item.v || !targetVersion) return true;
+        return versionAtLeast(targetVersion, item.v);
+      }),
+    }));
+  }, [targetVersion]);
 
   const copyCode = (code, idx) => {
     const resolved = code.replace(/<ns>/g, namespace || 'mypack');
@@ -2747,7 +2872,7 @@ function CommandReference({ namespace }) {
       <div className="flex flex-1 min-h-0">
         {/* Category list */}
         <div className="w-36 border-r border-mc-border overflow-y-auto py-1 flex-shrink-0">
-          {COMMAND_SNIPPETS.map(cat => {
+          {filteredSnippets.map(cat => {
             const Icon = cat.icon;
             return (
               <button key={cat.category}
@@ -2762,12 +2887,15 @@ function CommandReference({ namespace }) {
         </div>
         {/* Snippets */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
-          {COMMAND_SNIPPETS.find(c => c.category === openCat)?.items.map((item, idx) => (
+          {filteredSnippets.find(c => c.category === openCat)?.items.map((item, idx) => (
             <div key={idx}
               onClick={() => copyCode(item.code, `${openCat}-${idx}`)}
               className="bg-mc-dark/50 rounded p-2 cursor-pointer hover:bg-mc-dark/80 transition-colors group">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-medium text-mc-text">{item.label}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-mc-text">{item.label}</span>
+                  {item.v && <span className="text-[9px] px-1 py-0.5 rounded bg-mc-info/20 text-mc-info">{item.v}+</span>}
+                </div>
                 <span className="text-[10px] text-mc-muted group-hover:text-mc-success transition-colors">
                   {copied === `${openCat}-${idx}` ? '✓ コピー済み' : <Clipboard size={10} />}
                 </span>
@@ -3484,9 +3612,9 @@ export default function App() {
           {/* Tab content */}
           <div className="flex-1 flex min-h-0">
             {activeTab === 'editor' ? (
-              <CodeEditor file={selectedFile} onChange={handleFileContentChange} />
+              <CodeEditor file={selectedFile} onChange={handleFileContentChange} targetVersion={project.targetVersion} />
             ) : activeTab === 'commands' ? (
-              <CommandReference namespace={project.namespace} />
+              <CommandReference namespace={project.namespace} targetVersion={project.targetVersion} />
             ) : (
               <PreviewPanel project={project} files={files} errors={errors} />
             )}
