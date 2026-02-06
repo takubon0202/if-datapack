@@ -46,7 +46,24 @@ const VERSION_FORMATS = {
   '1.13':    { format: 4, useNewFormat: false },
 };
 
-const VERSION_LIST = Object.keys(VERSION_FORMATS);
+const VERSION_LIST = Object.keys(VERSION_FORMATS).sort((a, b) => {
+  const pa = b.split('.').map(Number), pb = a.split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const diff = (pa[i] || 0) - (pb[i] || 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
+});
+
+function formatVersionLabel(v) {
+  const fmt = VERSION_FORMATS[v];
+  if (!fmt) return `Minecraft ${v}`;
+  if (fmt.useNewFormat) {
+    const label = Array.isArray(fmt.min) ? `${fmt.min[0]}.${fmt.min[1]}` : fmt.min;
+    return `Minecraft ${v} (format: ${label})`;
+  }
+  return `Minecraft ${v} (format: ${fmt.format})`;
+}
 
 const DATAPACK_FOLDERS = [
   { name: 'advancement', label: '進捗' },
@@ -195,9 +212,9 @@ const TEMPLATE_CATEGORIES = [
   { key: 'advancement', label: '進捗', icon: Gift, templates: ['advancement'] },
   { key: 'loot_table', label: 'ルートテーブル', icon: Package, templates: ['loot_table'] },
   { key: 'tags', label: 'タグ', icon: Tag, templates: ['tag'] },
-  { key: 'predicate', label: '条件', icon: HelpCircle, templates: ['predicate'] },
-  { key: 'timeline', label: 'タイムライン', icon: Layers, templates: ['timeline'] },
-  { key: 'damage_type', label: 'ダメージタイプ', icon: Zap, templates: ['damage_type'] },
+  { key: 'predicate', label: '条件', icon: HelpCircle, templates: ['predicate'], v: '1.15' },
+  { key: 'timeline', label: 'タイムライン', icon: Layers, templates: ['timeline'], v: '1.21.11' },
+  { key: 'damage_type', label: 'ダメージタイプ', icon: Zap, templates: ['damage_type'], v: '1.19.4' },
   { key: 'minigame', label: 'ミニゲーム部品', icon: Gamepad2, templates: ['mg_game_loop', 'mg_timer', 'mg_team_setup', 'mg_death_detect', 'mg_bossbar'] },
 ];
 
@@ -816,11 +833,15 @@ function generatePackMcmeta(project) {
   if (!ver) return { pack: { pack_format: 48, description: project.description } };
 
   if (ver.useNewFormat) {
+    const packFormat = Array.isArray(ver.min) ? ver.min[0] : ver.min;
     return {
       pack: {
+        pack_format: packFormat,
         description: project.description,
-        min_format: ver.min,
-        max_format: ver.max
+        supported_formats: {
+          min_inclusive: Array.isArray(ver.min) ? ver.min[0] : ver.min,
+          max_inclusive: Array.isArray(ver.max) ? ver.max[0] : ver.max
+        }
       }
     };
   }
@@ -1729,11 +1750,7 @@ function SetupWizard({ onComplete, onCancel }) {
                   onChange={e => setConfig(c => ({ ...c, targetVersion: e.target.value }))}
                 >
                   {VERSION_LIST.map(v => (
-                    <option key={v} value={v}>
-                      Minecraft {v} (format: {VERSION_FORMATS[v].useNewFormat
-                        ? (Array.isArray(VERSION_FORMATS[v].min) ? `${VERSION_FORMATS[v].min[0]}.${VERSION_FORMATS[v].min[1]}` : VERSION_FORMATS[v].min)
-                        : VERSION_FORMATS[v].format})
-                    </option>
+                    <option key={v} value={v}>{formatVersionLabel(v)}</option>
                   ))}
                 </select>
               </div>
@@ -1860,12 +1877,19 @@ function ContextMenu({ x, y, items, onClose }) {
 // TEMPLATE SELECTOR MODAL
 // ════════════════════════════════════════════════════════════
 
-function TemplateSelector({ namespace, parentId, onSelect, onClose }) {
+function TemplateSelector({ namespace, parentId, onSelect, onClose, targetVersion }) {
   const [selectedCat, setSelectedCat] = useState('function');
   const [selectedTpl, setSelectedTpl] = useState(null);
   const [fileName, setFileName] = useState('');
 
-  const cat = TEMPLATE_CATEGORIES.find(c => c.key === selectedCat);
+  const filteredCategories = useMemo(() => {
+    return TEMPLATE_CATEGORIES.filter(c => {
+      if (!c.v || !targetVersion) return true;
+      return versionAtLeast(targetVersion, c.v);
+    });
+  }, [targetVersion]);
+
+  const cat = filteredCategories.find(c => c.key === selectedCat);
   const templates = cat ? cat.templates.map(k => ({ key: k, ...TEMPLATES[k] })) : [];
 
   useEffect(() => {
@@ -1901,7 +1925,7 @@ function TemplateSelector({ namespace, parentId, onSelect, onClose }) {
         <div className="flex" style={{ height: '400px' }}>
           {/* Categories */}
           <div className="w-44 border-r border-mc-border overflow-y-auto p-2 space-y-0.5">
-            {TEMPLATE_CATEGORIES.map(c => {
+            {filteredCategories.map(c => {
               const Icon = c.icon;
               return (
                 <button key={c.key}
@@ -2088,8 +2112,11 @@ function CodeEditor({ file, onChange, targetVersion }) {
   const isJSON = file?.type === 'json' || file?.type === 'mcmeta';
   const isMcfunction = file?.type === 'mcfunction';
 
-  // Reset autocomplete when file changes
-  useEffect(() => { setAcItems([]); }, [file?.id]);
+  // Reset autocomplete when file changes & cleanup RAF on unmount
+  useEffect(() => {
+    setAcItems([]);
+    return () => { if (acRafRef.current) cancelAnimationFrame(acRafRef.current); };
+  }, [file?.id]);
 
   const jsonError = useMemo(() => {
     if (!isJSON || !content.trim()) return null;
@@ -2569,7 +2596,7 @@ function SettingsPanel({ project, setProject, onClose }) {
               value={project.targetVersion}
               onChange={e => setProject(p => ({ ...p, targetVersion: e.target.value }))}
             >
-              {VERSION_LIST.map(v => <option key={v} value={v}>Minecraft {v}</option>)}
+              {VERSION_LIST.map(v => <option key={v} value={v}>{formatVersionLabel(v)}</option>)}
             </select>
           </div>
           <div>
@@ -3668,6 +3695,7 @@ export default function App() {
           parentId={nsFolder?.id}
           onSelect={handleTemplateSelect}
           onClose={() => setShowTemplateSelector(false)}
+          targetVersion={project.targetVersion}
         />
       )}
       {showMinigameWizard && (
