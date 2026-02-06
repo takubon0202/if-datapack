@@ -2650,7 +2650,7 @@ function SettingsPanel({ project, setProject, onClose }) {
 // MINIGAME WIZARD
 // ════════════════════════════════════════════════════════════
 
-function MinigameWizard({ namespace, onComplete, onClose }) {
+function MinigameWizard({ namespace, onComplete, onClose, targetVersion }) {
   const [step, setStep] = useState(0);
   const [selectedType, setSelectedType] = useState('tag_game');
   const [settings, setSettings] = useState({ gameTime: 300, teamA: '鬼', teamB: '逃走者', colorA: 'red', colorB: 'blue', targetKills: 10, fallY: 50, targetItem: 'minecraft:diamond' });
@@ -3256,6 +3256,7 @@ export default function App() {
       sampleRecipe: config.sampleRecipe,
       sampleAdvancement: config.sampleAdvancement,
       sampleLootTable: config.sampleLootTable,
+      targetVersion: config.targetVersion,
     });
     setFiles(newFiles);
     const allIds = new Set();
@@ -3703,6 +3704,7 @@ export default function App() {
           namespace={project.namespace}
           onComplete={handleMinigameComplete}
           onClose={() => setShowMinigameWizard(false)}
+          targetVersion={project.targetVersion}
         />
       )}
       {contextMenu && (
