@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minecraft Datapack Builder</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%231a1a2e'/><text x='4' y='24' font-size='24'>⛏️</text></svg>" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            mc: {
+              dark: '#1a1a2e',
+              darker: '#12122a',
+              sidebar: '#16213e',
+              panel: '#1e2a4a',
+              accent: '#e94560',
+              info: '#0f3460',
+              success: '#53d769',
+              warning: '#f5a623',
+              text: '#e0e0e0',
+              muted: '#8892a4',
+              bright: '#ffffff',
+              border: '#2a3a5e',
+            }
+          },
+          fontFamily: {
+            mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
+            sans: ['Noto Sans JP', 'Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Noto Sans JP', 'Inter', sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      overflow: hidden;
+      height: 100vh;
+    }
+    #root { height: 100vh; }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #2a3a5e; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3a4a6e; }
+
+    textarea, pre, code {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace !important;
+    }
+    textarea {
+      tab-size: 2;
+      -moz-tab-size: 2;
+    }
+    textarea::placeholder { color: #4a5568; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideInLeft {
+      from { opacity: 0; transform: translateX(-16px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(16px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .anim-fade { animation: fadeIn 0.2s ease-out; }
+    .anim-slide-l { animation: slideInLeft 0.2s ease-out; }
+    .anim-slide-r { animation: slideInRight 0.2s ease-out; }
+    .anim-scale { animation: scaleIn 0.15s ease-out; }
+
+    .editor-area {
+      line-height: 1.6;
+      font-size: 13px;
+    }
+    .line-num {
+      line-height: 1.6;
+      font-size: 13px;
+    }
+  </style>
+  <script type="module" crossorigin src="/if-datapack/assets/index-CUtCv_yB.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+</body>
+</html>
