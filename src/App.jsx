@@ -1813,14 +1813,12 @@ function SetupWizard({ onComplete, onCancel }) {
 
         {/* Navigation */}
         <div className="flex justify-between items-center px-6 pb-6">
-          {(step > 0 || onCancel) ? (
-            <button
-              onClick={step === 0 ? onCancel : () => setStep(s => s - 1)}
-              className="px-4 py-2 text-sm text-mc-muted hover:text-mc-text transition-colors"
-            >
-              {step === 0 ? 'キャンセル' : '戻る'}
-            </button>
-          ) : <div />}
+          <button
+            onClick={step === 0 ? onCancel : () => setStep(s => s - 1)}
+            className="px-4 py-2 text-sm text-mc-muted hover:text-mc-text transition-colors"
+          >
+            {step === 0 ? 'キャンセル' : '戻る'}
+          </button>
           <button
             onClick={() => {
               if (step < 2) setStep(s => s + 1);
@@ -3685,7 +3683,7 @@ export default function App() {
       {showWizard && (
         <SetupWizard
           onComplete={handleWizardComplete}
-          onCancel={files.length > 0 ? () => setShowWizard(false) : null}
+          onCancel={() => setShowWizard(false)}
         />
       )}
       {showSettings && (
