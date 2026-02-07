@@ -644,10 +644,10 @@ const AI_OPENAI_KEY = 'mc-datapack-ai-openai-key';
 const AI_MODEL_KEY = 'mc-datapack-ai-model';
 
 const AI_MODELS = [
-  { id: 'gemini-3-flash', label: 'Gemini 3 Flash', provider: 'gemini', apiModel: 'gemini-3-flash', desc: '高速・無料' },
-  { id: 'gemini-3-flash-preview', label: 'Gemini 3 Flash Preview', provider: 'gemini', apiModel: 'gemini-3-flash-preview', desc: '最新プレビュー' },
-  { id: 'gemini-3-pro', label: 'Gemini 3 Pro', provider: 'gemini', apiModel: 'gemini-3-pro-preview', desc: '高性能' },
-  { id: 'gpt-5.3-codex', label: 'GPT 5.3 Codex', provider: 'openai', apiModel: 'gpt-5.3-codex', desc: 'OpenAI最新' },
+  { id: 'gemini-3-flash', label: 'Gemini 3 Flash', provider: 'gemini', apiModel: 'gemini-3-flash-preview', thinking: null, desc: '高速・無料' },
+  { id: 'gemini-3-flash-thinking', label: 'Gemini 3 Flash Thinking', provider: 'gemini', apiModel: 'gemini-3-flash-preview', thinking: 'high', desc: '深い推論' },
+  { id: 'gemini-3-pro', label: 'Gemini 3 Pro', provider: 'gemini', apiModel: 'gemini-3-pro-preview', thinking: null, desc: '高性能' },
+  { id: 'gpt-5.3-codex', label: 'GPT 5.3 Codex', provider: 'openai', apiModel: 'gpt-5.3-codex', thinking: null, desc: 'OpenAI最新' },
 ];
 
 const AI_PROVIDERS = {
@@ -1089,7 +1089,7 @@ function parseAICodeBlocks(text) {
   return blocks;
 }
 
-function callGeminiStream(apiKey, modelId, messages, systemPrompt, onChunk, onDone, onError, signal) {
+function callGeminiStream(apiKey, modelId, messages, systemPrompt, onChunk, onDone, onError, signal, thinkingLevel) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:streamGenerateContent?alt=sse&key=${apiKey}`;
 
   const contents = messages.map(m => ({
@@ -1097,10 +1097,15 @@ function callGeminiStream(apiKey, modelId, messages, systemPrompt, onChunk, onDo
     parts: [{ text: m.content }],
   }));
 
+  const genConfig = { temperature: 0.7, maxOutputTokens: 8192 };
+  if (thinkingLevel) {
+    genConfig.thinkingConfig = { thinkingLevel };
+  }
+
   const body = {
     contents,
     systemInstruction: { parts: [{ text: systemPrompt }] },
-    generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
+    generationConfig: genConfig,
   };
 
   fetch(url, {
@@ -1144,10 +1149,12 @@ function callGeminiStream(apiKey, modelId, messages, systemPrompt, onChunk, onDo
 
             try {
               const parsed = JSON.parse(jsonStr);
-              const text = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (text) {
-                fullText += text;
-                onChunk(fullText);
+              const parts = parsed?.candidates?.[0]?.content?.parts;
+              if (parts) {
+                for (const part of parts) {
+                  if (part.thought) continue;
+                  if (part.text) { fullText += part.text; onChunk(fullText); }
+                }
               }
             } catch {}
           }
@@ -1244,11 +1251,11 @@ function callOpenAIStream(apiKey, modelId, messages, systemPrompt, onChunk, onDo
     });
 }
 
-function callAIStream(provider, apiKey, modelId, messages, systemPrompt, onChunk, onDone, onError, signal) {
+function callAIStream(provider, apiKey, modelId, messages, systemPrompt, onChunk, onDone, onError, signal, thinkingLevel) {
   if (provider === 'openai') {
     callOpenAIStream(apiKey, modelId, messages, systemPrompt, onChunk, onDone, onError, signal);
   } else {
-    callGeminiStream(apiKey, modelId, messages, systemPrompt, onChunk, onDone, onError, signal);
+    callGeminiStream(apiKey, modelId, messages, systemPrompt, onChunk, onDone, onError, signal, thinkingLevel);
   }
 }
 
@@ -3380,6 +3387,7 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
         abortRef.current = null;
       },
       controller.signal,
+      currentModel.thinking,
     );
   };
 
