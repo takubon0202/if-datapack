@@ -647,7 +647,7 @@ const AI_MODELS = [
   { id: 'gemini-3-flash', label: 'Gemini 3 Flash', provider: 'gemini', apiModel: 'gemini-3-flash-preview', thinking: null, desc: '高速・無料' },
   { id: 'gemini-3-flash-thinking', label: 'Gemini 3 Flash Thinking', provider: 'gemini', apiModel: 'gemini-3-flash-preview', thinking: 'high', desc: '深い推論' },
   { id: 'gemini-3-pro', label: 'Gemini 3 Pro', provider: 'gemini', apiModel: 'gemini-3-pro-preview', thinking: null, desc: '高性能' },
-  { id: 'gpt-5.3-codex', label: 'GPT 5.3 Codex', provider: 'openai', apiModel: 'gpt-5.3-codex', thinking: null, desc: 'OpenAI最新' },
+  { id: 'gpt-5.3-codex', label: 'GPT 5.3 Codex', provider: 'openai', apiModel: 'gpt-5.3-codex', thinking: null, desc: '近日対応予定', comingSoon: true },
 ];
 
 const AI_PROVIDERS = {
@@ -655,58 +655,163 @@ const AI_PROVIDERS = {
   openai: { name: 'OpenAI', storageKey: AI_OPENAI_KEY, link: 'https://platform.openai.com/api-keys', linkLabel: 'OpenAI Platform' },
 };
 
-const AI_SYSTEM_PROMPT = (namespace, targetVersion) => `あなたはMinecraftデータパック専門のAIアシスタントです。
-ユーザーの指示に従い、Minecraft Java Edition のデータパックファイルを生成してください。
+const AI_SYSTEM_PROMPT = (namespace, targetVersion) => {
+  // バージョン比較ヘルパー
+  const v = (ver) => {
+    const p = ver.split('.').map(Number);
+    return p[0] * 10000 + (p[1] || 0) * 100 + (p[2] || 0);
+  };
+  const tv = v(targetVersion);
+  const gte = (ver) => tv >= v(ver);
+  const lt = (ver) => tv < v(ver);
 
-【基本情報】
-- 対象バージョン: Minecraft ${targetVersion}
-- 名前空間: ${namespace}
-- ファイルはすべて data/ ディレクトリ以下に配置
+  // バージョンに応じたフォルダ名
+  const useSingular = gte('1.21');
+  const funcFolder = useSingular ? 'function' : 'functions';
+  const recipeFolder = useSingular ? 'recipe' : 'recipes';
+  const advFolder = useSingular ? 'advancement' : 'advancements';
+  const lootFolder = useSingular ? 'loot_table' : 'loot_tables';
+  const predFolder = useSingular ? 'predicate' : 'predicates';
+  const tagFuncFolder = useSingular ? 'function' : 'functions';
+  const tagBlockFolder = useSingular ? 'block' : 'blocks';
+  const tagItemFolder = useSingular ? 'item' : 'items';
 
-【ファイル出力形式】
-ファイルを生成する場合、必ず以下の形式のコードブロックで出力してください:
+  // バージョン別機能フラグ
+  const hasPredicates = gte('1.15');
+  const hasItemModifiers = gte('1.17');
+  const hasComponents = gte('1.20.5');
+  const hasFunctionMacros = gte('1.20.2');
+  const hasReturnCmd = gte('1.20.2');
+  const hasSimplifiedIngredients = gte('1.21.2');
+  const hasSNBTText = gte('1.21.5');
+  const hasDamageType = gte('1.19.4');
+  const hasEnchantmentRegistry = gte('1.21');
+  const hasExecuteOn = gte('1.19.4');
+  const hasItemCmd = gte('1.17');
+  const hasTickCmd = gte('1.21');
 
-\`\`\`mcfunction:data/${namespace}/function/example.mcfunction
-# ここにコマンドを書く
-say Hello!
-\`\`\`
+  // バージョン別レシピ形式
+  let recipeResultNote = '';
+  if (hasComponents) {
+    recipeResultNote = '"result": { "id": "minecraft:...", "count": 1 }  ※1.20.5+形式';
+  } else {
+    recipeResultNote = '"result": { "item": "minecraft:...", "count": 1 }  ※~1.20.4形式';
+  }
 
-\`\`\`json:data/${namespace}/recipe/example.json
-{
-  "type": "minecraft:crafting_shaped",
-  ...
-}
-\`\`\`
+  let ingredientNote = '';
+  if (hasSimplifiedIngredients) {
+    ingredientNote = `材料は文字列形式: "minecraft:stone"、タグは "#minecraft:planks"`;
+  } else {
+    ingredientNote = `材料はオブジェクト形式: { "item": "minecraft:stone" }、タグは { "tag": "minecraft:planks" }`;
+  }
 
-形式: \`\`\`言語:ファイルパス で、言語は mcfunction または json を使用してください。
+  // コマンド構文セクション
+  let commandNotes = `
+- /execute は 1.13+ 形式のみ: execute as @e at @s run <command>
+- 数値ID・データ値は使用禁止。名前空間付き文字列ID（minecraft:stone）を使用
+- ブロック状態: minecraft:oak_log[axis=x] 形式`;
 
-【バージョン対応ルール】
-- ${targetVersion} で利用可能なコマンド・機能のみを使用すること
-- 1.20.5以降: アイテムコンポーネント形式を使用 (item_name等ではなく components を使用)
-- 1.13以前の形式は使用しない
-- レシピの result は { "id": "minecraft:...", "count": 1 } 形式
-- 進捗の items 条件は { "items": "minecraft:diamond" } 形式（1.20.5+）
+  if (hasComponents) {
+    commandNotes += `
+- アイテム形式: コンポーネント方式を使用（NBT形式は禁止）
+  例: give @s minecraft:diamond_sword[damage=5,enchantments={levels:{"minecraft:sharpness":5}}]
+- custom_name, lore, enchantments, damage, unbreakable 等はコンポーネントとして指定`;
+  } else {
+    commandNotes += `
+- アイテムNBT形式: give @s minecraft:diamond_sword{Damage:5,Enchantments:[{id:"minecraft:sharpness",lvl:5}]}`;
+  }
 
-【データパック構造】
-data/
+  if (hasSNBTText) {
+    commandNotes += `
+- テキストコンポーネントはインラインSNBT形式: custom_name={text:'名前',color:'gold'}
+  /tellraw, /title もSNBT形式を使用`;
+  } else {
+    commandNotes += `
+- テキストコンポーネントはJSON文字列形式: custom_name='{"text":"名前","color":"gold"}'`;
+  }
+
+  if (hasFunctionMacros) {
+    commandNotes += `
+- 関数マクロ対応（$行で変数展開）: $say $(message)
+  呼び出し: function ${namespace}:func {message:"hello"}`;
+  }
+  if (hasReturnCmd) commandNotes += `\n- /return <value> で関数から値を返却可能`;
+  if (hasItemCmd) commandNotes += `\n- /item コマンドでアイテム操作（/replaceitemの後継）`;
+  if (hasTickCmd) commandNotes += `\n- /tick コマンドでティック速度を制御可能`;
+  if (hasExecuteOn) commandNotes += `\n- /execute on <relation> サブコマンド（passengers, vehicle, owner等）`;
+
+  // データパック構造
+  let structureNote = `data/
   minecraft/
-    tags/function/
+    tags/${tagFuncFolder}/
       load.json  → { "values": ["${namespace}:load"] }
       tick.json  → { "values": ["${namespace}:tick"] }
   ${namespace}/
-    function/    → .mcfunction ファイル
-    recipe/      → レシピJSON
-    advancement/ → 進捗JSON
-    loot_table/  → ルートテーブルJSON
-    predicate/   → 条件JSON
-    tags/        → タグJSON
+    ${funcFolder}/       → .mcfunction ファイル
+    ${recipeFolder}/      → レシピJSON
+    ${advFolder}/ → 進捗JSON
+    ${lootFolder}/  → ルートテーブルJSON
+    tags/${tagBlockFolder}/  → ブロックタグ
+    tags/${tagItemFolder}/   → アイテムタグ
+    tags/${tagFuncFolder}/   → 関数タグ`;
+
+  if (hasPredicates) structureNote += `\n    ${predFolder}/   → 条件JSON`;
+  if (hasItemModifiers) structureNote += `\n    ${useSingular ? 'item_modifier' : 'item_modifiers'}/  → アイテム修飾子`;
+  if (hasDamageType) structureNote += `\n    damage_type/  → ダメージタイプ`;
+  if (hasEnchantmentRegistry) structureNote += `\n    enchantment/  → エンチャント定義`;
+
+  return `あなたはMinecraft Java Edition データパック専門のAIアシスタントです。
+ユーザーの指示に従い、正確なデータパックファイルを生成してください。
+
+【対象バージョン: Minecraft ${targetVersion}】
+名前空間: ${namespace}
+
+【ファイル出力形式 ※必須】
+ファイルを生成する場合、必ず以下のコードブロック形式で出力:
+
+\`\`\`mcfunction:data/${namespace}/${funcFolder}/example.mcfunction
+# コマンド
+say Hello!
+\`\`\`
+
+\`\`\`json:data/${namespace}/${recipeFolder}/example.json
+{
+  "type": "minecraft:crafting_shaped"
+}
+\`\`\`
+
+形式: \`\`\`言語:ファイルパス （言語は mcfunction または json）
+
+【レシピ形式（${targetVersion}）】
+- ${recipeResultNote}
+- ${ingredientNote}
+- 利用可能なレシピタイプ: crafting_shaped, crafting_shapeless, smelting${gte('1.14') ? ', blasting, smoking, campfire_cooking, stonecutting' : ''}${gte('1.20') ? ', smithing_transform, smithing_trim' : ''}${hasSimplifiedIngredients ? ', crafting_transmute' : ''}
+
+【コマンド構文（${targetVersion}）】${commandNotes}
+
+【データパック構造（${targetVersion}）】
+${useSingular ? '※1.21+: フォルダ名は単数形' : '※~1.20: フォルダ名は複数形'}
+${structureNote}
+
+【進捗（advancement）形式】
+- icon: ${hasComponents ? '{ "id": "minecraft:..." }' : '{ "item": "minecraft:..." }'}
+- items条件: ${hasComponents ? '{ "items": "minecraft:diamond" }  ※1.20.5+形式' : '{ "items": [{ "items": ["minecraft:diamond"] }] }'}
+
+【バージョン固有の重要ルール】
+- 対象は Minecraft ${targetVersion} のみ。このバージョンで存在しない機能は使用禁止
+- ${useSingular ? 'フォルダ名は単数形（function, recipe, advancement等）' : 'フォルダ名は複数形（functions, recipes, advancements等）'}
+- タグフォルダ: tags/${tagFuncFolder}/, tags/${tagBlockFolder}/, tags/${tagItemFolder}/
+${hasComponents ? '- NBT形式({...})は禁止。必ずコンポーネント形式[...]を使用' : '- アイテムデータはNBT形式{...}を使用'}
+${hasSNBTText ? '- テキストはSNBT形式（JSON文字列ではない）' : '- テキストはJSON文字列形式'}
 
 【注意事項】
 - 名前空間は必ず "${namespace}" を使用
-- ファイル名は英数字・アンダースコア・ハイフンのみ
-- JSON は必ず有効な形式で出力
-- コメントはMCfunction (#) のみ、JSONにはコメント不可
-- 説明や注意点はコードブロックの外に日本語で書いてください`;
+- ファイル名は英小文字・数字・アンダースコア・ハイフンのみ
+- JSONは必ず有効な形式。コメント不可
+- mcfunctionのコメントは # で開始
+- 説明・注意点はコードブロックの外に日本語で記述
+- 数値ID・データ値は絶対に使用しない（1.13+のため）`;
+};
 
 const MC_ALL_COMMANDS = new Set(MC_AUTO._root.map(c => c.l));
 
@@ -3122,6 +3227,7 @@ function AISettingsInline({ selectedModel, setSelectedModel, apiKey, setApiKey }
 
   const model = AI_MODELS.find(m => m.id === selectedModel) || AI_MODELS[0];
   const provider = AI_PROVIDERS[model.provider];
+  const isComingSoon = model.comingSoon;
 
   const handleSave = () => {
     const trimmed = input.trim();
@@ -3149,6 +3255,14 @@ function AISettingsInline({ selectedModel, setSelectedModel, apiKey, setApiKey }
 
   return (
     <div className="px-3 py-2 bg-mc-dark/50 border-b border-mc-border space-y-2">
+      {/* API required banner */}
+      {!apiKey && !isComingSoon && (
+        <div className="flex items-center gap-2 px-2.5 py-2 rounded bg-mc-info/10 border border-mc-info/30 text-xs text-mc-info">
+          <Key size={12} className="flex-shrink-0" />
+          <span className="font-medium">AI機能を使うにはAPIキーが必須です。</span>
+        </div>
+      )}
+
       {/* Model selector */}
       <div className="flex items-center gap-2">
         <Bot size={12} className="text-mc-info flex-shrink-0" />
@@ -3158,15 +3272,31 @@ function AISettingsInline({ selectedModel, setSelectedModel, apiKey, setApiKey }
           className="flex-1 bg-mc-dark border border-mc-border rounded px-2 py-1 text-xs text-mc-text focus:outline-none focus:border-mc-info cursor-pointer"
         >
           {AI_MODELS.map(m => (
-            <option key={m.id} value={m.id}>
-              {m.label} — {m.desc}
+            <option key={m.id} value={m.id} disabled={m.comingSoon}>
+              {m.label} — {m.desc}{m.comingSoon ? ' (準備中)' : ''}
             </option>
           ))}
         </select>
       </div>
 
-      {/* API key display/input */}
-      {apiKey ? (
+      {/* Coming soon notice */}
+      {isComingSoon ? (
+        <div className="px-3 py-3 rounded bg-mc-dark border border-mc-border/50 text-center space-y-1.5">
+          <p className="text-xs font-medium text-mc-muted">{model.label}</p>
+          <span className="inline-block px-2 py-0.5 rounded-full bg-mc-warning/15 border border-mc-warning/30 text-[10px] text-mc-warning font-medium">
+            近日対応予定
+          </span>
+          <p className="text-[10px] text-mc-muted/60">
+            API公開後にAPIキーを設定することで利用可能になります。
+          </p>
+          <p className="text-[10px] text-mc-muted/60">
+            <a href={provider.link} target="_blank" rel="noopener noreferrer" className="text-mc-info hover:underline inline-flex items-center gap-1">
+              {provider.linkLabel} <ExternalLink size={9} />
+            </a>
+            でAPIキーを事前取得できます。
+          </p>
+        </div>
+      ) : apiKey ? (
         <div className="flex items-center gap-2 text-xs">
           <Key size={12} className="text-mc-success flex-shrink-0" />
           <span className="text-mc-muted flex-shrink-0">{provider.name}:</span>
@@ -3200,7 +3330,7 @@ function AISettingsInline({ selectedModel, setSelectedModel, apiKey, setApiKey }
               <a href={provider.link} target="_blank" rel="noopener noreferrer" className="text-mc-info hover:underline inline-flex items-center gap-1">
                 {provider.linkLabel} <ExternalLink size={9} />
               </a>
-              でAPIキーを取得できます。
+              でAPIキーを取得してください（必須）。
             </p>
             {model.provider === 'openai' && (
               <p className="flex items-start gap-1 text-mc-warning/70">
@@ -3335,7 +3465,7 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
 
   const handleSend = () => {
     const text = input.trim();
-    if (!text || !apiKey || streaming) return;
+    if (!text || !apiKey || streaming || currentModel.comingSoon) return;
 
     setError('');
     const fileList = files
@@ -3431,9 +3561,21 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
             <Sparkles size={32} className="text-mc-info/40 mb-3" />
             <p className="text-sm font-medium text-mc-text mb-1">AI データパックアシスタント</p>
-            <p className="text-xs text-mc-muted mb-4">
+            <p className="text-xs text-mc-muted mb-2">
               自然言語で指示するだけで、データパックのファイルを自動生成します。
             </p>
+            {!apiKey && !currentModel.comingSoon && (
+              <div className="w-full max-w-sm mb-4 px-4 py-3 rounded-lg bg-mc-dark border border-mc-info/30 space-y-2">
+                <div className="flex items-center justify-center gap-2 text-mc-info text-xs font-medium">
+                  <Key size={14} />
+                  APIキーが必要です
+                </div>
+                <p className="text-[11px] text-mc-muted">
+                  AI機能を利用するには、上のフォームからAPIキーを設定してください。
+                  APIキーは各プロバイダーのサイトで無料で取得できます。
+                </p>
+              </div>
+            )}
             {apiKey && (
               <div className="space-y-2 w-full max-w-sm">
                 <p className="text-[10px] text-mc-muted mb-2">試してみる:</p>
@@ -3499,8 +3641,8 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-            placeholder={apiKey ? 'AIに指示を入力...' : 'APIキーを設定してください'}
-            disabled={!apiKey || streaming}
+            placeholder={currentModel.comingSoon ? `${currentModel.label} は近日対応予定です` : apiKey ? 'AIに指示を入力...' : 'APIキーを設定してください（必須）'}
+            disabled={!apiKey || streaming || currentModel.comingSoon}
             className="flex-1 bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm text-mc-text placeholder-mc-muted/50 focus:outline-none focus:border-mc-info disabled:opacity-40 disabled:cursor-not-allowed"
           />
           {streaming ? (
@@ -3514,7 +3656,7 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
           ) : (
             <button
               onClick={handleSend}
-              disabled={!input.trim() || !apiKey}
+              disabled={!input.trim() || !apiKey || currentModel.comingSoon}
               className="px-3 py-2 rounded bg-mc-info hover:bg-mc-info/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               title="送信"
             >
