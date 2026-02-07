@@ -11,6 +11,7 @@ import {
   HelpCircle, ExternalLink, Menu, PanelLeftClose, PanelLeftOpen,
   Gamepad2, Users, Timer, Trophy, Sword, Target, Play, Square,
   Clipboard, Sparkles, Crown, Flag, Shield, Heart,
+  Send, Key, Bot, Loader, RotateCcw, MessageSquare, StopCircle,
 } from 'lucide-react';
 
 // ════════════════════════════════════════════════════════════
@@ -634,6 +635,65 @@ const MC_AUTO = {
   ],
 };
 
+// ════════════════════════════════════════════════════════════
+// AI (GEMINI) CONSTANTS
+// ════════════════════════════════════════════════════════════
+
+const AI_STORAGE_KEY = 'mc-datapack-ai-gemini-key';
+
+const GEMINI_SYSTEM_PROMPT = (namespace, targetVersion) => `あなたはMinecraftデータパック専門のAIアシスタントです。
+ユーザーの指示に従い、Minecraft Java Edition のデータパックファイルを生成してください。
+
+【基本情報】
+- 対象バージョン: Minecraft ${targetVersion}
+- 名前空間: ${namespace}
+- ファイルはすべて data/ ディレクトリ以下に配置
+
+【ファイル出力形式】
+ファイルを生成する場合、必ず以下の形式のコードブロックで出力してください:
+
+\`\`\`mcfunction:data/${namespace}/function/example.mcfunction
+# ここにコマンドを書く
+say Hello!
+\`\`\`
+
+\`\`\`json:data/${namespace}/recipe/example.json
+{
+  "type": "minecraft:crafting_shaped",
+  ...
+}
+\`\`\`
+
+形式: \`\`\`言語:ファイルパス で、言語は mcfunction または json を使用してください。
+
+【バージョン対応ルール】
+- ${targetVersion} で利用可能なコマンド・機能のみを使用すること
+- 1.20.5以降: アイテムコンポーネント形式を使用 (item_name等ではなく components を使用)
+- 1.13以前の形式は使用しない
+- レシピの result は { "id": "minecraft:...", "count": 1 } 形式
+- 進捗の items 条件は { "items": "minecraft:diamond" } 形式（1.20.5+）
+
+【データパック構造】
+data/
+  minecraft/
+    tags/function/
+      load.json  → { "values": ["${namespace}:load"] }
+      tick.json  → { "values": ["${namespace}:tick"] }
+  ${namespace}/
+    function/    → .mcfunction ファイル
+    recipe/      → レシピJSON
+    advancement/ → 進捗JSON
+    loot_table/  → ルートテーブルJSON
+    predicate/   → 条件JSON
+    tags/        → タグJSON
+
+【注意事項】
+- 名前空間は必ず "${namespace}" を使用
+- ファイル名は英数字・アンダースコア・ハイフンのみ
+- JSON は必ず有効な形式で出力
+- コメントはMCfunction (#) のみ、JSONにはコメント不可
+- 説明や注意点はコードブロックの外に日本語で書いてください`;
+
 const MC_ALL_COMMANDS = new Set(MC_AUTO._root.map(c => c.l));
 
 function getValidCommands(targetVersion) {
@@ -995,6 +1055,105 @@ function createInitialFiles(namespace, options = {}) {
   }
 
   return files;
+}
+
+// ════════════════════════════════════════════════════════════
+// AI UTILITY FUNCTIONS
+// ════════════════════════════════════════════════════════════
+
+function parseAICodeBlocks(text) {
+  const blocks = [];
+  const regex = /```(\w+):([^\n]+)\n([\s\S]*?)```/g;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    blocks.push({
+      lang: match[1],
+      path: match[2].trim(),
+      content: match[3].trimEnd(),
+    });
+  }
+  return blocks;
+}
+
+function callGeminiStream(apiKey, messages, systemPrompt, onChunk, onDone, onError, signal) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${apiKey}`;
+
+  const contents = messages.map(m => ({
+    role: m.role === 'user' ? 'user' : 'model',
+    parts: [{ text: m.content }],
+  }));
+
+  const body = {
+    contents,
+    systemInstruction: { parts: [{ text: systemPrompt }] },
+    generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
+  };
+
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal,
+  })
+    .then(response => {
+      if (!response.ok) {
+        const status = response.status;
+        if (status === 400 || status === 401 || status === 403) {
+          throw new Error('APIキーが無効です。正しいGemini APIキーを設定してください。');
+        } else if (status === 429) {
+          throw new Error('レート制限に達しました。しばらく待ってから再試行してください。');
+        } else {
+          throw new Error(`APIエラー (${status})`);
+        }
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullText = '';
+
+      function read() {
+        reader.read().then(({ done, value }) => {
+          if (done) {
+            onDone(fullText);
+            return;
+          }
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const jsonStr = line.slice(6).trim();
+            if (!jsonStr || jsonStr === '[DONE]') continue;
+
+            try {
+              const parsed = JSON.parse(jsonStr);
+              const text = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (text) {
+                fullText += text;
+                onChunk(fullText);
+              }
+            } catch {}
+          }
+
+          read();
+        }).catch(err => {
+          if (err.name === 'AbortError') {
+            onDone(fullText);
+          } else {
+            onError(err.message || 'ストリーム読み取りエラー');
+          }
+        });
+      }
+
+      read();
+    })
+    .catch(err => {
+      if (err.name === 'AbortError') return;
+      onError(err.message || 'ネットワークエラーが発生しました。');
+    });
 }
 
 function validateProject(project, files) {
@@ -2851,6 +3010,395 @@ function MinigameWizard({ namespace, onComplete, onClose, targetVersion }) {
 }
 
 // ════════════════════════════════════════════════════════════
+// AI SETTINGS INLINE
+// ════════════════════════════════════════════════════════════
+
+function AISettingsInline({ apiKey, setApiKey }) {
+  const [input, setInput] = useState('');
+  const [showKey, setShowKey] = useState(false);
+
+  const handleSave = () => {
+    const trimmed = input.trim();
+    if (!trimmed) return;
+    localStorage.setItem(AI_STORAGE_KEY, trimmed);
+    setApiKey(trimmed);
+    setInput('');
+  };
+
+  const handleDelete = () => {
+    localStorage.removeItem(AI_STORAGE_KEY);
+    setApiKey('');
+  };
+
+  if (apiKey) {
+    const masked = apiKey.slice(0, 8) + '••••••••' + apiKey.slice(-4);
+    return (
+      <div className="px-3 py-2 bg-mc-dark/50 border-b border-mc-border">
+        <div className="flex items-center gap-2 text-xs">
+          <Key size={12} className="text-mc-success flex-shrink-0" />
+          <span className="text-mc-muted flex-shrink-0">APIキー:</span>
+          <code className="text-[11px] text-mc-text truncate flex-1 font-mono">
+            {showKey ? apiKey : masked}
+          </code>
+          <button
+            onClick={() => setShowKey(!showKey)}
+            className="text-mc-muted hover:text-mc-text text-[10px] flex-shrink-0"
+          >
+            {showKey ? '隠す' : '表示'}
+          </button>
+          <button
+            onClick={handleDelete}
+            className="text-mc-accent hover:text-red-400 flex-shrink-0"
+            title="APIキーを削除"
+          >
+            <Trash2 size={12} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-3 py-3 bg-mc-dark/50 border-b border-mc-border space-y-2">
+      <div className="flex items-center gap-2 text-xs text-mc-muted">
+        <Key size={12} />
+        <span>Gemini APIキーを設定してください</span>
+      </div>
+      <div className="flex gap-2">
+        <input
+          type="password"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSave()}
+          placeholder="APIキーをペースト..."
+          className="flex-1 bg-mc-dark border border-mc-border rounded px-2 py-1.5 text-xs text-mc-text placeholder-mc-muted/50 focus:outline-none focus:border-mc-info"
+        />
+        <button
+          onClick={handleSave}
+          disabled={!input.trim()}
+          className="px-3 py-1.5 text-xs font-medium rounded bg-mc-info hover:bg-mc-info/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          設定
+        </button>
+      </div>
+      <div className="text-[10px] text-mc-muted/70 space-y-1">
+        <p>
+          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer"
+            className="text-mc-info hover:underline inline-flex items-center gap-1">
+            Google AI Studio <ExternalLink size={9} />
+          </a>
+          で無料のAPIキーを取得できます。
+        </p>
+        <p className="flex items-start gap-1 text-mc-warning/70">
+          <AlertTriangle size={9} className="flex-shrink-0 mt-0.5" />
+          キーはブラウザのlocalStorageに保存されます。共有PCでの使用にご注意ください。
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+// AI MESSAGE BUBBLE
+// ════════════════════════════════════════════════════════════
+
+function AIMessageBubble({ message, onApply }) {
+  const isUser = message.role === 'user';
+  const codeBlocks = useMemo(() => isUser ? [] : parseAICodeBlocks(message.content), [message.content, isUser]);
+  const hasFiles = codeBlocks.length > 0;
+
+  const renderContent = (text) => {
+    if (isUser) {
+      return <p className="text-sm whitespace-pre-wrap">{text}</p>;
+    }
+
+    const parts = [];
+    const regex = /```(\w+):([^\n]+)\n([\s\S]*?)```/g;
+    let lastIndex = 0;
+    let match;
+    let idx = 0;
+
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(
+          <p key={`t${idx}`} className="text-sm whitespace-pre-wrap mb-2">
+            {text.slice(lastIndex, match.index)}
+          </p>
+        );
+      }
+
+      const lang = match[1];
+      const filePath = match[2].trim();
+      const code = match[3].trimEnd();
+
+      parts.push(
+        <div key={`c${idx}`} className="my-2 rounded overflow-hidden border border-mc-border/50">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-mc-darker text-[10px] text-mc-muted font-mono">
+            <FileCode size={10} />
+            <span className="truncate">{filePath}</span>
+            <span className="ml-auto text-mc-muted/50">{lang}</span>
+          </div>
+          <pre className="px-3 py-2 text-[11px] font-mono text-mc-text bg-mc-dark overflow-x-auto leading-relaxed">
+            <code>{code}</code>
+          </pre>
+        </div>
+      );
+
+      lastIndex = match.index + match[0].length;
+      idx++;
+    }
+
+    if (lastIndex < text.length) {
+      parts.push(
+        <p key={`t${idx}`} className="text-sm whitespace-pre-wrap">
+          {text.slice(lastIndex)}
+        </p>
+      );
+    }
+
+    return parts;
+  };
+
+  return (
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-3`}>
+      <div className={`max-w-[85%] ${isUser ? 'order-1' : 'order-1'}`}>
+        <div className="flex items-center gap-1.5 mb-1">
+          {!isUser && <Bot size={12} className="text-mc-info" />}
+          <span className="text-[10px] text-mc-muted">
+            {isUser ? 'あなた' : 'Gemini AI'}
+          </span>
+        </div>
+        <div className={`rounded-lg px-3 py-2 ${
+          isUser
+            ? 'bg-mc-info/20 border border-mc-info/30'
+            : 'bg-mc-dark border border-mc-border/50'
+        }`}>
+          {renderContent(message.content)}
+        </div>
+        {hasFiles && !message.streaming && (
+          <button
+            onClick={() => onApply(codeBlocks)}
+            className="mt-2 px-3 py-1.5 text-xs font-medium rounded bg-mc-success/20 border border-mc-success/40 text-mc-success hover:bg-mc-success/30 transition-colors flex items-center gap-1.5"
+          >
+            <Play size={11} />
+            プロジェクトに適用（{codeBlocks.length}ファイル）
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+// AI CHAT PANEL
+// ════════════════════════════════════════════════════════════
+
+function AIChatPanel({ project, files, setFiles, setExpanded }) {
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem(AI_STORAGE_KEY) || '');
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [streaming, setStreaming] = useState(false);
+  const [streamingText, setStreamingText] = useState('');
+  const [error, setError] = useState('');
+  const abortRef = useRef(null);
+  const chatEndRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, streamingText]);
+
+  const handleSend = () => {
+    const text = input.trim();
+    if (!text || !apiKey || streaming) return;
+
+    setError('');
+    const fileList = files
+      .filter(f => f.type !== 'folder')
+      .map(f => getFullPath(files, f.id))
+      .join('\n');
+
+    const contextNote = fileList
+      ? `\n\n[現在のプロジェクトファイル一覧]\n${fileList}`
+      : '\n\n[プロジェクトにはまだファイルがありません]';
+
+    const userMsg = { role: 'user', content: text };
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
+    setInput('');
+    setStreaming(true);
+    setStreamingText('');
+
+    const apiMessages = newMessages.map((m, i) => {
+      if (m.role === 'user' && i === newMessages.length - 1) {
+        return { ...m, content: m.content + contextNote };
+      }
+      return m;
+    });
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    const systemPrompt = GEMINI_SYSTEM_PROMPT(project.namespace, project.targetVersion);
+
+    callGeminiStream(
+      apiKey,
+      apiMessages,
+      systemPrompt,
+      (text) => setStreamingText(text),
+      (finalText) => {
+        setMessages(prev => [...prev, { role: 'assistant', content: finalText }]);
+        setStreamingText('');
+        setStreaming(false);
+        abortRef.current = null;
+      },
+      (errMsg) => {
+        setError(errMsg);
+        setStreaming(false);
+        setStreamingText('');
+        abortRef.current = null;
+      },
+      controller.signal,
+    );
+  };
+
+  const handleStop = () => {
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+  };
+
+  const handleApply = (codeBlocks) => {
+    const pathContents = codeBlocks.map(block => ({
+      path: block.path,
+      content: block.content,
+    }));
+    const newFiles = addFilesFromPaths(files, pathContents);
+    setFiles(newFiles);
+    const allFolderIds = new Set();
+    newFiles.filter(f => f.type === 'folder').forEach(f => allFolderIds.add(f.id));
+    setExpanded(allFolderIds);
+  };
+
+  const handleReset = () => {
+    setMessages([]);
+    setStreamingText('');
+    setError('');
+  };
+
+  const samplePrompts = [
+    'ダイヤモンドソードの強化レシピを作って',
+    'ダイヤモンドを拾うと進捗が解除される仕組みを作って',
+    '鬼ごっこミニゲームのデータパックを作って',
+    'プレイヤーがスニークしたらパーティクルが出る仕組みを作って',
+  ];
+
+  return (
+    <div className="flex-1 flex flex-col min-h-0">
+      <AISettingsInline apiKey={apiKey} setApiKey={setApiKey} />
+
+      <div className="flex-1 overflow-y-auto p-3 space-y-1">
+        {messages.length === 0 && !streaming && (
+          <div className="flex flex-col items-center justify-center h-full text-center px-4">
+            <Sparkles size={32} className="text-mc-info/40 mb-3" />
+            <p className="text-sm font-medium text-mc-text mb-1">AI データパックアシスタント</p>
+            <p className="text-xs text-mc-muted mb-4">
+              自然言語で指示するだけで、データパックのファイルを自動生成します。
+            </p>
+            {apiKey && (
+              <div className="space-y-2 w-full max-w-sm">
+                <p className="text-[10px] text-mc-muted mb-2">試してみる:</p>
+                {samplePrompts.map((prompt, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { setInput(prompt); inputRef.current?.focus(); }}
+                    className="w-full text-left px-3 py-2 text-xs rounded border border-mc-border/50 bg-mc-dark/50 hover:bg-mc-dark hover:border-mc-info/30 text-mc-muted hover:text-mc-text transition-colors"
+                  >
+                    <MessageSquare size={10} className="inline mr-2 opacity-50" />
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {messages.map((msg, i) => (
+          <AIMessageBubble key={i} message={msg} onApply={handleApply} />
+        ))}
+
+        {streaming && streamingText && (
+          <AIMessageBubble
+            message={{ role: 'assistant', content: streamingText, streaming: true }}
+            onApply={handleApply}
+          />
+        )}
+
+        {streaming && !streamingText && (
+          <div className="flex items-center gap-2 text-xs text-mc-muted py-2">
+            <Loader size={12} className="animate-spin" />
+            AIが考えています...
+          </div>
+        )}
+
+        {error && (
+          <div className="px-3 py-2 rounded bg-mc-accent/10 border border-mc-accent/30 text-xs text-mc-accent flex items-start gap-2">
+            <AlertTriangle size={12} className="flex-shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <div ref={chatEndRef} />
+      </div>
+
+      <div className="border-t border-mc-border p-3">
+        {messages.length > 0 && (
+          <div className="flex justify-end mb-2">
+            <button
+              onClick={handleReset}
+              className="text-[10px] text-mc-muted hover:text-mc-text flex items-center gap-1 transition-colors"
+            >
+              <RotateCcw size={10} />
+              チャットをリセット
+            </button>
+          </div>
+        )}
+        <div className="flex gap-2">
+          <input
+            ref={inputRef}
+            type="text"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+            placeholder={apiKey ? 'AIに指示を入力...' : 'APIキーを設定してください'}
+            disabled={!apiKey || streaming}
+            className="flex-1 bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm text-mc-text placeholder-mc-muted/50 focus:outline-none focus:border-mc-info disabled:opacity-40 disabled:cursor-not-allowed"
+          />
+          {streaming ? (
+            <button
+              onClick={handleStop}
+              className="px-3 py-2 rounded bg-mc-accent/20 border border-mc-accent/40 text-mc-accent hover:bg-mc-accent/30 transition-colors"
+              title="生成を停止"
+            >
+              <StopCircle size={16} />
+            </button>
+          ) : (
+            <button
+              onClick={handleSend}
+              disabled={!input.trim() || !apiKey}
+              className="px-3 py-2 rounded bg-mc-info hover:bg-mc-info/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              title="送信"
+            >
+              <Send size={16} />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
 // COMMAND REFERENCE PANEL
 // ════════════════════════════════════════════════════════════
 
@@ -3615,6 +4163,7 @@ export default function App() {
               { key: 'editor', label: 'エディター', icon: Code },
               { key: 'preview', label: 'プレビュー', icon: Eye },
               { key: 'commands', label: 'コマンド', icon: BookOpen },
+              { key: 'ai', label: 'AI', icon: Sparkles },
             ].map(t => (
               <button
                 key={t.key}
@@ -3646,6 +4195,8 @@ export default function App() {
               <CodeEditor file={selectedFile} onChange={handleFileContentChange} targetVersion={project.targetVersion} />
             ) : activeTab === 'commands' ? (
               <CommandReference namespace={project.namespace} targetVersion={project.targetVersion} />
+            ) : activeTab === 'ai' ? (
+              <AIChatPanel project={project} files={files} setFiles={setFiles} setExpanded={setExpanded} />
             ) : (
               <PreviewPanel project={project} files={files} errors={errors} />
             )}
