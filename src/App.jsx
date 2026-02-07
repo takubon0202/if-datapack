@@ -810,7 +810,90 @@ ${hasSNBTText ? '- テキストはSNBT形式（JSON文字列ではない）' : '
 - JSONは必ず有効な形式。コメント不可
 - mcfunctionのコメントは # で開始
 - 説明・注意点はコードブロックの外に日本語で記述
-- 数値ID・データ値は絶対に使用しない（1.13+のため）`;
+- 数値ID・データ値は絶対に使用しない（1.13+のため）
+
+【武器・ツール一覧】
+剣: wooden_sword, stone_sword, iron_sword, golden_sword, diamond_sword${gte('1.16') ? ', netherite_sword' : ''}
+斧: wooden_axe, stone_axe, iron_axe, golden_axe, diamond_axe${gte('1.16') ? ', netherite_axe' : ''}
+ツルハシ: wooden_pickaxe, stone_pickaxe, iron_pickaxe, golden_pickaxe, diamond_pickaxe${gte('1.16') ? ', netherite_pickaxe' : ''}
+シャベル: wooden_shovel, stone_shovel, iron_shovel, golden_shovel, diamond_shovel${gte('1.16') ? ', netherite_shovel' : ''}
+クワ: wooden_hoe, stone_hoe, iron_hoe, golden_hoe, diamond_hoe${gte('1.16') ? ', netherite_hoe' : ''}
+遠距離: bow, crossbow, trident${gte('1.21') ? ', mace' : ''}
+その他ツール: fishing_rod, shears, flint_and_steel${gte('1.16') ? ', warped_fungus_on_a_stick' : ''}, carrot_on_a_stick${gte('1.19') ? ', brush' : ''}
+
+【防具一覧】
+素材: leather, chainmail, iron, golden, diamond${gte('1.16') ? ', netherite' : ''}
+部位: helmet, chestplate, leggings, boots
+形式: minecraft:{素材}_{部位}  例: minecraft:diamond_chestplate
+盾: shield, ${gte('1.16') ? 'turtle_helmet' : ''}
+装飾ヘッド: carved_pumpkin${gte('1.14') ? '' : ''}${gte('1.20') ? `
+防具カスタム(${targetVersion}): 装飾トリムが利用可能` : ''}
+${gte('1.20') ? `トリムパターン: coast, dune, eye, host, raiser, rib, sentry, shaper, silence, snout, spire, tide, vex, ward, wayfinder, wild${gte('1.21') ? ', bolt, flow' : ''}
+トリム素材: amethyst, copper, diamond, emerald, gold, iron, lapis, netherite, quartz, redstone${gte('1.21') ? ', resin_brick' : ''}` : ''}
+
+【エンチャント一覧（最大レベル）】
+${hasEnchantmentRegistry ? '※1.21+: エンチャントはレジストリで管理' : '※~1.20: enchantments はNBTリストで指定'}
+剣: sharpness(5), smite(5), bane_of_arthropods(5), knockback(2), fire_aspect(2), looting(3), sweeping_edge(3)${gte('1.21') ? ', breach(4), density(5)' : ''}
+弓: power(5), punch(2), flame(1), infinity(1)
+クロスボウ: quick_charge(3), multishot(1), piercing(4)
+${gte('1.21') ? 'メイス: wind_burst(3), breach(4), density(5)' : ''}
+ツルハシ/斧: efficiency(5), fortune(3), silk_touch(1)
+防具共通: protection(4), fire_protection(4), blast_protection(4), projectile_protection(4), thorns(3), unbreaking(3), mending(1)${hasComponents ? ', vanishing_curse(1), binding_curse(1)' : ', curse_of_vanishing(1), curse_of_binding(1)'}
+ヘルメット: respiration(3), aqua_affinity(1)
+ブーツ: feather_falling(4), depth_strider(3), frost_walker(2), soul_speed(3)${gte('1.19') ? ', swift_sneak(3)' : ''}
+トライデント: loyalty(3), riptide(3), channeling(1), impaling(5)
+釣竿: luck_of_the_sea(3), lure(3)
+
+【エンティティ一覧】
+敵対: zombie, skeleton, creeper, spider, cave_spider, enderman, witch, slime, magma_cube, phantom, blaze, ghast, wither_skeleton, ${gte('1.14') ? 'pillager, ravager, ' : ''}${gte('1.16') ? 'hoglin, piglin, piglin_brute, zoglin, ' : ''}${gte('1.17') ? '' : ''}guardian, elder_guardian, endermite, silverfish, vex, vindicator, evoker, shulker, drowned, husk, stray${gte('1.19') ? ', warden' : ''}${gte('1.21') ? ', breeze, bogged' : ''}${gte('1.21.2') ? ', creaking' : ''}
+友好: pig, cow, sheep, chicken, horse, donkey, mule, rabbit, ocelot, wolf, cat, parrot, ${gte('1.14') ? 'fox, ' : ''}${gte('1.16') ? 'strider, ' : ''}${gte('1.17') ? 'axolotl, goat, glow_squid, ' : ''}${gte('1.19') ? 'frog, tadpole, allay, ' : ''}${gte('1.20') ? 'camel, sniffer, ' : ''}${gte('1.21') ? 'armadillo, ' : ''}mooshroom, turtle, squid, bat, villager, wandering_trader
+中立: bee, dolphin, llama, polar_bear, iron_golem, snow_golem, ${gte('1.16') ? 'zombified_piglin' : 'zombie_pigman'}, panda, trader_llama
+ボス: ender_dragon, wither
+乗り物等: minecart, boat${gte('1.19') ? ', chest_boat' : ''}, armor_stand
+投射物: arrow, spectral_arrow, trident, fireball, snowball, egg, ender_pearl, experience_bottle
+
+【ポーション効果一覧】
+有益: speed, haste, strength, instant_health, jump_boost, regeneration, resistance, fire_resistance, water_breathing, invisibility, night_vision, absorption, saturation, luck, slow_falling, conduit_power, hero_of_the_village${gte('1.21') ? ', wind_charged, raid_omen, trial_omen' : ''}
+有害: slowness, mining_fatigue, instant_damage, nausea, blindness, hunger, weakness, poison, wither, levitation${gte('1.19') ? ', darkness' : ''}${gte('1.21') ? ', infested, oozing, weaving' : ''}
+中立: glowing, bad_omen
+
+【主要アイテム/素材】
+鉱石素材: coal, raw_iron, raw_gold, raw_copper, diamond, emerald, lapis_lazuli, redstone, quartz, amethyst_shard${gte('1.16') ? ', ancient_debris, netherite_scrap, netherite_ingot, gold_nugget' : ''}
+インゴット: iron_ingot, gold_ingot, copper_ingot${gte('1.16') ? ', netherite_ingot' : ''}
+食料: apple, golden_apple, enchanted_golden_apple, bread, cooked_beef, cooked_porkchop, cooked_chicken, cooked_mutton, cooked_salmon, cooked_cod, baked_potato, cookie, pumpkin_pie, cake, melon_slice, dried_kelp, sweet_berries${gte('1.19') ? ', glow_berries' : ''}
+便利: ender_pearl, blaze_rod, blaze_powder, ghast_tear, nether_star, elytra, totem_of_undying, trident, name_tag, saddle, lead, compass, clock, map, book, writable_book, written_book, experience_bottle
+レッドストーン: redstone, redstone_torch, repeater, comparator, piston, sticky_piston, observer, dropper, dispenser, hopper, lever, stone_button, tripwire_hook, daylight_detector, target${gte('1.19') ? ', sculk_sensor, calibrated_sculk_sensor' : ''}${gte('1.21') ? ', crafter' : ''}
+
+【ターゲットセレクタ】
+@a=全プレイヤー, @p=最寄りプレイヤー, @r=ランダムプレイヤー, @s=実行者, @e=全エンティティ${gte('1.20.2') ? ', @n=最寄りエンティティ' : ''}
+引数: type, name, tag, scores, nbt, distance, dx/dy/dz, x/y/z, sort, limit, level, gamemode, team, x_rotation, y_rotation${hasComponents ? ', predicate' : ''}
+
+【give/summonの具体例（${targetVersion}）】
+${hasComponents ? `give @s minecraft:diamond_sword[custom_name='{"text":"伝説の剣","color":"gold","bold":true}',enchantments={levels:{"minecraft:sharpness":5,"minecraft:unbreaking":3}},unbreakable={}] 1
+summon minecraft:zombie ~ ~ ~ {CustomName:'{"text":"ゾンビキング"}',HandItems:[{id:"minecraft:diamond_sword",count:1,components:{"minecraft:enchantments":{levels:{"minecraft:sharpness":5}}}},{}],ArmorItems:[{},{},{},{id:"minecraft:diamond_helmet",count:1}]}` : `give @s minecraft:diamond_sword{display:{Name:'{"text":"伝説の剣","color":"gold","bold":true}'},Enchantments:[{id:"minecraft:sharpness",lvl:5},{id:"minecraft:unbreaking",lvl:3}],Unbreakable:1} 1
+summon minecraft:zombie ~ ~ ~ {CustomName:'{"text":"ゾンビキング"}',HandItems:[{id:"minecraft:diamond_sword",Count:1,tag:{Enchantments:[{id:"minecraft:sharpness",lvl:5}]}},{}],ArmorItems:[{},{},{},{id:"minecraft:diamond_helmet",Count:1}]}`}
+
+【スコアボード操作】
+scoreboard objectives add <名前> <基準> [表示名]
+基準: dummy, trigger, deathCount, playerKillCount, totalKillCount, health, xp, level, food, armor${gte('1.19') ? '' : ''}
+  minecraft.custom:minecraft.<stat> 例: minecraft.custom:minecraft.play_time
+  minecraft.mined:minecraft.<block>, minecraft.crafted/used/broken/picked_up:minecraft.<item>
+  minecraft.killed/killed_by:minecraft.<entity>
+scoreboard players set/add/remove/reset/get/operation <ターゲット> <目的> [値]
+scoreboard objectives setdisplay sidebar/list/belowName <目的>
+
+【execute構文（${targetVersion}）】
+execute as <ターゲット> at @s run <コマンド>
+execute at <ターゲット> run <コマンド>
+execute positioned <x> <y> <z> run <コマンド>
+execute if/unless score <ターゲット> <目的> matches <範囲> run <コマンド>
+execute if/unless entity <セレクタ> run <コマンド>
+execute if/unless block <座標> <ブロック> run <コマンド>
+execute store result/success score <ターゲット> <目的> run <コマンド>
+execute rotated as <ターゲット> run <コマンド>
+execute anchored eyes/feet run <コマンド>
+${hasPredicates ? 'execute if/unless predicate <名前空間:パス> run <コマンド>' : ''}
+${hasExecuteOn ? 'execute on passengers/vehicle/owner/leasher/origin/attacker/target run <コマンド>' : ''}`;
 };
 
 const MC_ALL_COMMANDS = new Set(MC_AUTO._root.map(c => c.l));
