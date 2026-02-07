@@ -636,12 +636,26 @@ const MC_AUTO = {
 };
 
 // ════════════════════════════════════════════════════════════
-// AI (GEMINI) CONSTANTS
+// AI CONSTANTS
 // ════════════════════════════════════════════════════════════
 
-const AI_STORAGE_KEY = 'mc-datapack-ai-gemini-key';
+const AI_GEMINI_KEY = 'mc-datapack-ai-gemini-key';
+const AI_OPENAI_KEY = 'mc-datapack-ai-openai-key';
+const AI_MODEL_KEY = 'mc-datapack-ai-model';
 
-const GEMINI_SYSTEM_PROMPT = (namespace, targetVersion) => `あなたはMinecraftデータパック専門のAIアシスタントです。
+const AI_MODELS = [
+  { id: 'gemini-3-flash', label: 'Gemini 3 Flash', provider: 'gemini', apiModel: 'gemini-3-flash', desc: '高速・無料' },
+  { id: 'gemini-3-flash-preview', label: 'Gemini 3 Flash Preview', provider: 'gemini', apiModel: 'gemini-3-flash-preview', desc: '最新プレビュー' },
+  { id: 'gemini-3-pro', label: 'Gemini 3 Pro', provider: 'gemini', apiModel: 'gemini-3-pro-preview', desc: '高性能' },
+  { id: 'gpt-5.3-codex', label: 'GPT 5.3 Codex', provider: 'openai', apiModel: 'gpt-5.3-codex', desc: 'OpenAI最新' },
+];
+
+const AI_PROVIDERS = {
+  gemini: { name: 'Google Gemini', storageKey: AI_GEMINI_KEY, link: 'https://aistudio.google.com/apikey', linkLabel: 'Google AI Studio' },
+  openai: { name: 'OpenAI', storageKey: AI_OPENAI_KEY, link: 'https://platform.openai.com/api-keys', linkLabel: 'OpenAI Platform' },
+};
+
+const AI_SYSTEM_PROMPT = (namespace, targetVersion) => `あなたはMinecraftデータパック専門のAIアシスタントです。
 ユーザーの指示に従い、Minecraft Java Edition のデータパックファイルを生成してください。
 
 【基本情報】
@@ -1075,8 +1089,8 @@ function parseAICodeBlocks(text) {
   return blocks;
 }
 
-function callGeminiStream(apiKey, messages, systemPrompt, onChunk, onDone, onError, signal) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${apiKey}`;
+function callGeminiStream(apiKey, modelId, messages, systemPrompt, onChunk, onDone, onError, signal) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:streamGenerateContent?alt=sse&key=${apiKey}`;
 
   const contents = messages.map(m => ({
     role: m.role === 'user' ? 'user' : 'model',
@@ -1154,6 +1168,88 @@ function callGeminiStream(apiKey, messages, systemPrompt, onChunk, onDone, onErr
       if (err.name === 'AbortError') return;
       onError(err.message || 'ネットワークエラーが発生しました。');
     });
+}
+
+function callOpenAIStream(apiKey, modelId, messages, systemPrompt, onChunk, onDone, onError, signal) {
+  const url = 'https://api.openai.com/v1/responses';
+
+  const input = [
+    { role: 'developer', content: [{ type: 'input_text', text: systemPrompt }] },
+    ...messages.map(m => ({
+      role: m.role === 'user' ? 'user' : 'assistant',
+      content: [{ type: m.role === 'user' ? 'input_text' : 'output_text', text: m.content }],
+    })),
+  ];
+
+  const body = { model: modelId, input, stream: true };
+
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(body),
+    signal,
+  })
+    .then(response => {
+      if (!response.ok) {
+        const status = response.status;
+        if (status === 401) throw new Error('APIキーが無効です。正しいOpenAI APIキーを設定してください。');
+        if (status === 429) throw new Error('レート制限に達しました。しばらく待ってから再試行してください。');
+        if (status === 404) throw new Error('モデルが見つかりません。APIアクセスがまだ有効でない可能性があります。');
+        throw new Error(`OpenAI APIエラー (${status})`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullText = '';
+
+      function read() {
+        reader.read().then(({ done, value }) => {
+          if (done) { onDone(fullText); return; }
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const jsonStr = line.slice(6).trim();
+            if (!jsonStr || jsonStr === '[DONE]') continue;
+            try {
+              const parsed = JSON.parse(jsonStr);
+              if (parsed.type === 'response.output_text.delta' && parsed.delta) {
+                fullText += parsed.delta;
+                onChunk(fullText);
+              }
+            } catch {}
+          }
+          read();
+        }).catch(err => {
+          if (err.name === 'AbortError') { onDone(fullText); }
+          else { onError(err.message || 'ストリーム読み取りエラー'); }
+        });
+      }
+      read();
+    })
+    .catch(err => {
+      if (err.name === 'AbortError') return;
+      if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError')) {
+        onError('ネットワークエラー: OpenAI APIはブラウザからの直接呼び出し(CORS)に対応していない場合があります。');
+      } else {
+        onError(err.message || 'ネットワークエラーが発生しました。');
+      }
+    });
+}
+
+function callAIStream(provider, apiKey, modelId, messages, systemPrompt, onChunk, onDone, onError, signal) {
+  if (provider === 'openai') {
+    callOpenAIStream(apiKey, modelId, messages, systemPrompt, onChunk, onDone, onError, signal);
+  } else {
+    callGeminiStream(apiKey, modelId, messages, systemPrompt, onChunk, onDone, onError, signal);
+  }
 }
 
 function validateProject(project, files) {
@@ -3013,87 +3109,105 @@ function MinigameWizard({ namespace, onComplete, onClose, targetVersion }) {
 // AI SETTINGS INLINE
 // ════════════════════════════════════════════════════════════
 
-function AISettingsInline({ apiKey, setApiKey }) {
+function AISettingsInline({ selectedModel, setSelectedModel, apiKey, setApiKey }) {
   const [input, setInput] = useState('');
   const [showKey, setShowKey] = useState(false);
+
+  const model = AI_MODELS.find(m => m.id === selectedModel) || AI_MODELS[0];
+  const provider = AI_PROVIDERS[model.provider];
 
   const handleSave = () => {
     const trimmed = input.trim();
     if (!trimmed) return;
-    localStorage.setItem(AI_STORAGE_KEY, trimmed);
+    localStorage.setItem(provider.storageKey, trimmed);
     setApiKey(trimmed);
     setInput('');
   };
 
   const handleDelete = () => {
-    localStorage.removeItem(AI_STORAGE_KEY);
+    localStorage.removeItem(provider.storageKey);
     setApiKey('');
   };
 
-  if (apiKey) {
-    const masked = apiKey.slice(0, 8) + '••••••••' + apiKey.slice(-4);
-    return (
-      <div className="px-3 py-2 bg-mc-dark/50 border-b border-mc-border">
+  const handleModelChange = (e) => {
+    const newModelId = e.target.value;
+    setSelectedModel(newModelId);
+    localStorage.setItem(AI_MODEL_KEY, newModelId);
+    const newModel = AI_MODELS.find(m => m.id === newModelId) || AI_MODELS[0];
+    const newProvider = AI_PROVIDERS[newModel.provider];
+    setApiKey(localStorage.getItem(newProvider.storageKey) || '');
+    setShowKey(false);
+    setInput('');
+  };
+
+  return (
+    <div className="px-3 py-2 bg-mc-dark/50 border-b border-mc-border space-y-2">
+      {/* Model selector */}
+      <div className="flex items-center gap-2">
+        <Bot size={12} className="text-mc-info flex-shrink-0" />
+        <select
+          value={selectedModel}
+          onChange={handleModelChange}
+          className="flex-1 bg-mc-dark border border-mc-border rounded px-2 py-1 text-xs text-mc-text focus:outline-none focus:border-mc-info cursor-pointer"
+        >
+          {AI_MODELS.map(m => (
+            <option key={m.id} value={m.id}>
+              {m.label} — {m.desc}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* API key display/input */}
+      {apiKey ? (
         <div className="flex items-center gap-2 text-xs">
           <Key size={12} className="text-mc-success flex-shrink-0" />
-          <span className="text-mc-muted flex-shrink-0">APIキー:</span>
+          <span className="text-mc-muted flex-shrink-0">{provider.name}:</span>
           <code className="text-[11px] text-mc-text truncate flex-1 font-mono">
-            {showKey ? apiKey : masked}
+            {showKey ? apiKey : apiKey.slice(0, 8) + '••••••••' + apiKey.slice(-4)}
           </code>
-          <button
-            onClick={() => setShowKey(!showKey)}
-            className="text-mc-muted hover:text-mc-text text-[10px] flex-shrink-0"
-          >
+          <button onClick={() => setShowKey(!showKey)} className="text-mc-muted hover:text-mc-text text-[10px] flex-shrink-0">
             {showKey ? '隠す' : '表示'}
           </button>
-          <button
-            onClick={handleDelete}
-            className="text-mc-accent hover:text-red-400 flex-shrink-0"
-            title="APIキーを削除"
-          >
+          <button onClick={handleDelete} className="text-mc-accent hover:text-red-400 flex-shrink-0" title="APIキーを削除">
             <Trash2 size={12} />
           </button>
         </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="px-3 py-3 bg-mc-dark/50 border-b border-mc-border space-y-2">
-      <div className="flex items-center gap-2 text-xs text-mc-muted">
-        <Key size={12} />
-        <span>Gemini APIキーを設定してください</span>
-      </div>
-      <div className="flex gap-2">
-        <input
-          type="password"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleSave()}
-          placeholder="APIキーをペースト..."
-          className="flex-1 bg-mc-dark border border-mc-border rounded px-2 py-1.5 text-xs text-mc-text placeholder-mc-muted/50 focus:outline-none focus:border-mc-info"
-        />
-        <button
-          onClick={handleSave}
-          disabled={!input.trim()}
-          className="px-3 py-1.5 text-xs font-medium rounded bg-mc-info hover:bg-mc-info/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-        >
-          設定
-        </button>
-      </div>
-      <div className="text-[10px] text-mc-muted/70 space-y-1">
-        <p>
-          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer"
-            className="text-mc-info hover:underline inline-flex items-center gap-1">
-            Google AI Studio <ExternalLink size={9} />
-          </a>
-          で無料のAPIキーを取得できます。
-        </p>
-        <p className="flex items-start gap-1 text-mc-warning/70">
-          <AlertTriangle size={9} className="flex-shrink-0 mt-0.5" />
-          キーはブラウザのlocalStorageに保存されます。共有PCでの使用にご注意ください。
-        </p>
-      </div>
+      ) : (
+        <>
+          <div className="flex gap-2">
+            <input
+              type="password"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSave()}
+              placeholder={`${provider.name} APIキーをペースト...`}
+              className="flex-1 bg-mc-dark border border-mc-border rounded px-2 py-1.5 text-xs text-mc-text placeholder-mc-muted/50 focus:outline-none focus:border-mc-info"
+            />
+            <button onClick={handleSave} disabled={!input.trim()} className="px-3 py-1.5 text-xs font-medium rounded bg-mc-info hover:bg-mc-info/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+              設定
+            </button>
+          </div>
+          <div className="text-[10px] text-mc-muted/70 space-y-1">
+            <p>
+              <a href={provider.link} target="_blank" rel="noopener noreferrer" className="text-mc-info hover:underline inline-flex items-center gap-1">
+                {provider.linkLabel} <ExternalLink size={9} />
+              </a>
+              でAPIキーを取得できます。
+            </p>
+            {model.provider === 'openai' && (
+              <p className="flex items-start gap-1 text-mc-warning/70">
+                <AlertTriangle size={9} className="flex-shrink-0 mt-0.5" />
+                OpenAI APIはブラウザからの直接呼び出し(CORS)に対応していない場合があります。
+              </p>
+            )}
+            <p className="flex items-start gap-1 text-mc-warning/70">
+              <AlertTriangle size={9} className="flex-shrink-0 mt-0.5" />
+              キーはブラウザのlocalStorageに保存されます。共有PCでの使用にご注意ください。
+            </p>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -3106,6 +3220,7 @@ function AIMessageBubble({ message, onApply }) {
   const isUser = message.role === 'user';
   const codeBlocks = useMemo(() => isUser ? [] : parseAICodeBlocks(message.content), [message.content, isUser]);
   const hasFiles = codeBlocks.length > 0;
+  const modelLabel = message.modelLabel || 'AI';
 
   const renderContent = (text) => {
     if (isUser) {
@@ -3165,7 +3280,7 @@ function AIMessageBubble({ message, onApply }) {
         <div className="flex items-center gap-1.5 mb-1">
           {!isUser && <Bot size={12} className="text-mc-info" />}
           <span className="text-[10px] text-mc-muted">
-            {isUser ? 'あなた' : 'Gemini AI'}
+            {isUser ? 'あなた' : modelLabel}
           </span>
         </div>
         <div className={`rounded-lg px-3 py-2 ${
@@ -3194,7 +3309,10 @@ function AIMessageBubble({ message, onApply }) {
 // ════════════════════════════════════════════════════════════
 
 function AIChatPanel({ project, files, setFiles, setExpanded }) {
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem(AI_STORAGE_KEY) || '');
+  const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem(AI_MODEL_KEY) || AI_MODELS[0].id);
+  const currentModel = AI_MODELS.find(m => m.id === selectedModel) || AI_MODELS[0];
+  const currentProvider = AI_PROVIDERS[currentModel.provider];
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem(currentProvider.storageKey) || '');
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
@@ -3239,15 +3357,18 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
     const controller = new AbortController();
     abortRef.current = controller;
 
-    const systemPrompt = GEMINI_SYSTEM_PROMPT(project.namespace, project.targetVersion);
+    const systemPrompt = AI_SYSTEM_PROMPT(project.namespace, project.targetVersion);
+    const modelLabel = currentModel.label;
 
-    callGeminiStream(
+    callAIStream(
+      currentModel.provider,
       apiKey,
+      currentModel.apiModel,
       apiMessages,
       systemPrompt,
       (text) => setStreamingText(text),
       (finalText) => {
-        setMessages(prev => [...prev, { role: 'assistant', content: finalText }]);
+        setMessages(prev => [...prev, { role: 'assistant', content: finalText, modelLabel }]);
         setStreamingText('');
         setStreaming(false);
         abortRef.current = null;
@@ -3295,7 +3416,7 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <AISettingsInline apiKey={apiKey} setApiKey={setApiKey} />
+      <AISettingsInline selectedModel={selectedModel} setSelectedModel={setSelectedModel} apiKey={apiKey} setApiKey={setApiKey} />
 
       <div className="flex-1 overflow-y-auto p-3 space-y-1">
         {messages.length === 0 && !streaming && (
@@ -3329,7 +3450,7 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
 
         {streaming && streamingText && (
           <AIMessageBubble
-            message={{ role: 'assistant', content: streamingText, streaming: true }}
+            message={{ role: 'assistant', content: streamingText, streaming: true, modelLabel: currentModel.label }}
             onApply={handleApply}
           />
         )}
@@ -3337,7 +3458,7 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
         {streaming && !streamingText && (
           <div className="flex items-center gap-2 text-xs text-mc-muted py-2">
             <Loader size={12} className="animate-spin" />
-            AIが考えています...
+            {currentModel.label} が考えています...
           </div>
         )}
 
