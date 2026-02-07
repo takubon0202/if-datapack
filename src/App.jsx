@@ -530,7 +530,7 @@ const MC_AUTO = {
     { l: 'transfer', d: 'サーバー転送', v: '1.20.5' },
     { l: 'rotate', d: 'エンティティ回転', v: '1.21.2' },
     { l: 'test', d: 'テスト実行', v: '1.21.5' },
-    { l: 'dialog', d: 'ダイアログ表示', v: '1.21.6' },
+    { l: 'dialog', d: 'ダイアログ表示', v: '1.21.10' },
     { l: 'fetchprofile', d: 'プロフィール取得', v: '1.21.9' },
     { l: 'stopwatch', d: 'ストップウォッチ', v: '1.21.11' },
     { l: 'defaultgamemode', d: 'デフォルトゲームモード' },
@@ -627,11 +627,11 @@ const MC_AUTO = {
     { l: 'clearall', d: 'テスト結果クリア', v: '1.21.5' }, { l: 'resetall', d: 'テスト全リセット', v: '1.21.5' },
   ],
   stopwatch: [
-    { l: 'start', d: '計測開始', v: '1.21.11' }, { l: 'stop', d: '計測停止', v: '1.21.11' },
-    { l: 'reset', d: 'リセット', v: '1.21.11' }, { l: 'query', d: '値取得', v: '1.21.11' },
+    { l: 'create', d: 'ストップウォッチ作成', v: '1.21.11' }, { l: 'query', d: '値取得', v: '1.21.11' },
+    { l: 'restart', d: '再スタート', v: '1.21.11' }, { l: 'remove', d: '削除', v: '1.21.11' },
   ],
   dialog: [
-    { l: 'show', d: 'ダイアログ表示', v: '1.21.6' }, { l: 'clear', d: 'ダイアログ消去', v: '1.21.6' },
+    { l: 'show', d: 'ダイアログ表示', v: '1.21.10' }, { l: 'clear', d: 'ダイアログ消去', v: '1.21.10' },
   ],
   place: [
     { l: 'feature', d: '地物配置', v: '1.19' }, { l: 'template', d: 'テンプレート配置', v: '1.19' },
@@ -683,6 +683,7 @@ const MC_AUTO = {
     { l: 'enderPearlsVanishOnDeath', d: 'エンダーパール消失', v: '1.20.2' },
     { l: 'maxCommandForkCount', d: 'コマンドフォーク上限', v: '1.20.2' },
     { l: 'spawnChunkRadius', d: 'スポーンチャンク半径', v: '1.20.5' },
+    { l: 'fireSpreadRadiusAroundPlayer', d: '火の延焼距離', v: '1.21.11' },
   ],
 };
 
@@ -716,9 +717,10 @@ const AI_SYSTEM_PROMPT = (namespace, targetVersion) => {
   const gte = (ver) => tv >= v(ver);
   const lt = (ver) => tv < v(ver);
 
-  // pack_format
+  // pack_format (1.21.9+はセマンティックバージョニング: [major, minor])
   let packFormat = 10;
-  if (gte('1.21.11')) packFormat = 94;
+  let packFormatMinor = 0;
+  if (gte('1.21.11')) { packFormat = 94; packFormatMinor = 1; }
   else if (gte('1.21.9')) packFormat = 88;
   else if (gte('1.21.7')) packFormat = 81;
   else if (gte('1.21.6')) packFormat = 80;
@@ -769,10 +771,15 @@ const AI_SYSTEM_PROMPT = (namespace, targetVersion) => {
   const hasPlaceCmd = gte('1.19.3');
   const hasTestCmd = gte('1.21.5');
   const hasStopwatchCmd = gte('1.21.11');
+  const hasDialogCmd = gte('1.21.10');
   const hasPaleGarden = gte('1.21.4');
   const hasSpringToLife = gte('1.21.5');
   const hasSpear = gte('1.21.11');
   const hasNautilus = gte('1.21.11');
+  const hasTimeline = gte('1.21.11');
+  const hasEnvAttribute = gte('1.21.11');
+  const hasExecuteFunction = gte('1.20.2');
+  const hasPositionedOver = gte('1.20.2');
 
   // レシピ形式
   const recipeResultNote = hasComponents
@@ -792,12 +799,14 @@ const AI_SYSTEM_PROMPT = (namespace, targetVersion) => {
     commandNotes += `
 - アイテム: コンポーネント形式[...]を使用（NBT{...}は禁止）
   give @s minecraft:diamond_sword[damage=5,enchantments={levels:{"minecraft:sharpness":5}}]
-  コンポーネント: custom_name, lore, enchantments, damage, unbreakable, custom_data, item_model, custom_model_data, attribute_modifiers, potion_contents${hasSimplifiedIngredients ? `, consumable, equippable, glider, damage_resistant, death_protection
+  主要コンポーネント: custom_name, item_name, lore, enchantments, stored_enchantments, damage, max_damage, unbreakable, custom_data, item_model, custom_model_data, attribute_modifiers, potion_contents, food, tool, rarity, enchantment_glint_override, max_stack_size, repair_cost, repairable, can_break, can_place_on, dyed_color, trim, fireworks, firework_explosion, lodestone_tracker, map_id, map_color, profile, banner_patterns, container, bucket_entity_data, block_entity_data, block_state, entity_data, instrument, jukebox_playable, recipes, writable_book_content, written_book_content, charged_projectiles, bundle_contents, debug_stick_state, intangible_projectile, use_cooldown, use_remainder, tooltip_display, tooltip_style, lock, pot_decorations, note_block_sound, base_color, suspicious_stew_effects, ominous_bottle_amplifier, enchantable${hasSimplifiedIngredients ? `, consumable, equippable, glider, damage_resistant, death_protection, blocks_attacks, break_sound, provides_trim_material, provides_banner_patterns
   consumable={consume_seconds:1.6,animation:"eat",on_consume_effects:[...]}
-  equippable={slot:"head",swappable:true}
+  equippable={slot:"head",equip_sound:"...",asset_id:"...",swappable:true}
   glider={}  ※エリトラのように滑空可能
   damage_resistant={types:"#minecraft:is_fire"}
-  death_protection={death_effects:[...]}  ※不死のトーテム効果` : ''}`;
+  death_protection={death_effects:[...]}  ※不死のトーテム効果
+  blocks_attacks={block_delay_seconds:0.25,damage_reductions:[...]}  ※盾ブロック` : ''}${hasNautilus ? `
+  1.21.11新規: attack_range={min_reach,max_reach,hitbox_margin,mob_factor}, damage_type="minecraft:spear", kinetic_weapon={delay_ticks,damage_multiplier,forward_movement,sound,...}, piercing_weapon={deals_knockback,dismounts,sound,...}, minimum_attack_charge=0.0-1.0, swing_animation={type:"stab"|"whack"|"none",duration:ticks}, use_effects={can_sprint,speed_multiplier}` : ''}`;
   } else {
     commandNotes += `
 - アイテムNBT: give @s minecraft:diamond_sword{Damage:5,Enchantments:[{id:"minecraft:sharpness",lvl:5}]}`;
@@ -830,8 +839,11 @@ const AI_SYSTEM_PROMPT = (namespace, targetVersion) => {
   if (hasDamageCmd) commandNotes += `\n- /damage <target> <amount> [<damageType>] [at <pos>] [by <entity>] [from <entity>]`;
   if (hasPlaceCmd) commandNotes += `\n- /place feature <feature> [<pos>] | template <template> [<pos>] | jigsaw <pool> <element> <depth> [<pos>]`;
   if (hasRotateCmd) commandNotes += `\n- /rotate <target> <yaw> <pitch>  ※エンティティの向き変更`;
-  if (hasTestCmd) commandNotes += `\n- /test runfunction|runthese|clearall 等（テスト用）`;
-  if (hasStopwatchCmd) commandNotes += `\n- /stopwatch <name> start|stop|reset|query  ※リアルタイムストップウォッチ`;
+  if (hasTestCmd) commandNotes += `\n- /test run <tests> [回数] [失敗まで] [回転] [行数] | runthese | runclosest | runfailed | clearall | create <id> [w] [h d] | locate | export | stop | verify`;
+  if (hasStopwatchCmd) commandNotes += `\n- /stopwatch create <id> | query <id> [<scale>] | restart <id> | remove <id>  ※ゲームティック非依存のリアルタイム計測`;
+  if (hasDialogCmd) commandNotes += `\n- /dialog show <targets> <dialog> | clear <targets>  ※ダイアログUI表示
+  タイプ: notice(情報+OK), confirmation(Yes/No), multi_action(ボタンリスト), dialog_list(サブダイアログ)
+  定義: data/${namespace}/dialog/<id>.json  アクション: run_command, open_url, custom_click`;
 
   // データパック構造
   let structureNote = `data/
@@ -851,7 +863,10 @@ const AI_SYSTEM_PROMPT = (namespace, targetVersion) => {
   if (hasItemModifiers) structureNote += `\n    ${useSingular ? 'item_modifier' : 'item_modifiers'}/  → アイテム修飾子`;
   if (hasDamageType) structureNote += `\n    damage_type/  → ダメージタイプ`;
   if (hasEnchantmentRegistry) structureNote += `\n    enchantment/  → エンチャント定義`;
-  if (hasNautilus) structureNote += `\n    environment_attribute/  → 環境属性（1.21.11+）`;
+  if (hasDialogCmd) structureNote += `\n    dialog/  → ダイアログUI定義（1.21.10+）`;
+  if (hasEnvAttribute) structureNote += `\n    environment_attribute/  → 環境属性（1.21.11+）`;
+  if (hasTimeline) structureNote += `\n    timeline/  → タイムライン定義（1.21.11+）`;
+  if (hasTestCmd) structureNote += `\n    test_instance/  → テストインスタンス（1.21.5+）\n    test_environment/  → テスト環境（1.21.5+）`;
 
   return `あなたはMinecraft Java Edition データパック専門のAIアシスタントです。
 ユーザーの指示に従い、正確なデータパックファイルを生成してください。
@@ -862,7 +877,7 @@ const AI_SYSTEM_PROMPT = (namespace, targetVersion) => {
 
 【pack.mcmeta（必須）】
 \`\`\`json:pack.mcmeta
-${gte('1.21.9') ? `{"pack":{"pack_format":${packFormat},"description":"${namespace} datapack","supported_formats":{"min_inclusive":${packFormat},"max_inclusive":${packFormat}}}}` : `{"pack":{"pack_format":${packFormat},"description":"${namespace} datapack"}}`}
+${gte('1.21.9') ? `{"pack":{"pack_format":${packFormat},"description":"${namespace} datapack","supported_formats":{"min_inclusive":[${packFormat},${packFormatMinor}],"max_inclusive":[${packFormat},${packFormatMinor}]}}}` : `{"pack":{"pack_format":${packFormat},"description":"${namespace} datapack"}}`}
 \`\`\`
 
 【ファイル出力形式 ※必須】
@@ -910,12 +925,14 @@ execute store result/success entity <ターゲット> <path> <type> <scale> run 
 execute store result/success bossbar <id> <value|max> run <コマンド>
 execute store result/success storage <namespace> <path> <type> <scale> run <コマンド>
 ${hasPredicates ? 'execute if/unless predicate <名前空間:パス> run <コマンド>' : ''}
-${hasExecuteOn ? `execute on <relation> run <コマンド>  (relation: passengers, vehicle, owner, leasher, origin, attacker, target)
+${hasExecuteOn ? `execute on <relation> run <コマンド>  (relation: passengers, vehicle, owner, leasher, controller, origin, attacker, target)
 execute summon <entity_type> run <コマンド>` : ''}
 ${gte('1.19.4') ? 'execute if/unless biome <pos> <biome> run <コマンド>' : ''}
 ${gte('1.19.4') ? 'execute if/unless dimension <dimension> run <コマンド>' : ''}
 ${gte('1.20') ? 'execute if/unless loaded <pos> run <コマンド>' : ''}
 ${hasComponents ? 'execute if/unless items entity/block <source> <slots> <predicate> run <コマンド>' : ''}
+${hasExecuteFunction ? 'execute if/unless function <namespace:function> run <コマンド>  ※関数戻り値で条件分岐' : ''}
+${hasPositionedOver ? 'execute positioned over <heightmap> run <コマンド>  (heightmap: world_surface, motion_blocking, motion_blocking_no_leaves, ocean_floor)' : ''}
 
 【スコアボード操作】
 scoreboard objectives add <名前> <基準> [表示名]
@@ -960,11 +977,12 @@ execute store result storage ${namespace}:<key> <path> int 1 run <コマンド>
 【進捗（advancement）形式】
 - icon: ${hasComponents ? '{ "id": "minecraft:..." }' : '{ "item": "minecraft:..." }'}
 - items条件: ${hasComponents ? '{ "items": "minecraft:diamond" }' : '{ "items": [{ "items": ["minecraft:diamond"] }] }'}
-- 主要トリガー: inventory_changed, player_killed_entity, entity_killed_player, enter_block, placed_block, item_used_on_block, consume_item, changed_dimension, player_interacted_with_entity, tick, recipe_unlocked, summoned_entity, bred_animals, levitation, fall_from_height, using_item${gte('1.21') ? ', crafter_recipe_crafted, fall_after_explosion' : ''}
+- トリガー全種: inventory_changed, player_killed_entity, entity_killed_player, player_hurt_entity, entity_hurt_player, enter_block, placed_block, item_used_on_block, consume_item, changed_dimension, player_interacted_with_entity, tick, recipe_unlocked, recipe_crafted, summoned_entity, bred_animals, levitation, fall_from_height, using_item, enchanted_item, effects_changed, slept_in_bed, hero_of_the_village, villager_trade, brewed_potion, filled_bucket, fishing_rod_hooked, channeled_lightning, construct_beacon, cured_zombie_villager, tame_animal, shot_crossbow, killed_by_arrow, nether_travel, used_totem, used_ender_eye, item_durability_changed, location, started_riding, ride_entity_in_lava, slide_down_block, bee_nest_destroyed, target_hit, any_block_use, default_block_use, allay_drop_item_on_block, avoid_vibration, kill_mob_near_sculk_catalyst, thrown_item_picked_up_by_entity, thrown_item_picked_up_by_player, player_generates_container_loot, player_sheared_equipment, impossible${gte('1.21') ? ', crafter_recipe_crafted, fall_after_explosion' : ''}${hasNautilus ? ', spear_mobs' : ''}, voluntary_exile, lightning_strike
 - rewards: function, experience, loot, recipes
+- フレーム: task(通常), challenge(金枠), goal(丸枠)
 
-${hasPredicates ? `【predicate（条件）タイプ】
-entity_properties (エンティティ状態), block_state_property (ブロック状態), match_tool (ツール), damage_source_properties (ダメージ源), location_check (位置/バイオーム), weather_check (天候), time_check (時刻), random_chance (確率), all_of/any_of (論理), inverted (否定), value_check (数値), survives_explosion` : ''}
+${hasPredicates ? `【predicate（条件）全19タイプ】
+entity_properties (エンティティ状態・装備・スロット), entity_scores (スコアボード値), block_state_property (ブロック状態), match_tool (ツール判定), damage_source_properties (ダメージ源), location_check (位置/バイオーム/構造物), weather_check (天候: raining, thundering), time_check (時刻: value, period), random_chance (確率: chance), random_chance_with_enchanted_bonus (エンチャントレベル確率), all_of (全条件AND), any_of (いずれかOR), inverted (否定NOT), value_check (数値比較), survives_explosion (爆発生存確率), reference (外部predicate参照), table_bonus (エンチャントパワー確率テーブル), killed_by_player (プレイヤーキル判定), enchantment_active_check (エンチャント有効判定)` : ''}
 ${hasEnchantmentRegistry ? `
 【エンチャントレジストリ（1.21+）】
 data/${namespace}/enchantment/<名前>.json で独自エンチャント定義可能
@@ -981,7 +999,8 @@ ${hasItemModifiers ? `
 計算: apply_bonus (幸運ボーナス), looting_enchant (ドロップ増加), limit_count (個数制限), explosion_decay (爆発減衰)
 コピー: copy_name (名前コピー)
 制御: sequence (順次実行), reference (別ファイル参照), filtered (条件付き適用)
-${hasComponents ? 'set_item (ID変更), toggle_tooltips (ツールチップ切替), modify_contents (中身修飾), set_ominous_bottle_amplifier' : ''}` : ''}
+${hasComponents ? 'set_item (ID変更), toggle_tooltips (ツールチップ切替), modify_contents (中身修飾), set_ominous_bottle_amplifier, set_custom_model_data (モデルデータ), set_random_dyes (ランダム染料), set_random_potion (ランダムポーション)' : ''}
+${hasNautilus ? 'discard (アイテム破棄 ※1.21.11新規)' : ''}` : ''}
 
 【武器・ツール一覧】
 剣: wooden_sword, stone_sword, iron_sword, golden_sword, diamond_sword${gte('1.16') ? ', netherite_sword' : ''}
@@ -1023,7 +1042,7 @@ ${hasSpringToLife ? `動物バリアント: cold_pig, warm_pig, cold_cow, warm_c
 乗り物: minecart, boat${gte('1.19') ? ', chest_boat' : ''}
 
 【ポーション効果一覧】
-有益: speed, haste, strength, instant_health, jump_boost, regeneration, resistance, fire_resistance, water_breathing, invisibility, night_vision, absorption, saturation, luck, slow_falling, conduit_power, hero_of_the_village${gte('1.21') ? ', wind_charged, raid_omen, trial_omen' : ''}
+有益: speed, haste, strength, instant_health, jump_boost, regeneration, resistance, fire_resistance, water_breathing, invisibility, night_vision, absorption, saturation, luck, slow_falling, conduit_power, hero_of_the_village${gte('1.21') ? ', wind_charged, raid_omen, trial_omen' : ''}${hasNautilus ? ', breath_of_the_nautilus' : ''}
 有害: slowness, mining_fatigue, instant_damage, nausea, blindness, hunger, weakness, poison, wither, levitation${gte('1.19') ? ', darkness' : ''}${gte('1.21') ? ', infested, oozing, weaving' : ''}
 
 【主要アイテム/素材】
@@ -1039,7 +1058,35 @@ ${hasNautilus ? '1.21.11新規: spear(全素材), nautilus_armor, netherite_hors
 
 【ターゲットセレクタ】
 @a=全プレイヤー, @p=最寄りプレイヤー, @r=ランダムプレイヤー, @s=実行者, @e=全エンティティ${gte('1.20.2') ? ', @n=最寄りエンティティ' : ''}
-引数: type, name, tag, scores, nbt, distance, dx/dy/dz, x/y/z, sort, limit, level, gamemode, team, x_rotation, y_rotation${hasComponents ? ', predicate' : ''}
+引数: type(!で否定可), name, tag, scores={obj=min..max}, nbt={...}, distance=..10, dx/dy/dz(ボリューム判定), x/y/z(基準座標), sort(nearest|furthest|random|arbitrary), limit, level, gamemode(!creative等), team(!team等), x_rotation, y_rotation${hasComponents ? ', predicate=namespace:path' : ''}
+例: @a[tag=playing,scores={kills=5..},distance=..20,team=red]
+  @e[type=zombie,limit=1,sort=nearest,nbt={NoAI:1b}]
+  @a[x=-50,z=-50,dx=100,dz=100]  ※エリア内プレイヤー（矩形判定）
+${hasDialogCmd ? `
+【ダイアログ定義（1.21.10+）】
+data/${namespace}/dialog/<id>.json に定義。/dialog show @a ${namespace}:<id> で表示。
+■ notice（情報表示）:
+  {"type":"minecraft:notice","title":"タイトル","body":{"type":"minecraft:plain_text","text":"本文"},"can_close_with_escape":true,"button":{"label":"OK","action":{"type":"run_command","command":"say OK!"}}}
+■ confirmation（Yes/No選択）:
+  {"type":"minecraft:confirmation","title":"確認","body":{"type":"minecraft:plain_text","text":"実行しますか？"},"yes":{"label":"はい","action":{"type":"run_command","command":"function ${namespace}:yes"}},"no":{"label":"いいえ","action":{"type":"run_command","command":"dialog clear @s"}}}
+■ multi_action（複数ボタン）:
+  {"type":"minecraft:multi_action","title":"選択","body":{"type":"minecraft:plain_text","text":"選んでね"},"buttons":[{"label":"選択1","action":{"type":"run_command","command":"function ${namespace}:choice1"}},{"label":"選択2","action":{"type":"run_command","command":"function ${namespace}:choice2"}}],"exit_action":{"type":"run_command","command":"say キャンセル"}}
+■ dialog_list（サブダイアログ）:
+  {"type":"minecraft:dialog_list","title":"メニュー","buttons":[{"label":"設定","dialog":"${namespace}:settings"},{"label":"ヘルプ","dialog":"${namespace}:help"}]}` : ''}
+${hasTimeline ? `
+【タイムライン定義（1.21.11+）】
+data/${namespace}/timeline/<id>.json で絶対ゲーム時間に基づく環境変化を定義。
+  {"period_ticks":24000,"tracks":{"minecraft:sky_color":{"ease":"linear","keyframes":[{"ticks":0,"value":{"type":"override","value":"#87CEEB"}},{"ticks":12000,"value":{"type":"override","value":"#FF4500"}}]}}}
+イージング: constant, linear, ease_in_quad/cubic/quart/quint/sine/expo/circ/back/elastic/bounce, ease_out_*, ease_in_out_*, cubic_bezier
+タグ: #universal, #in_overworld, #in_nether, #in_end` : ''}
+${hasEnvAttribute ? `
+【環境属性（Environment Attributes, 1.21.11+）】
+data/${namespace}/environment_attribute/<id>.json でバイオーム/ディメンションのビジュアルやゲームプレイを制御。
+■ ビジュアル: fog_color, fog_start/end_distance, water_fog_color, sky_color, sky_light_color, cloud_color, cloud_height, sun_angle, moon_angle, star_brightness, ambient_particles, sunrise_sunset_color
+■ オーディオ: background_music (default/underwater/creative), music_volume, ambient_sounds, firefly_bush_sounds
+■ ゲームプレイ: water_evaporates, bed_rule, respawn_anchor_works, fast_lava, monsters_burn, snow_golem_melts, sky_light_level, creaking_active, surface_slime_spawn_chance
+■ 優先度: Dimensions > Biomes > Timelines > Weather
+■ モディファイア: override, add, subtract, multiply, minimum, maximum, alpha_blend, and, or, xor` : ''}
 
 【ミニゲーム実装パターン（実際のデータパックから抽出）】
 ■ 基本構成:
@@ -1104,6 +1151,52 @@ ${hasNautilus ? '1.21.11新規: spear(全素材), nautilus_armor, netherite_hors
   {"criteria":{"custom_trigger":{"trigger":"minecraft:player_interacted_with_entity","conditions":{"entity":[{"condition":"minecraft:entity_properties","predicate":{"type":"minecraft:villager","nbt":"{Tags:[\\"shop\\"]}"}}]}}},"rewards":{"function":"${namespace}:on_shop"}}
 ■ ルートテーブル（条件付きドロップ）:
   {"pools":[{"rolls":1,"bonus_rolls":0,"entries":[{"type":"minecraft:item","name":"minecraft:diamond","weight":1,"functions":[{"function":"minecraft:set_count","count":{"min":1,"max":3,"type":"minecraft:uniform"}}]}],"conditions":[{"condition":"minecraft:killed_by_player"}]}]}
+  エントリタイプ: item, loot_table, dynamic, empty, tag, group, alternatives, sequence
+■ advancement→function→revokeループ（イベント検出の定番パターン）:
+  advancement JSON: {"criteria":{"trigger_name":{"trigger":"minecraft:using_item","conditions":{"item":{"items":"minecraft:shield","predicates":{"minecraft:custom_data":{"action":true}}}}}},"rewards":{"function":"${namespace}:on_trigger"}}
+  function内で即revoke: advancement revoke @s only ${namespace}:trigger_name
+  ※using_item, placed_block, item_used_on_block等のトリガーで繰返しイベント検出可能
+■ マクロ+storageパイプライン（データパック解析から抽出）:
+  # Step1: エンティティ/ブロックデータをstorageに転写
+  data modify storage ${namespace}:temp id set from entity @s SelectedItem.id
+  data modify storage ${namespace}:temp count set from entity @s Inventory[{Slot:-106b}].count
+  # Step2: マクロで動的コマンド生成
+  $summon item ~ ~ ~ {Item:{count:$(count),id:"$(id)"}}
+  $execute if block ~$(x) ~$(y) ~$(z) minecraft:white_wool run scoreboard players add @s check 1
+■ item_display/text_display活用:
+  # 3Dオブジェクト配置(transformation付き)
+  summon item_display ~ ~ ~ {item:{id:"minecraft:command_block",count:1,components:{"minecraft:item_model":custom_model}},transformation:{left_rotation:{angle:0,axis:[0,0,0]},translation:[0.0f,0.5f,0.0f],right_rotation:{angle:0,axis:[0,0,0]},scale:[1.0f,1.0f,1.0f]},brightness:{sky:15,block:15},Tags:["display"]}
+  # text_display動的更新(マクロ)
+  $data modify entity @s text set value ["",{"text":"経過: ","color":"yellow"},{"text":"$(time)","color":"aqua"},{"text":"秒"}]
+■ 透明エンティティ乗り物:
+  summon pig ~ ~ ~ {Saddle:1b,NoAI:1b,NoGravity:1b,active_effects:[{id:"minecraft:invisibility",duration:-1,show_particles:0b},{id:"minecraft:resistance",duration:-1,amplifier:5,show_particles:0b}],Silent:1b,PersistenceRequired:1b,Tags:["vehicle"]}
+  execute as @e[tag=vehicle] at @s rotated 180 -8.2 run tp @s ^ ^ ^0.6  ※斜め移動
+  execute as @e[tag=vehicle] on passengers run ride @s dismount  ※降車
+■ 精密ボリューム判定:
+  execute at @e[tag=marker] align xyz positioned ~-0.375 ~ ~-0.375 if entity @s[dx=0] positioned ~0.75 ~ ~0.75 if entity @s[dx=0] run ...
+  ※2段positioned+dx=0で0.75ブロック幅の精密検出
+■ scoreboard全演算子活用（タイマー→分:秒変換）:
+  scoreboard players operation #sec timer = #ticks timer
+  scoreboard players operation #sec timer /= 20 const  ※tick→秒
+  scoreboard players operation #min timer = #sec timer
+  scoreboard players operation #min timer /= 60 const  ※秒→分
+  scoreboard players operation #sec_rem timer = #sec timer
+  scoreboard players operation #sec_rem timer %= 60 const  ※秒の余り
+■ ディメンション移動検知+制限:
+  advancement: {"criteria":{"nether":{"trigger":"minecraft:changed_dimension","conditions":{"to":"minecraft:the_nether"}}},"rewards":{"function":"${namespace}:deny_nether"}}
+  function: tellraw @s {"text":"ネザーは禁止です！","color":"red"} → kill @s → advancement revoke
+■ カスタムレシピJSON例（1.21.2+簡略形式）:
+  shaped: {"type":"minecraft:crafting_shaped","pattern":["DDD","DSD","DDD"],"key":{"D":"minecraft:diamond_block","S":"minecraft:nether_star"},"result":{"id":"minecraft:diamond_sword","count":1,"components":{"minecraft:enchantments":{"levels":{"minecraft:sharpness":10}},"minecraft:custom_name":"{\\"text\\":\\"伝説の剣\\",\\"color\\":\\"gold\\",\\"bold\\":true}","minecraft:unbreakable":true}}}
+  shapeless: {"type":"minecraft:crafting_shapeless","ingredients":["minecraft:diamond","minecraft:emerald"],"result":{"id":"minecraft:diamond","count":2}}
+  smithing: {"type":"minecraft:smithing_transform","template":"minecraft:netherite_upgrade_smithing_template","base":"minecraft:diamond_sword","addition":"minecraft:netherite_ingot","result":{"id":"minecraft:netherite_sword"}}
+${hasEnchantmentRegistry ? `■ カスタムエンチャント定義例（1.21+）:
+  data/${namespace}/enchantment/lifesteal.json:
+  {"description":{"translate":"enchantment.${namespace}.lifesteal"},"supported_items":"#minecraft:enchantable/sword","weight":5,"max_level":3,"min_cost":{"base":10,"per_level_above_first":10},"max_cost":{"base":50,"per_level_above_first":10},"anvil_cost":4,"slots":["mainhand"],"effects":{"minecraft:post_attack":[{"effect":{"type":"minecraft:run_function","function":"${namespace}:enchant/lifesteal"}}]}}` : ''}
+${hasDialogCmd ? `■ ダイアログ活用パターン（1.21.10+）:
+  # ショップUI
+  /dialog show @s ${namespace}:shop
+  # dialog/shop.json: multi_action → 各ボタンがfunction実行 → アイテム付与
+  # NPCとの対話 → advancement trigger → function → /dialog show` : ''}
 
 【バージョン固有の重要ルール】
 - 対象は Minecraft ${targetVersion} のみ（pack_format: ${packFormat}）
@@ -4022,9 +4115,27 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
 - delete_files: ファイルを削除
 - validate_mcfunction: mcfunction構文を検証
 
-必ずツールを使ってファイルを作成してください。コードブロック形式での出力は不要です。
-まずlist_project_filesで現在の状態を確認し、必要に応じてread_filesで既存ファイルを読み、create_filesで新しいファイルを作成してください。
-作成後はvalidate_mcfunctionで検証し、問題があれば修正してください。`;
+【ワークフロー】
+1. list_project_filesで現在のファイル一覧を確認
+2. read_filesで既存のload/tick/main等の内容を読む
+3. 設計: 必要なファイル群を計画（pack.mcmeta, load.json, tick.json, 各function, recipe, advancement等）
+4. create_filesで全ファイルを一括作成（パスとコンテンツの配列）
+5. validate_mcfunctionで全mcfunctionを検証、エラーがあれば修正
+
+【ミニゲーム作成時の定番構成】
+- reload.mcfunction: scoreboard objectives add, team add, bossbar add等の初期化
+- main.mcfunction: 毎tick実行のゲームループ（状態分岐、タイマー減算、判定）
+- start.mcfunction: ゲーム開始（gamemode変更、clear、effect clear、tp、アイテム配布）
+- end.mcfunction: ゲーム終了（勝敗判定、title表示、リセット）
+- ゲーム状態管理: scoreboard players set #state game 0(待機)/1(プレイ中)/2(終了)
+- タイマー: bossbar + execute store result bossbar value run scoreboard players get
+- チーム: team add/join/modify color/friendlyFire
+- リスポーン: deathCount + function on_death + spawnpoint
+- 演出: title, playsound, particle
+- イベント検出: advancement trigger → rewards function → advancement revoke（ループ）
+- マクロパイプライン: execute store result storage → function ... with storage
+
+必ずツールを使ってファイルを作成してください。コードブロック形式での出力は不要です。`;
 
       const apiMessages = newMessages.map((m, i) => {
         if (m.role === 'user' && i === newMessages.length - 1) {
