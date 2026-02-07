@@ -102,6 +102,13 @@ const TAG_SUBCATEGORIES = [
 // TEMPLATES
 // ════════════════════════════════════════════════════════════
 
+// バージョン対応ヘルパー
+function tplVer(ver, target) {
+  if (!target) return false;
+  const p = (v) => { const s = v.split('.').map(Number); return s[0] * 10000 + (s[1] || 0) * 100 + (s[2] || 0); };
+  return p(target) >= p(ver);
+}
+
 const TEMPLATES = {
   function_basic: {
     category: 'function', label: '基本関数', ext: '.mcfunction',
@@ -117,49 +124,68 @@ const TEMPLATES = {
   },
   recipe_shaped: {
     category: 'recipe', label: '固定レシピ（shaped）', ext: '.json',
-    content: () => JSON.stringify({
-      type: "minecraft:crafting_shaped",
-      pattern: ["AAA", "ABA", "AAA"],
-      key: { A: "minecraft:stone", B: "minecraft:diamond" },
-      result: { id: "minecraft:diamond_block", count: 1 }
-    }, null, 2),
+    content: (name, ns, ver) => {
+      const use1205 = tplVer('1.20.5', ver);
+      const use1212 = tplVer('1.21.2', ver);
+      const obj = {
+        type: "minecraft:crafting_shaped",
+        pattern: ["AAA", "ABA", "AAA"],
+        key: use1212 ? { A: "minecraft:stone", B: "minecraft:diamond" } : { A: { item: "minecraft:stone" }, B: { item: "minecraft:diamond" } },
+        result: use1205 ? { id: "minecraft:diamond_block", count: 1 } : { item: "minecraft:diamond_block", count: 1 }
+      };
+      return JSON.stringify(obj, null, 2);
+    },
   },
   recipe_shapeless: {
     category: 'recipe', label: '不定形レシピ（shapeless）', ext: '.json',
-    content: () => JSON.stringify({
-      type: "minecraft:crafting_shapeless",
-      ingredients: ["minecraft:diamond", "minecraft:stick"],
-      result: { id: "minecraft:diamond_sword", count: 1 }
-    }, null, 2),
+    content: (name, ns, ver) => {
+      const use1205 = tplVer('1.20.5', ver);
+      const use1212 = tplVer('1.21.2', ver);
+      const obj = {
+        type: "minecraft:crafting_shapeless",
+        ingredients: use1212 ? ["minecraft:diamond", "minecraft:stick"] : [{ item: "minecraft:diamond" }, { item: "minecraft:stick" }],
+        result: use1205 ? { id: "minecraft:diamond_sword", count: 1 } : { item: "minecraft:diamond_sword", count: 1 }
+      };
+      return JSON.stringify(obj, null, 2);
+    },
   },
   recipe_smelting: {
     category: 'recipe', label: '精錬レシピ', ext: '.json',
-    content: () => JSON.stringify({
-      type: "minecraft:smelting",
-      ingredient: "minecraft:iron_ore",
-      result: { id: "minecraft:iron_ingot" },
-      experience: 0.7,
-      cookingtime: 200
-    }, null, 2),
+    content: (name, ns, ver) => {
+      const use1205 = tplVer('1.20.5', ver);
+      const use1212 = tplVer('1.21.2', ver);
+      const obj = {
+        type: "minecraft:smelting",
+        ingredient: use1212 ? "minecraft:iron_ore" : { item: "minecraft:iron_ore" },
+        result: use1205 ? { id: "minecraft:iron_ingot" } : "minecraft:iron_ingot",
+        experience: 0.7,
+        cookingtime: 200
+      };
+      return JSON.stringify(obj, null, 2);
+    },
   },
   advancement: {
     category: 'advancement', label: '進捗', ext: '.json',
-    content: () => JSON.stringify({
-      display: {
-        title: "進捗タイトル",
-        description: "進捗の説明",
-        icon: { id: "minecraft:diamond" },
-        frame: "task",
-        show_toast: true,
-        announce_to_chat: true
-      },
-      criteria: {
-        requirement: {
-          trigger: "minecraft:inventory_changed",
-          conditions: { items: [{ items: "minecraft:diamond" }] }
+    content: (name, ns, ver) => {
+      const use1205 = tplVer('1.20.5', ver);
+      const obj = {
+        display: {
+          title: "進捗タイトル",
+          description: "進捗の説明",
+          icon: use1205 ? { id: "minecraft:diamond" } : { item: "minecraft:diamond" },
+          frame: "task",
+          show_toast: true,
+          announce_to_chat: true
+        },
+        criteria: {
+          requirement: {
+            trigger: "minecraft:inventory_changed",
+            conditions: { items: use1205 ? [{ items: "minecraft:diamond" }] : [{ items: [{ items: ["minecraft:diamond"] }] }] }
+          }
         }
-      }
-    }, null, 2),
+      };
+      return JSON.stringify(obj, null, 2);
+    },
   },
   loot_table: {
     category: 'loot_table', label: 'ルートテーブル', ext: '.json',
@@ -592,6 +618,29 @@ const MC_AUTO = {
   ],
   schedule: [{ l: 'function', d: '関数遅延実行' }, { l: 'clear', d: 'スケジュール解除' }],
   item: [{ l: 'modify', d: 'アイテム変更' }, { l: 'replace', d: 'アイテム置換' }],
+  rotate: [
+    { l: '~', d: '相対角度 (yaw pitch)' }, { l: '@s', d: '実行者を回転' },
+    { l: '@e', d: 'エンティティを回転' }, { l: '@p', d: '最寄りプレイヤーを回転' },
+  ],
+  test: [
+    { l: 'runfunction', d: '関数テスト実行', v: '1.21.5' }, { l: 'runthese', d: '全テスト実行', v: '1.21.5' },
+    { l: 'clearall', d: 'テスト結果クリア', v: '1.21.5' }, { l: 'resetall', d: 'テスト全リセット', v: '1.21.5' },
+  ],
+  stopwatch: [
+    { l: 'start', d: '計測開始', v: '1.21.11' }, { l: 'stop', d: '計測停止', v: '1.21.11' },
+    { l: 'reset', d: 'リセット', v: '1.21.11' }, { l: 'query', d: '値取得', v: '1.21.11' },
+  ],
+  dialog: [
+    { l: 'show', d: 'ダイアログ表示', v: '1.21.6' }, { l: 'clear', d: 'ダイアログ消去', v: '1.21.6' },
+  ],
+  place: [
+    { l: 'feature', d: '地物配置', v: '1.19' }, { l: 'template', d: 'テンプレート配置', v: '1.19' },
+    { l: 'jigsaw', d: 'ジグソー配置', v: '1.19' },
+  ],
+  damage: [
+    { l: '@s', d: '実行者にダメージ' }, { l: '@e', d: 'エンティティにダメージ' },
+    { l: '@p', d: '最寄りプレイヤーにダメージ' }, { l: '@a', d: '全プレイヤーにダメージ' },
+  ],
   _selectors: [
     { l: '@a', d: '全プレイヤー' }, { l: '@p', d: '最寄りプレイヤー' },
     { l: '@r', d: 'ランダムプレイヤー' }, { l: '@s', d: '実行者' },
@@ -1036,6 +1085,25 @@ ${hasNautilus ? '1.21.11新規: spear(全素材), nautilus_armor, netherite_hors
   execute if block ~ ~ ~ #minecraft:impermeable run return 0
   execute as @e[distance=..0.5,limit=1,type=!player] run function ${namespace}:raycast/hit
   execute positioned ^ ^ ^0.1 run function ${namespace}:raycast/loop
+■ アイテム配布（全プレイヤー）:
+  clear @a[tag=playing]
+  effect clear @a[tag=playing]
+  give @a[tag=playing] minecraft:iron_sword[enchantments={levels:{"minecraft:sharpness":2}}] 1
+  give @a[tag=playing] minecraft:bow 1
+  give @a[tag=playing] minecraft:arrow 64
+  give @a[tag=playing] minecraft:iron_chestplate 1
+■ エリア境界（ワールドボーダー的）:
+  execute as @a[tag=playing] at @s unless entity @s[x=-50,z=-50,dx=100,dz=100] run tp @s 0 64 0
+  execute as @a[tag=playing] at @s unless entity @s[y=0,dy=256] run kill @s
+■ スコア表示マクロ（sidebar2.mcfunction）:
+  $scoreboard players display name score_line minecrant [{"text":"スコア: ","color":"aqua"},{"text":"$(val)","color":"yellow"}]
+  ※with storageで呼び出し: function ${namespace}:sidebar2 with storage ${namespace}:display
+■ 条件JSON（predicate）例:
+  {"condition":"minecraft:any_of","terms":[{"condition":"minecraft:entity_properties","entity":"this","predicate":{"equipment":{"mainhand":{"items":"minecraft:diamond_sword"}}}},{"condition":"minecraft:entity_properties","entity":"this","predicate":{"equipment":{"mainhand":{"items":"minecraft:iron_sword"}}}}]}
+■ 進捗JSON（advancement）トリガー例:
+  {"criteria":{"custom_trigger":{"trigger":"minecraft:player_interacted_with_entity","conditions":{"entity":[{"condition":"minecraft:entity_properties","predicate":{"type":"minecraft:villager","nbt":"{Tags:[\\"shop\\"]}"}}]}}},"rewards":{"function":"${namespace}:on_shop"}}
+■ ルートテーブル（条件付きドロップ）:
+  {"pools":[{"rolls":1,"bonus_rolls":0,"entries":[{"type":"minecraft:item","name":"minecraft:diamond","weight":1,"functions":[{"function":"minecraft:set_count","count":{"min":1,"max":3,"type":"minecraft:uniform"}}]}],"conditions":[{"condition":"minecraft:killed_by_player"}]}]}
 
 【バージョン固有の重要ルール】
 - 対象は Minecraft ${targetVersion} のみ（pack_format: ${packFormat}）
@@ -1387,7 +1455,7 @@ function createInitialFiles(namespace, options = {}) {
     files.push({ id: recipeId, name: 'recipe', type: 'folder', content: null, parentId: nsId });
     files.push({
       id: id(), name: 'example_shaped.json', type: 'json',
-      content: TEMPLATES.recipe_shaped.content(),
+      content: TEMPLATES.recipe_shaped.content('example_shaped', namespace, options.targetVersion),
       parentId: recipeId
     });
   }
@@ -1397,7 +1465,7 @@ function createInitialFiles(namespace, options = {}) {
     files.push({ id: advId, name: 'advancement', type: 'folder', content: null, parentId: nsId });
     files.push({
       id: id(), name: 'example.json', type: 'json',
-      content: TEMPLATES.advancement.content(),
+      content: TEMPLATES.advancement.content('example', namespace, options.targetVersion),
       parentId: advId
     });
   }
@@ -1601,6 +1669,158 @@ function callAIStream(provider, apiKey, modelId, messages, systemPrompt, onChunk
   } else {
     callGeminiStream(apiKey, modelId, messages, systemPrompt, onChunk, onDone, onError, signal, thinkingLevel);
   }
+}
+
+// ════════════════════════════════════════════════════════════
+// AGENT TOOLS & AGENTIC LOOP
+// ════════════════════════════════════════════════════════════
+
+const AGENT_TOOL_DECLARATIONS = [
+  {
+    name: 'create_files',
+    description: 'データパックにファイルを作成・更新する。複数ファイルを一度に作成可能。',
+    parameters: {
+      type: 'object',
+      properties: {
+        files: {
+          type: 'array',
+          description: '作成するファイルの配列',
+          items: {
+            type: 'object',
+            properties: {
+              path: { type: 'string', description: 'ファイルパス (例: data/ns/function/load.mcfunction)' },
+              content: { type: 'string', description: 'ファイル内容' },
+            },
+            required: ['path', 'content'],
+          },
+        },
+      },
+      required: ['files'],
+    },
+  },
+  {
+    name: 'read_files',
+    description: 'プロジェクト内の既存ファイルの内容を読み取る。',
+    parameters: {
+      type: 'object',
+      properties: {
+        paths: { type: 'array', items: { type: 'string' }, description: '読み取るファイルパスの配列' },
+      },
+      required: ['paths'],
+    },
+  },
+  {
+    name: 'list_project_files',
+    description: 'プロジェクト内の全ファイル一覧をパス付きで取得する。',
+    parameters: { type: 'object', properties: {} },
+  },
+  {
+    name: 'delete_files',
+    description: 'プロジェクトからファイルを削除する。',
+    parameters: {
+      type: 'object',
+      properties: {
+        paths: { type: 'array', items: { type: 'string' }, description: '削除するファイルパスの配列' },
+      },
+      required: ['paths'],
+    },
+  },
+  {
+    name: 'validate_mcfunction',
+    description: 'mcfunctionファイルの構文を検証する。',
+    parameters: {
+      type: 'object',
+      properties: {
+        content: { type: 'string', description: 'mcfunction内容' },
+        version: { type: 'string', description: '対象Minecraftバージョン' },
+      },
+      required: ['content'],
+    },
+  },
+];
+
+function callGeminiAgent(apiKey, modelId, conversationHistory, systemPrompt, tools, onStep, onChunk, onDone, onError, signal, thinkingLevel) {
+  const maxIterations = 8;
+  let iteration = 0;
+  let allContents = conversationHistory.map(m => ({
+    role: m.role === 'user' ? 'user' : 'model',
+    parts: m.functionCall ? [{ functionCall: m.functionCall }]
+      : m.functionResponse ? [{ functionResponse: m.functionResponse }]
+      : [{ text: m.content }],
+  }));
+
+  function iterate() {
+    if (iteration >= maxIterations) {
+      onDone({ type: 'max_iterations' });
+      return;
+    }
+    iteration++;
+    const genConfig = { temperature: 0.7, maxOutputTokens: 16384 };
+    if (thinkingLevel) genConfig.thinkingConfig = { thinkingLevel };
+
+    const body = {
+      contents: allContents,
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      generationConfig: genConfig,
+      tools: [{ function_declarations: tools }],
+    };
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
+
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal,
+    })
+      .then(r => {
+        if (!r.ok) {
+          if (r.status === 400 || r.status === 401 || r.status === 403) throw new Error('APIキーが無効です。');
+          if (r.status === 429) throw new Error('レート制限に達しました。');
+          throw new Error(`APIエラー (${r.status})`);
+        }
+        return r.json();
+      })
+      .then(data => {
+        const candidate = data?.candidates?.[0];
+        if (!candidate?.content?.parts) {
+          onDone({ type: 'empty' });
+          return;
+        }
+
+        const parts = candidate.content.parts;
+        const textParts = parts.filter(p => p.text && !p.thought).map(p => p.text);
+        const functionCalls = parts.filter(p => p.functionCall);
+
+        if (textParts.length > 0) {
+          const text = textParts.join('');
+          onChunk(text);
+        }
+
+        if (functionCalls.length > 0) {
+          allContents.push({ role: 'model', parts: functionCalls.map(fc => ({ functionCall: fc.functionCall })) });
+
+          const results = [];
+          for (const fc of functionCalls) {
+            const result = onStep(fc.functionCall.name, fc.functionCall.args);
+            results.push({
+              functionResponse: { name: fc.functionCall.name, response: { result: result } },
+            });
+          }
+
+          allContents.push({ role: 'user', parts: results });
+          iterate();
+        } else {
+          onDone({ type: 'complete', text: textParts.join('') });
+        }
+      })
+      .catch(err => {
+        if (err.name === 'AbortError') { onDone({ type: 'aborted' }); return; }
+        onError(err.message || 'エージェントエラー');
+      });
+  }
+
+  iterate();
 }
 
 function validateProject(project, files) {
@@ -2509,7 +2729,7 @@ function TemplateSelector({ namespace, parentId, onSelect, onClose, targetVersio
   const handleSelect = () => {
     if (!selectedTpl || !fileName) return;
     const tpl = TEMPLATES[selectedTpl];
-    const content = tpl.content(fileName.replace(tpl.ext, ''), namespace);
+    const content = tpl.content(fileName.replace(tpl.ext, ''), namespace, targetVersion);
     onSelect({
       category: tpl.category,
       fileName: fileName.endsWith(tpl.ext) ? fileName : fileName + tpl.ext,
@@ -3695,19 +3915,81 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
   const [streaming, setStreaming] = useState(false);
   const [streamingText, setStreamingText] = useState('');
   const [error, setError] = useState('');
+  const [agentMode, setAgentMode] = useState(true);
+  const [agentSteps, setAgentSteps] = useState([]);
   const abortRef = useRef(null);
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
+  const filesRef = useRef(files);
+  filesRef.current = files;
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, streamingText]);
+  }, [messages, streamingText, agentSteps]);
+
+  // エージェントツール実行
+  const executeAgentTool = useCallback((toolName, args) => {
+    const currentFiles = filesRef.current;
+    switch (toolName) {
+      case 'create_files': {
+        const pathContents = (args.files || []).map(f => ({ path: f.path, content: f.content }));
+        const newFiles = addFilesFromPaths(currentFiles, pathContents);
+        setFiles(newFiles);
+        filesRef.current = newFiles;
+        const allFolderIds = new Set();
+        newFiles.filter(f => f.type === 'folder').forEach(f => allFolderIds.add(f.id));
+        setExpanded(allFolderIds);
+        setAgentSteps(prev => [...prev, { tool: toolName, status: 'done', detail: `${pathContents.length}ファイル作成` }]);
+        return { success: true, created: pathContents.map(f => f.path) };
+      }
+      case 'read_files': {
+        const results = {};
+        for (const path of (args.paths || [])) {
+          const file = currentFiles.find(f => f.type !== 'folder' && getFullPath(currentFiles, f.id) === path);
+          results[path] = file ? file.content : '[ファイルが見つかりません]';
+        }
+        setAgentSteps(prev => [...prev, { tool: toolName, status: 'done', detail: `${Object.keys(results).length}ファイル読取` }]);
+        return results;
+      }
+      case 'list_project_files': {
+        const paths = currentFiles.filter(f => f.type !== 'folder').map(f => getFullPath(currentFiles, f.id));
+        setAgentSteps(prev => [...prev, { tool: toolName, status: 'done', detail: `${paths.length}ファイル` }]);
+        return { files: paths };
+      }
+      case 'delete_files': {
+        let newFiles = [...currentFiles];
+        const deleted = [];
+        for (const path of (args.paths || [])) {
+          const file = newFiles.find(f => f.type !== 'folder' && getFullPath(newFiles, f.id) === path);
+          if (file) { newFiles = newFiles.filter(f => f.id !== file.id); deleted.push(path); }
+        }
+        setFiles(newFiles);
+        filesRef.current = newFiles;
+        setAgentSteps(prev => [...prev, { tool: toolName, status: 'done', detail: `${deleted.length}ファイル削除` }]);
+        return { success: true, deleted };
+      }
+      case 'validate_mcfunction': {
+        const lines = (args.content || '').split('\n');
+        const ver = args.version || project.targetVersion;
+        const errors = [];
+        lines.forEach((line, i) => {
+          const result = validateMcfunctionLine(line, i + 1, ver);
+          if (result) errors.push(result);
+        });
+        setAgentSteps(prev => [...prev, { tool: toolName, status: errors.length ? 'warn' : 'done', detail: errors.length ? `${errors.length}件の問題` : '問題なし' }]);
+        return { valid: errors.length === 0, errors };
+      }
+      default:
+        return { error: `Unknown tool: ${toolName}` };
+    }
+  }, [project.targetVersion, setFiles, setExpanded]);
 
   const handleSend = () => {
     const text = input.trim();
     if (!text || !apiKey || streaming || currentModel.comingSoon) return;
 
     setError('');
+    setAgentSteps([]);
     const fileList = files
       .filter(f => f.type !== 'folder')
       .map(f => getFullPath(files, f.id))
@@ -3724,18 +4006,77 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
     setStreaming(true);
     setStreamingText('');
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    const systemPrompt = AI_SYSTEM_PROMPT(project.namespace, project.targetVersion);
+    const modelLabel = currentModel.label;
+
+    // エージェントモード: Gemini function calling
+    if (agentMode && currentModel.provider === 'gemini') {
+      const agentSystemPrompt = systemPrompt + `\n\n【エージェントモード】
+あなたはデータパックビルダーのAIエージェントです。以下のツールを使ってプロジェクトを直接操作できます:
+- create_files: ファイルを作成・更新（自動でプロジェクトに適用される）
+- read_files: 既存ファイルの内容を読み取る
+- list_project_files: プロジェクト内の全ファイル一覧を取得
+- delete_files: ファイルを削除
+- validate_mcfunction: mcfunction構文を検証
+
+必ずツールを使ってファイルを作成してください。コードブロック形式での出力は不要です。
+まずlist_project_filesで現在の状態を確認し、必要に応じてread_filesで既存ファイルを読み、create_filesで新しいファイルを作成してください。
+作成後はvalidate_mcfunctionで検証し、問題があれば修正してください。`;
+
+      const apiMessages = newMessages.map((m, i) => {
+        if (m.role === 'user' && i === newMessages.length - 1) {
+          return { ...m, content: m.content + contextNote };
+        }
+        return m;
+      });
+
+      setAgentSteps([{ tool: 'agent', status: 'running', detail: 'エージェント起動...' }]);
+
+      callGeminiAgent(
+        apiKey,
+        currentModel.apiModel,
+        apiMessages,
+        agentSystemPrompt,
+        AGENT_TOOL_DECLARATIONS,
+        (toolName, toolArgs) => {
+          setAgentSteps(prev => [...prev, { tool: toolName, status: 'running', detail: '実行中...' }]);
+          return executeAgentTool(toolName, toolArgs);
+        },
+        (text) => setStreamingText(prev => prev + text),
+        (result) => {
+          const finalText = result.text || streamingText || 'エージェントタスク完了。';
+          setMessages(prev => [...prev, { role: 'assistant', content: finalText, modelLabel, agentSteps: agentSteps }]);
+          setStreamingText('');
+          setStreaming(false);
+          setAgentSteps(prev => {
+            const updated = prev.filter(s => s.status !== 'running');
+            return [...updated, { tool: 'agent', status: 'done', detail: '完了' }];
+          });
+          abortRef.current = null;
+        },
+        (errMsg) => {
+          setError(errMsg);
+          setStreaming(false);
+          setStreamingText('');
+          setAgentSteps(prev => [...prev, { tool: 'agent', status: 'error', detail: errMsg }]);
+          abortRef.current = null;
+        },
+        controller.signal,
+        currentModel.thinking,
+      );
+      return;
+    }
+
+    // 通常チャットモード
     const apiMessages = newMessages.map((m, i) => {
       if (m.role === 'user' && i === newMessages.length - 1) {
         return { ...m, content: m.content + contextNote };
       }
       return m;
     });
-
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    const systemPrompt = AI_SYSTEM_PROMPT(project.namespace, project.targetVersion);
-    const modelLabel = currentModel.label;
 
     callAIStream(
       currentModel.provider,
@@ -3783,6 +4124,7 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
     setMessages([]);
     setStreamingText('');
     setError('');
+    setAgentSteps([]);
   };
 
   const samplePrompts = [
@@ -3801,6 +4143,21 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
   return (
     <div className="flex-1 flex flex-col min-h-0">
       <AISettingsInline selectedModel={selectedModel} setSelectedModel={setSelectedModel} apiKey={apiKey} setApiKey={setApiKey} />
+      <div className="flex items-center gap-2 px-3 py-1.5 border-b border-mc-border bg-mc-titlebar">
+        <button
+          onClick={() => setAgentMode(false)}
+          className={`px-2.5 py-1 text-[10px] rounded-md transition-colors ${!agentMode ? 'bg-mc-info text-white' : 'text-mc-muted hover:text-mc-text hover:bg-mc-active'}`}
+        >
+          <MessageSquare size={10} className="inline mr-1" />Chat
+        </button>
+        <button
+          onClick={() => setAgentMode(true)}
+          className={`px-2.5 py-1 text-[10px] rounded-md transition-colors ${agentMode ? 'bg-mc-success/80 text-white' : 'text-mc-muted hover:text-mc-text hover:bg-mc-active'}`}
+        >
+          <Zap size={10} className="inline mr-1" />Agent
+        </button>
+        {agentMode && <span className="text-[9px] text-mc-success/70 ml-1">自動ファイル操作・検証・修正</span>}
+      </div>
 
       <div className="flex-1 overflow-y-auto p-3 space-y-1">
         {messages.length === 0 && !streaming && (
@@ -3866,7 +4223,28 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
           />
         )}
 
-        {streaming && !streamingText && (
+        {agentSteps.length > 0 && streaming && (
+          <div className="mb-3 rounded-lg border border-mc-border bg-mc-sidebar/50 overflow-hidden">
+            <div className="px-3 py-1.5 bg-mc-titlebar text-[10px] text-mc-muted font-medium flex items-center gap-1.5">
+              <Zap size={10} className="text-mc-success" />
+              エージェント実行ログ
+            </div>
+            <div className="px-3 py-2 space-y-1">
+              {agentSteps.map((step, i) => (
+                <div key={i} className="flex items-center gap-2 text-[11px]">
+                  {step.status === 'running' ? <Loader size={10} className="animate-spin text-mc-info" /> :
+                   step.status === 'done' ? <CheckCircle size={10} className="text-mc-success" /> :
+                   step.status === 'warn' ? <AlertTriangle size={10} className="text-mc-warning" /> :
+                   <AlertTriangle size={10} className="text-mc-accent" />}
+                  <span className="text-mc-muted font-mono">{step.tool}</span>
+                  <span className="text-mc-text">{step.detail}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {streaming && !streamingText && agentSteps.length === 0 && (
           <div className="flex items-center gap-2 text-xs text-mc-muted py-2">
             <Loader size={12} className="animate-spin" />
             {currentModel.label} が考えています...
@@ -3902,7 +4280,7 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-            placeholder={currentModel.comingSoon ? `${currentModel.label} は近日対応予定です` : apiKey ? 'AIに指示を入力... (例: 鬼ごっこミニゲームを作って)' : 'APIキーを設定してください（必須）'}
+            placeholder={currentModel.comingSoon ? `${currentModel.label} は近日対応予定です` : apiKey ? (agentMode ? 'エージェントに指示... (例: PvPミニゲームを作って) ※自動でファイル操作' : 'AIに指示を入力... (例: 鬼ごっこミニゲームを作って)') : 'APIキーを設定してください（必須）'}
             disabled={!apiKey || streaming || currentModel.comingSoon}
             className="flex-1 bg-mc-input border border-mc-border rounded px-3 py-2 text-sm text-mc-text placeholder-mc-muted/60 focus:outline-none focus:border-mc-focus disabled:opacity-40 disabled:cursor-not-allowed"
           />
