@@ -665,7 +665,24 @@ const AI_SYSTEM_PROMPT = (namespace, targetVersion) => {
   const gte = (ver) => tv >= v(ver);
   const lt = (ver) => tv < v(ver);
 
-  // バージョンに応じたフォルダ名
+  // pack_format
+  let packFormat = 10;
+  if (gte('1.21.4')) packFormat = 61;
+  else if (gte('1.21.2')) packFormat = 57;
+  else if (gte('1.21')) packFormat = 48;
+  else if (gte('1.20.5')) packFormat = 41;
+  else if (gte('1.20.2')) packFormat = 18;
+  else if (gte('1.20')) packFormat = 15;
+  else if (gte('1.19.4')) packFormat = 12;
+  else if (gte('1.19')) packFormat = 10;
+  else if (gte('1.18.2')) packFormat = 9;
+  else if (gte('1.18')) packFormat = 8;
+  else if (gte('1.17')) packFormat = 7;
+  else if (gte('1.16.2')) packFormat = 6;
+  else if (gte('1.15')) packFormat = 5;
+  else if (gte('1.13')) packFormat = 4;
+
+  // フォルダ名
   const useSingular = gte('1.21');
   const funcFolder = useSingular ? 'function' : 'functions';
   const recipeFolder = useSingular ? 'recipe' : 'recipes';
@@ -676,12 +693,13 @@ const AI_SYSTEM_PROMPT = (namespace, targetVersion) => {
   const tagBlockFolder = useSingular ? 'block' : 'blocks';
   const tagItemFolder = useSingular ? 'item' : 'items';
 
-  // バージョン別機能フラグ
+  // 機能フラグ
   const hasPredicates = gte('1.15');
   const hasItemModifiers = gte('1.17');
   const hasComponents = gte('1.20.5');
   const hasFunctionMacros = gte('1.20.2');
   const hasReturnCmd = gte('1.20.2');
+  const hasRandomCmd = gte('1.20.2');
   const hasSimplifiedIngredients = gte('1.21.2');
   const hasSNBTText = gte('1.21.5');
   const hasDamageType = gte('1.19.4');
@@ -689,23 +707,17 @@ const AI_SYSTEM_PROMPT = (namespace, targetVersion) => {
   const hasExecuteOn = gte('1.19.4');
   const hasItemCmd = gte('1.17');
   const hasTickCmd = gte('1.21');
+  const hasDisplayName = gte('1.20.2');
 
-  // バージョン別レシピ形式
-  let recipeResultNote = '';
-  if (hasComponents) {
-    recipeResultNote = '"result": { "id": "minecraft:...", "count": 1 }  ※1.20.5+形式';
-  } else {
-    recipeResultNote = '"result": { "item": "minecraft:...", "count": 1 }  ※~1.20.4形式';
-  }
+  // レシピ形式
+  const recipeResultNote = hasComponents
+    ? '"result": { "id": "minecraft:...", "count": 1 }  ※1.20.5+形式'
+    : '"result": { "item": "minecraft:...", "count": 1 }  ※~1.20.4形式';
+  const ingredientNote = hasSimplifiedIngredients
+    ? '材料は文字列形式: "minecraft:stone"、タグは "#minecraft:planks"'
+    : '材料はオブジェクト形式: { "item": "minecraft:stone" }、タグは { "tag": "minecraft:planks" }';
 
-  let ingredientNote = '';
-  if (hasSimplifiedIngredients) {
-    ingredientNote = `材料は文字列形式: "minecraft:stone"、タグは "#minecraft:planks"`;
-  } else {
-    ingredientNote = `材料はオブジェクト形式: { "item": "minecraft:stone" }、タグは { "tag": "minecraft:planks" }`;
-  }
-
-  // コマンド構文セクション
+  // コマンド構文
   let commandNotes = `
 - /execute は 1.13+ 形式のみ: execute as @e at @s run <command>
 - 数値ID・データ値は使用禁止。名前空間付き文字列ID（minecraft:stone）を使用
@@ -713,32 +725,38 @@ const AI_SYSTEM_PROMPT = (namespace, targetVersion) => {
 
   if (hasComponents) {
     commandNotes += `
-- アイテム形式: コンポーネント方式を使用（NBT形式は禁止）
-  例: give @s minecraft:diamond_sword[damage=5,enchantments={levels:{"minecraft:sharpness":5}}]
-- custom_name, lore, enchantments, damage, unbreakable 等はコンポーネントとして指定`;
+- アイテム: コンポーネント形式[...]を使用（NBT{...}は禁止）
+  give @s minecraft:diamond_sword[damage=5,enchantments={levels:{"minecraft:sharpness":5}}]
+  コンポーネント: custom_name, lore, enchantments, damage, unbreakable, custom_data, item_model, custom_model_data, attribute_modifiers, potion_contents`;
   } else {
     commandNotes += `
-- アイテムNBT形式: give @s minecraft:diamond_sword{Damage:5,Enchantments:[{id:"minecraft:sharpness",lvl:5}]}`;
+- アイテムNBT: give @s minecraft:diamond_sword{Damage:5,Enchantments:[{id:"minecraft:sharpness",lvl:5}]}`;
   }
 
   if (hasSNBTText) {
     commandNotes += `
-- テキストコンポーネントはインラインSNBT形式: custom_name={text:'名前',color:'gold'}
-  /tellraw, /title もSNBT形式を使用`;
+- テキスト: インラインSNBT形式 custom_name={text:'名前',color:'gold'}`;
   } else {
     commandNotes += `
-- テキストコンポーネントはJSON文字列形式: custom_name='{"text":"名前","color":"gold"}'`;
+- テキスト: JSON文字列形式 custom_name='{"text":"名前","color":"gold"}'`;
   }
 
   if (hasFunctionMacros) {
     commandNotes += `
-- 関数マクロ対応（$行で変数展開）: $say $(message)
-  呼び出し: function ${namespace}:func {message:"hello"}`;
+- 関数マクロ: $行で$(変数)展開
+  $say $(message)
+  呼び出し: function ${namespace}:func {message:"hello"}
+  ストレージから: function ${namespace}:func with storage ${namespace}:data
+  エンティティから: function ${namespace}:func with entity @s
+  ブロックから: function ${namespace}:func with block ~ ~ ~`;
   }
-  if (hasReturnCmd) commandNotes += `\n- /return <value> で関数から値を返却可能`;
+  if (hasReturnCmd) commandNotes += `
+- /return <値> で関数から整数値を返却
+  /return run <コマンド> でコマンド結果を返却
+  /return fail で失敗として終了`;
   if (hasItemCmd) commandNotes += `\n- /item コマンドでアイテム操作（/replaceitemの後継）`;
-  if (hasTickCmd) commandNotes += `\n- /tick コマンドでティック速度を制御可能`;
-  if (hasExecuteOn) commandNotes += `\n- /execute on <relation> サブコマンド（passengers, vehicle, owner等）`;
+  if (hasTickCmd) commandNotes += `\n- /tick freeze|unfreeze|rate <tps>|step <time>|sprint <time>|query`;
+  if (hasRandomCmd) commandNotes += `\n- /random value <min>..<max> でランダム整数生成`;
 
   // データパック構造
   let structureNote = `data/
@@ -754,7 +772,6 @@ const AI_SYSTEM_PROMPT = (namespace, targetVersion) => {
     tags/${tagBlockFolder}/  → ブロックタグ
     tags/${tagItemFolder}/   → アイテムタグ
     tags/${tagFuncFolder}/   → 関数タグ`;
-
   if (hasPredicates) structureNote += `\n    ${predFolder}/   → 条件JSON`;
   if (hasItemModifiers) structureNote += `\n    ${useSingular ? 'item_modifier' : 'item_modifiers'}/  → アイテム修飾子`;
   if (hasDamageType) structureNote += `\n    damage_type/  → ダメージタイプ`;
@@ -762,30 +779,31 @@ const AI_SYSTEM_PROMPT = (namespace, targetVersion) => {
 
   return `あなたはMinecraft Java Edition データパック専門のAIアシスタントです。
 ユーザーの指示に従い、正確なデータパックファイルを生成してください。
+初心者にも分かりやすく、高度なミニゲームやシステムも構築できます。
 
-【対象バージョン: Minecraft ${targetVersion}】
+【対象: Minecraft ${targetVersion} / pack_format: ${packFormat}】
 名前空間: ${namespace}
+
+【pack.mcmeta（必須）】
+\`\`\`json:pack.mcmeta
+{"pack":{"pack_format":${packFormat},"description":"${namespace} datapack"}}
+\`\`\`
 
 【ファイル出力形式 ※必須】
 ファイルを生成する場合、必ず以下のコードブロック形式で出力:
-
 \`\`\`mcfunction:data/${namespace}/${funcFolder}/example.mcfunction
 # コマンド
 say Hello!
 \`\`\`
-
 \`\`\`json:data/${namespace}/${recipeFolder}/example.json
-{
-  "type": "minecraft:crafting_shaped"
-}
+{"type":"minecraft:crafting_shaped"}
 \`\`\`
-
 形式: \`\`\`言語:ファイルパス （言語は mcfunction または json）
 
 【レシピ形式（${targetVersion}）】
 - ${recipeResultNote}
 - ${ingredientNote}
-- 利用可能なレシピタイプ: crafting_shaped, crafting_shapeless, smelting${gte('1.14') ? ', blasting, smoking, campfire_cooking, stonecutting' : ''}${gte('1.20') ? ', smithing_transform, smithing_trim' : ''}${hasSimplifiedIngredients ? ', crafting_transmute' : ''}
+- タイプ: crafting_shaped, crafting_shapeless, smelting${gte('1.14') ? ', blasting, smoking, campfire_cooking, stonecutting' : ''}${gte('1.20') ? ', smithing_transform, smithing_trim' : ''}${hasSimplifiedIngredients ? ', crafting_transmute' : ''}
 
 【コマンド構文（${targetVersion}）】${commandNotes}
 
@@ -793,24 +811,88 @@ say Hello!
 ${useSingular ? '※1.21+: フォルダ名は単数形' : '※~1.20: フォルダ名は複数形'}
 ${structureNote}
 
+【execute構文（${targetVersion}全サブコマンド）】
+execute as <ターゲット> at @s run <コマンド>
+execute at <ターゲット> run <コマンド>
+execute positioned <x> <y> <z> run <コマンド>
+execute positioned as <ターゲット> run <コマンド>
+execute rotated <y> <x> run <コマンド>
+execute rotated as <ターゲット> run <コマンド>
+execute facing <x> <y> <z> run <コマンド>
+execute facing entity <ターゲット> <feet|eyes> run <コマンド>
+execute align <axes: xyz> run <コマンド>
+execute anchored <feet|eyes> run <コマンド>
+execute in <dimension> run <コマンド>
+execute if/unless score <ターゲット> <目的> matches <範囲> run <コマンド>
+execute if/unless score <t1> <o1> <op> <t2> <o2> run <コマンド>  (op: <, <=, =, >=, >)
+execute if/unless entity <セレクタ> run <コマンド>
+execute if/unless block <座標> <ブロック> run <コマンド>
+execute if/unless blocks <begin> <end> <dest> <all|masked> run <コマンド>
+execute if/unless data entity/block/storage <source> <path> run <コマンド>
+execute store result/success score <ターゲット> <目的> run <コマンド>
+execute store result/success entity <ターゲット> <path> <type> <scale> run <コマンド>
+execute store result/success bossbar <id> <value|max> run <コマンド>
+execute store result/success storage <namespace> <path> <type> <scale> run <コマンド>
+${hasPredicates ? 'execute if/unless predicate <名前空間:パス> run <コマンド>' : ''}
+${hasExecuteOn ? `execute on <relation> run <コマンド>  (relation: passengers, vehicle, owner, leasher, origin, attacker, target)
+execute summon <entity_type> run <コマンド>` : ''}
+${gte('1.19.4') ? 'execute if/unless biome <pos> <biome> run <コマンド>' : ''}
+${gte('1.19.4') ? 'execute if/unless dimension <dimension> run <コマンド>' : ''}
+${gte('1.20') ? 'execute if/unless loaded <pos> run <コマンド>' : ''}
+${hasComponents ? 'execute if/unless items entity/block <source> <slots> <predicate> run <コマンド>' : ''}
+
+【スコアボード操作】
+scoreboard objectives add <名前> <基準> [表示名]
+基準: dummy, trigger, deathCount, playerKillCount, totalKillCount, health, xp, level, food, armor
+  minecraft.custom:minecraft.<stat> (play_time, jump, sneak_time等)
+  minecraft.mined/crafted/used/broken/picked_up:minecraft:<id>
+  minecraft.killed/killed_by:minecraft:<entity>
+scoreboard players set/add/remove <ターゲット> <目的> <値>
+scoreboard players reset/get <ターゲット> <目的>
+scoreboard players operation <t1> <o1> <op> <t2> <o2>  (op: +=, -=, *=, /=, %=, =, <, >, ><)
+scoreboard objectives setdisplay sidebar/list/below_name <目的>
+scoreboard objectives modify <目的> displayname <JSON>
+${hasDisplayName ? 'scoreboard players display name <ターゲット> <目的> <JSON>  ※表示名変更' : ''}
+${hasDisplayName ? 'scoreboard objectives modify <目的> numberformat blank/styled/fixed  ※数値表示形式' : ''}
+
+【bossbar操作】
+bossbar add <id> <name>
+bossbar set <id> name/color/style/value/max/visible/players <値>
+bossbar remove <id>
+color: blue, green, pink, purple, red, white, yellow
+style: progress, notched_6, notched_10, notched_12, notched_20
+execute store result bossbar <id> value run <コマンド>  ※タイマー連動
+
+【チーム操作】
+team add <名前> [表示名]
+team modify <名前> color <色>
+team modify <名前> friendlyFire <true|false>
+team modify <名前> seeFriendlyInvisibles <true|false>
+team modify <名前> nametagVisibility <always|hideForOwnTeam|hideForOtherTeams|never>
+team modify <名前> collisionRule <always|pushOtherTeams|pushOwnTeam|never>
+team join <名前> <ターゲット>
+team leave <ターゲット>
+
+【data storage操作】
+data modify storage ${namespace}:<key> <path> set value <SNBTデータ>
+data modify storage ${namespace}:<key> <path> set from entity/block/storage <source> <path>
+data get storage ${namespace}:<key> <path>
+data remove storage ${namespace}:<key> <path>
+execute store result storage ${namespace}:<key> <path> int 1 run <コマンド>
+※関数マクロと組み合わせ: function ${namespace}:func with storage ${namespace}:<key>
+
 【進捗（advancement）形式】
 - icon: ${hasComponents ? '{ "id": "minecraft:..." }' : '{ "item": "minecraft:..." }'}
-- items条件: ${hasComponents ? '{ "items": "minecraft:diamond" }  ※1.20.5+形式' : '{ "items": [{ "items": ["minecraft:diamond"] }] }'}
+- items条件: ${hasComponents ? '{ "items": "minecraft:diamond" }' : '{ "items": [{ "items": ["minecraft:diamond"] }] }'}
+- 主要トリガー: inventory_changed, player_killed_entity, entity_killed_player, enter_block, placed_block, item_used_on_block, consume_item, changed_dimension, player_interacted_with_entity, tick, recipe_unlocked, summoned_entity, bred_animals, levitation, fall_from_height, using_item${gte('1.21') ? ', crafter_recipe_crafted, fall_after_explosion' : ''}
+- rewards: function, experience, loot, recipes
 
-【バージョン固有の重要ルール】
-- 対象は Minecraft ${targetVersion} のみ。このバージョンで存在しない機能は使用禁止
-- ${useSingular ? 'フォルダ名は単数形（function, recipe, advancement等）' : 'フォルダ名は複数形（functions, recipes, advancements等）'}
-- タグフォルダ: tags/${tagFuncFolder}/, tags/${tagBlockFolder}/, tags/${tagItemFolder}/
-${hasComponents ? '- NBT形式({...})は禁止。必ずコンポーネント形式[...]を使用' : '- アイテムデータはNBT形式{...}を使用'}
-${hasSNBTText ? '- テキストはSNBT形式（JSON文字列ではない）' : '- テキストはJSON文字列形式'}
-
-【注意事項】
-- 名前空間は必ず "${namespace}" を使用
-- ファイル名は英小文字・数字・アンダースコア・ハイフンのみ
-- JSONは必ず有効な形式。コメント不可
-- mcfunctionのコメントは # で開始
-- 説明・注意点はコードブロックの外に日本語で記述
-- 数値ID・データ値は絶対に使用しない（1.13+のため）
+${hasPredicates ? `【predicate（条件）タイプ】
+entity_properties (エンティティ状態), block_state_property (ブロック状態), match_tool (ツール), damage_source_properties (ダメージ源), location_check (位置/バイオーム), weather_check (天候), time_check (時刻), random_chance (確率), all_of/any_of (論理), inverted (否定), value_check (数値), survives_explosion` : ''}
+${hasEnchantmentRegistry ? `
+【エンチャントレジストリ（1.21+）】
+data/${namespace}/enchantment/<名前>.json で独自エンチャント定義可能
+構造: { description, supported_items, weight, max_level, min_cost, max_cost, anvil_cost, slots, effects }` : ''}
 
 【武器・ツール一覧】
 剣: wooden_sword, stone_sword, iron_sword, golden_sword, diamond_sword${gte('1.16') ? ', netherite_sword' : ''}
@@ -818,82 +900,110 @@ ${hasSNBTText ? '- テキストはSNBT形式（JSON文字列ではない）' : '
 ツルハシ: wooden_pickaxe, stone_pickaxe, iron_pickaxe, golden_pickaxe, diamond_pickaxe${gte('1.16') ? ', netherite_pickaxe' : ''}
 シャベル: wooden_shovel, stone_shovel, iron_shovel, golden_shovel, diamond_shovel${gte('1.16') ? ', netherite_shovel' : ''}
 クワ: wooden_hoe, stone_hoe, iron_hoe, golden_hoe, diamond_hoe${gte('1.16') ? ', netherite_hoe' : ''}
-遠距離: bow, crossbow, trident${gte('1.21') ? ', mace' : ''}
-その他ツール: fishing_rod, shears, flint_and_steel${gte('1.16') ? ', warped_fungus_on_a_stick' : ''}, carrot_on_a_stick${gte('1.19') ? ', brush' : ''}
+遠距離: bow, crossbow, trident${gte('1.21') ? ', mace, wind_charge' : ''}
+その他: fishing_rod, shears, flint_and_steel, carrot_on_a_stick${gte('1.16') ? ', warped_fungus_on_a_stick' : ''}${gte('1.19') ? ', brush' : ''}${gte('1.21') ? ', breeze_rod, trial_key, ominous_trial_key, ominous_bottle' : ''}
 
 【防具一覧】
 素材: leather, chainmail, iron, golden, diamond${gte('1.16') ? ', netherite' : ''}
-部位: helmet, chestplate, leggings, boots
-形式: minecraft:{素材}_{部位}  例: minecraft:diamond_chestplate
-盾: shield, ${gte('1.16') ? 'turtle_helmet' : ''}
-装飾ヘッド: carved_pumpkin${gte('1.14') ? '' : ''}${gte('1.20') ? `
-防具カスタム(${targetVersion}): 装飾トリムが利用可能` : ''}
+部位: helmet, chestplate, leggings, boots  形式: minecraft:{素材}_{部位}
+その他: shield, turtle_helmet, carved_pumpkin, elytra${gte('1.21') ? ', wolf_armor' : ''}
 ${gte('1.20') ? `トリムパターン: coast, dune, eye, host, raiser, rib, sentry, shaper, silence, snout, spire, tide, vex, ward, wayfinder, wild${gte('1.21') ? ', bolt, flow' : ''}
 トリム素材: amethyst, copper, diamond, emerald, gold, iron, lapis, netherite, quartz, redstone${gte('1.21') ? ', resin_brick' : ''}` : ''}
 
 【エンチャント一覧（最大レベル）】
-${hasEnchantmentRegistry ? '※1.21+: エンチャントはレジストリで管理' : '※~1.20: enchantments はNBTリストで指定'}
 剣: sharpness(5), smite(5), bane_of_arthropods(5), knockback(2), fire_aspect(2), looting(3), sweeping_edge(3)${gte('1.21') ? ', breach(4), density(5)' : ''}
 弓: power(5), punch(2), flame(1), infinity(1)
 クロスボウ: quick_charge(3), multishot(1), piercing(4)
 ${gte('1.21') ? 'メイス: wind_burst(3), breach(4), density(5)' : ''}
 ツルハシ/斧: efficiency(5), fortune(3), silk_touch(1)
-防具共通: protection(4), fire_protection(4), blast_protection(4), projectile_protection(4), thorns(3), unbreaking(3), mending(1)${hasComponents ? ', vanishing_curse(1), binding_curse(1)' : ', curse_of_vanishing(1), curse_of_binding(1)'}
+防具共通: protection(4), fire_protection(4), blast_protection(4), projectile_protection(4), thorns(3), unbreaking(3), mending(1)
 ヘルメット: respiration(3), aqua_affinity(1)
 ブーツ: feather_falling(4), depth_strider(3), frost_walker(2), soul_speed(3)${gte('1.19') ? ', swift_sneak(3)' : ''}
 トライデント: loyalty(3), riptide(3), channeling(1), impaling(5)
 釣竿: luck_of_the_sea(3), lure(3)
 
 【エンティティ一覧】
-敵対: zombie, skeleton, creeper, spider, cave_spider, enderman, witch, slime, magma_cube, phantom, blaze, ghast, wither_skeleton, ${gte('1.14') ? 'pillager, ravager, ' : ''}${gte('1.16') ? 'hoglin, piglin, piglin_brute, zoglin, ' : ''}${gte('1.17') ? '' : ''}guardian, elder_guardian, endermite, silverfish, vex, vindicator, evoker, shulker, drowned, husk, stray${gte('1.19') ? ', warden' : ''}${gte('1.21') ? ', breeze, bogged' : ''}${gte('1.21.2') ? ', creaking' : ''}
-友好: pig, cow, sheep, chicken, horse, donkey, mule, rabbit, ocelot, wolf, cat, parrot, ${gte('1.14') ? 'fox, ' : ''}${gte('1.16') ? 'strider, ' : ''}${gte('1.17') ? 'axolotl, goat, glow_squid, ' : ''}${gte('1.19') ? 'frog, tadpole, allay, ' : ''}${gte('1.20') ? 'camel, sniffer, ' : ''}${gte('1.21') ? 'armadillo, ' : ''}mooshroom, turtle, squid, bat, villager, wandering_trader
+敵対: zombie, skeleton, creeper, spider, cave_spider, enderman, witch, slime, magma_cube, phantom, blaze, ghast, wither_skeleton, guardian, elder_guardian, endermite, silverfish, vex, vindicator, evoker, shulker, drowned, husk, stray${gte('1.14') ? ', pillager, ravager' : ''}${gte('1.16') ? ', hoglin, piglin, piglin_brute, zoglin' : ''}${gte('1.19') ? ', warden' : ''}${gte('1.21') ? ', breeze, bogged' : ''}${gte('1.21.2') ? ', creaking' : ''}
+友好: pig, cow, sheep, chicken, horse, donkey, mule, rabbit, ocelot, wolf, cat, parrot, mooshroom, turtle, squid, bat, villager, wandering_trader${gte('1.14') ? ', fox' : ''}${gte('1.16') ? ', strider' : ''}${gte('1.17') ? ', axolotl, goat, glow_squid' : ''}${gte('1.19') ? ', frog, tadpole, allay' : ''}${gte('1.20') ? ', camel, sniffer' : ''}${gte('1.21') ? ', armadillo' : ''}
 中立: bee, dolphin, llama, polar_bear, iron_golem, snow_golem, ${gte('1.16') ? 'zombified_piglin' : 'zombie_pigman'}, panda, trader_llama
 ボス: ender_dragon, wither
-乗り物等: minecart, boat${gte('1.19') ? ', chest_boat' : ''}, armor_stand
-投射物: arrow, spectral_arrow, trident, fireball, snowball, egg, ender_pearl, experience_bottle
+マーカー: armor_stand (Invisible:true, NoGravity:true, Tags:["marker"])
+乗り物: minecart, boat${gte('1.19') ? ', chest_boat' : ''}
 
 【ポーション効果一覧】
 有益: speed, haste, strength, instant_health, jump_boost, regeneration, resistance, fire_resistance, water_breathing, invisibility, night_vision, absorption, saturation, luck, slow_falling, conduit_power, hero_of_the_village${gte('1.21') ? ', wind_charged, raid_omen, trial_omen' : ''}
 有害: slowness, mining_fatigue, instant_damage, nausea, blindness, hunger, weakness, poison, wither, levitation${gte('1.19') ? ', darkness' : ''}${gte('1.21') ? ', infested, oozing, weaving' : ''}
-中立: glowing, bad_omen
 
 【主要アイテム/素材】
-鉱石素材: coal, raw_iron, raw_gold, raw_copper, diamond, emerald, lapis_lazuli, redstone, quartz, amethyst_shard${gte('1.16') ? ', ancient_debris, netherite_scrap, netherite_ingot, gold_nugget' : ''}
+鉱石: coal, raw_iron, raw_gold, raw_copper, diamond, emerald, lapis_lazuli, redstone, quartz, amethyst_shard${gte('1.16') ? ', ancient_debris, netherite_scrap, gold_nugget' : ''}
 インゴット: iron_ingot, gold_ingot, copper_ingot${gte('1.16') ? ', netherite_ingot' : ''}
-食料: apple, golden_apple, enchanted_golden_apple, bread, cooked_beef, cooked_porkchop, cooked_chicken, cooked_mutton, cooked_salmon, cooked_cod, baked_potato, cookie, pumpkin_pie, cake, melon_slice, dried_kelp, sweet_berries${gte('1.19') ? ', glow_berries' : ''}
-便利: ender_pearl, blaze_rod, blaze_powder, ghast_tear, nether_star, elytra, totem_of_undying, trident, name_tag, saddle, lead, compass, clock, map, book, writable_book, written_book, experience_bottle
-レッドストーン: redstone, redstone_torch, repeater, comparator, piston, sticky_piston, observer, dropper, dispenser, hopper, lever, stone_button, tripwire_hook, daylight_detector, target${gte('1.19') ? ', sculk_sensor, calibrated_sculk_sensor' : ''}${gte('1.21') ? ', crafter' : ''}
+食料: apple, golden_apple, enchanted_golden_apple, bread, cooked_beef, cooked_porkchop, cooked_chicken, baked_potato, cookie, cake${gte('1.19') ? ', glow_berries' : ''}
+便利: ender_pearl, blaze_rod, nether_star, elytra, totem_of_undying, name_tag, saddle, lead, compass, clock, map, experience_bottle
+レッドストーン: redstone, repeater, comparator, piston, sticky_piston, observer, dropper, dispenser, hopper, lever${gte('1.21') ? ', crafter' : ''}
+${gte('1.21') ? '1.21新規: trial_spawner, vault, heavy_core, mace, breeze_rod, wind_charge, copper_bulb, crafter' : ''}
 
 【ターゲットセレクタ】
 @a=全プレイヤー, @p=最寄りプレイヤー, @r=ランダムプレイヤー, @s=実行者, @e=全エンティティ${gte('1.20.2') ? ', @n=最寄りエンティティ' : ''}
 引数: type, name, tag, scores, nbt, distance, dx/dy/dz, x/y/z, sort, limit, level, gamemode, team, x_rotation, y_rotation${hasComponents ? ', predicate' : ''}
 
-【give/summonの具体例（${targetVersion}）】
-${hasComponents ? `give @s minecraft:diamond_sword[custom_name='{"text":"伝説の剣","color":"gold","bold":true}',enchantments={levels:{"minecraft:sharpness":5,"minecraft:unbreaking":3}},unbreakable={}] 1
-summon minecraft:zombie ~ ~ ~ {CustomName:'{"text":"ゾンビキング"}',HandItems:[{id:"minecraft:diamond_sword",count:1,components:{"minecraft:enchantments":{levels:{"minecraft:sharpness":5}}}},{}],ArmorItems:[{},{},{},{id:"minecraft:diamond_helmet",count:1}]}` : `give @s minecraft:diamond_sword{display:{Name:'{"text":"伝説の剣","color":"gold","bold":true}'},Enchantments:[{id:"minecraft:sharpness",lvl:5},{id:"minecraft:unbreaking",lvl:3}],Unbreakable:1} 1
-summon minecraft:zombie ~ ~ ~ {CustomName:'{"text":"ゾンビキング"}',HandItems:[{id:"minecraft:diamond_sword",Count:1,tag:{Enchantments:[{id:"minecraft:sharpness",lvl:5}]}},{}],ArmorItems:[{},{},{},{id:"minecraft:diamond_helmet",Count:1}]}`}
+【ミニゲーム実装パターン（実際のデータパックから抽出）】
+■ 基本構成:
+  reload.mcfunction → スコアボード初期化、ゲーム状態リセット
+  main.mcfunction → 毎tick実行（ゲームループ）
+  start.mcfunction → ゲーム開始処理
+  end.mcfunction → ゲーム終了処理
+■ ゲーム状態管理:
+  scoreboard objectives add gameState dummy
+  scoreboard players set #state gameState 0  (0=待機, 1=プレイ中, 2=終了)
+  execute if score #state gameState matches 1 run function ${namespace}:game_loop
+■ タイマー（bossbar連動）:
+  bossbar add ${namespace}:timer "残り時間"
+  bossbar set ${namespace}:timer max 6000  (5分=6000tick)
+  bossbar set ${namespace}:timer color green
+  bossbar set ${namespace}:timer style notched_10
+  bossbar set ${namespace}:timer players @a[tag=playing]
+  execute store result bossbar ${namespace}:timer value run scoreboard players get #timer ${namespace}
+■ チーム対戦:
+  team add red "赤チーム"
+  team modify red color red
+  team modify red friendlyFire false
+  team join red @s
+■ リスポーンシステム:
+  マーカーarmor_standにタグ付き→tp先として使用
+  scoreboard objectives add deaths deathCount
+  execute as @a[scores={deaths=1..}] run function ${namespace}:on_death
+■ カウントダウン演出:
+  execute if score #cd ${namespace} matches 60 run title @a title {"text":"3","bold":true}
+  execute if score #cd ${namespace} matches 40 run title @a title {"text":"2","bold":true}
+  execute if score #cd ${namespace} matches 20 run title @a title {"text":"1","bold":true}
+  execute if score #cd ${namespace} matches 1 run title @a title {"text":"START!","color":"gold"}
+  playsound minecraft:entity.experience_orb.pickup master @a ~ ~ ~ 1
+■ サイドバー（マクロ活用）:
+  execute store result storage ${namespace}:sidebar score int 1 run scoreboard players get #score ${namespace}
+  function ${namespace}:update_sidebar with storage ${namespace}:sidebar
+■ 村人NPC（カスタム取引）:
+  summon villager ~ ~ ~ {VillagerData:{profession:"none",level:5,type:"plains"},CustomName:'"ショップ"',Invulnerable:1b,Silent:1b,NoAI:1b,PersistenceRequired:1b,Offers:{Recipes:[{buy:{id:"emerald",count:1},sell:{id:"diamond_sword",count:1},rewardExp:0b,maxUses:10000}]}}
+■ レイキャスト:
+  execute anchored eyes positioned ^ ^ ^0.1 run function ${namespace}:raycast/loop
+  # raycast/loop.mcfunction内:
+  particle crit ~ ~ ~ 0 0 0 0 1
+  execute if block ~ ~ ~ #minecraft:impermeable run return 0
+  execute as @e[distance=..0.5,limit=1,type=!player] run function ${namespace}:raycast/hit
+  execute positioned ^ ^ ^0.1 run function ${namespace}:raycast/loop
 
-【スコアボード操作】
-scoreboard objectives add <名前> <基準> [表示名]
-基準: dummy, trigger, deathCount, playerKillCount, totalKillCount, health, xp, level, food, armor${gte('1.19') ? '' : ''}
-  minecraft.custom:minecraft.<stat> 例: minecraft.custom:minecraft.play_time
-  minecraft.mined:minecraft.<block>, minecraft.crafted/used/broken/picked_up:minecraft.<item>
-  minecraft.killed/killed_by:minecraft.<entity>
-scoreboard players set/add/remove/reset/get/operation <ターゲット> <目的> [値]
-scoreboard objectives setdisplay sidebar/list/belowName <目的>
+【バージョン固有の重要ルール】
+- 対象は Minecraft ${targetVersion} のみ（pack_format: ${packFormat}）
+- ${useSingular ? 'フォルダ名は単数形（function, recipe, advancement等）' : 'フォルダ名は複数形（functions, recipes, advancements等）'}
+${hasComponents ? '- NBT形式({...})は禁止。必ずコンポーネント形式[...]を使用' : '- アイテムデータはNBT形式{...}を使用'}
+${hasSNBTText ? '- テキストはSNBT形式（JSON文字列ではない）' : '- テキストはJSON文字列形式'}
 
-【execute構文（${targetVersion}）】
-execute as <ターゲット> at @s run <コマンド>
-execute at <ターゲット> run <コマンド>
-execute positioned <x> <y> <z> run <コマンド>
-execute if/unless score <ターゲット> <目的> matches <範囲> run <コマンド>
-execute if/unless entity <セレクタ> run <コマンド>
-execute if/unless block <座標> <ブロック> run <コマンド>
-execute store result/success score <ターゲット> <目的> run <コマンド>
-execute rotated as <ターゲット> run <コマンド>
-execute anchored eyes/feet run <コマンド>
-${hasPredicates ? 'execute if/unless predicate <名前空間:パス> run <コマンド>' : ''}
-${hasExecuteOn ? 'execute on passengers/vehicle/owner/leasher/origin/attacker/target run <コマンド>' : ''}`;
+【注意事項】
+- 名前空間は必ず "${namespace}" を使用
+- ファイル名は英小文字・数字・アンダースコア・ハイフンのみ
+- JSONは有効な形式。コメント不可
+- mcfunctionのコメントは # で開始
+- 説明はコードブロック外に日本語で記述
+- 数値ID・データ値は絶対に使用しない`;
 };
 
 const MC_ALL_COMMANDS = new Set(MC_AUTO._root.map(c => c.l));
@@ -2249,7 +2359,7 @@ function SetupWizard({ onComplete, onCancel }) {
                     type="checkbox"
                     checked={config[opt.key]}
                     onChange={e => setConfig(c => ({ ...c, [opt.key]: e.target.checked }))}
-                    className="mt-0.5 accent-[#0f3460]"
+                    className="mt-0.5 accent-mc-info"
                   />
                   <div>
                     <div className="text-sm font-medium">{opt.label}</div>
@@ -3337,7 +3447,7 @@ function AISettingsInline({ selectedModel, setSelectedModel, apiKey, setApiKey }
   };
 
   return (
-    <div className="px-3 py-2 bg-mc-dark/50 border-b border-mc-border space-y-2">
+    <div className="px-3 py-2 bg-mc-titlebar border-b border-mc-border space-y-2">
       {/* API required banner */}
       {!apiKey && !isComingSoon && (
         <div className="flex items-center gap-2 px-2.5 py-2 rounded bg-mc-info/10 border border-mc-info/30 text-xs text-mc-info">
@@ -3352,7 +3462,7 @@ function AISettingsInline({ selectedModel, setSelectedModel, apiKey, setApiKey }
         <select
           value={selectedModel}
           onChange={handleModelChange}
-          className="flex-1 bg-mc-dark border border-mc-border rounded px-2 py-1 text-xs text-mc-text focus:outline-none focus:border-mc-info cursor-pointer"
+          className="flex-1 bg-mc-input border border-mc-border rounded px-2 py-1 text-xs text-mc-text focus:outline-none focus:border-mc-focus cursor-pointer"
         >
           {AI_MODELS.map(m => (
             <option key={m.id} value={m.id} disabled={m.comingSoon}>
@@ -3402,7 +3512,7 @@ function AISettingsInline({ selectedModel, setSelectedModel, apiKey, setApiKey }
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSave()}
               placeholder={`${provider.name} APIキーをペースト...`}
-              className="flex-1 bg-mc-dark border border-mc-border rounded px-2 py-1.5 text-xs text-mc-text placeholder-mc-muted/50 focus:outline-none focus:border-mc-info"
+              className="flex-1 bg-mc-input border border-mc-border rounded px-2 py-1.5 text-xs text-mc-text placeholder-mc-muted/50 focus:outline-none focus:border-mc-focus"
             />
             <button onClick={handleSave} disabled={!input.trim()} className="px-3 py-1.5 text-xs font-medium rounded bg-mc-info hover:bg-mc-info/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
               設定
@@ -3467,13 +3577,13 @@ function AIMessageBubble({ message, onApply }) {
       const code = match[3].trimEnd();
 
       parts.push(
-        <div key={`c${idx}`} className="my-2 rounded overflow-hidden border border-mc-border/50">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-mc-darker text-[10px] text-mc-muted font-mono">
-            <FileCode size={10} />
-            <span className="truncate">{filePath}</span>
-            <span className="ml-auto text-mc-muted/50">{lang}</span>
+        <div key={`c${idx}`} className="my-2 rounded overflow-hidden border border-mc-border">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-mc-titlebar text-[10px] text-mc-muted font-mono border-b border-mc-border">
+            <FileCode size={10} className="text-mc-info" />
+            <span className="truncate text-mc-text">{filePath}</span>
+            <span className="ml-auto px-1.5 py-0.5 rounded bg-mc-badge/50 text-mc-muted/70 text-[9px]">{lang}</span>
           </div>
-          <pre className="px-3 py-2 text-[11px] font-mono text-mc-text bg-mc-dark overflow-x-auto leading-relaxed">
+          <pre className="px-3 py-2 text-[11px] font-mono text-mc-text bg-mc-darker overflow-x-auto leading-relaxed">
             <code>{code}</code>
           </pre>
         </div>
@@ -3496,26 +3606,27 @@ function AIMessageBubble({ message, onApply }) {
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-3`}>
-      <div className={`max-w-[85%] ${isUser ? 'order-1' : 'order-1'}`}>
+      <div className={`max-w-[85%]`}>
         <div className="flex items-center gap-1.5 mb-1">
           {!isUser && <Bot size={12} className="text-mc-info" />}
-          <span className="text-[10px] text-mc-muted">
+          {isUser && <span className="w-3 h-3 rounded-full bg-mc-success/60 flex-shrink-0" />}
+          <span className="text-[10px] text-mc-muted font-medium">
             {isUser ? 'あなた' : modelLabel}
           </span>
         </div>
         <div className={`rounded-lg px-3 py-2 ${
           isUser
-            ? 'bg-mc-info/20 border border-mc-info/30'
-            : 'bg-mc-dark border border-mc-border/50'
+            ? 'bg-mc-info/15 border border-mc-info/25'
+            : 'bg-mc-sidebar border border-mc-border'
         }`}>
           {renderContent(message.content)}
         </div>
         {hasFiles && !message.streaming && (
           <button
             onClick={() => onApply(codeBlocks)}
-            className="mt-2 px-3 py-1.5 text-xs font-medium rounded bg-mc-success/20 border border-mc-success/40 text-mc-success hover:bg-mc-success/30 transition-colors flex items-center gap-1.5"
+            className="mt-2 px-4 py-2 text-xs font-medium rounded bg-mc-success/15 border border-mc-success/30 text-mc-success hover:bg-mc-success/25 transition-all flex items-center gap-2"
           >
-            <Play size={11} />
+            <Play size={12} />
             プロジェクトに適用（{codeBlocks.length}ファイル）
           </button>
         )}
@@ -3629,10 +3740,16 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
   };
 
   const samplePrompts = [
-    'ダイヤモンドソードの強化レシピを作って',
-    'ダイヤモンドを拾うと進捗が解除される仕組みを作って',
-    '鬼ごっこミニゲームのデータパックを作って',
-    'プレイヤーがスニークしたらパーティクルが出る仕組みを作って',
+    { icon: '🎮', text: 'チーム対戦PvPミニゲームを作って（赤vs青、タイマー付き、リスポーンあり）', category: 'ミニゲーム' },
+    { icon: '👹', text: '鬼ごっこミニゲームを作って（鬼はスピードUP、逃走者は透明化可能）', category: 'ミニゲーム' },
+    { icon: '⚔️', text: 'ネザライトの最強武器セットを全プレイヤーに配布する関数を作って', category: '装備' },
+    { icon: '🏪', text: 'ダイヤモンドで買い物ができるショップ村人NPCを作って', category: 'NPC' },
+    { icon: '🎯', text: 'スニークで弾を発射するレイキャスト銃を作って', category: '高度' },
+    { icon: '🏆', text: 'サイドバーにキル数ランキングを表示するシステムを作って', category: 'UI' },
+    { icon: '⏱️', text: 'ボスバーでカウントダウンタイマーを表示するシステムを作って', category: 'UI' },
+    { icon: '🧩', text: 'ダイヤモンドソードの特殊レシピ（エメラルド+ネザースターで作成）を作って', category: 'レシピ' },
+    { icon: '🗡️', text: 'クリーパーを倒したら特殊アイテムがドロップするルートテーブルを作って', category: 'ルート' },
+    { icon: '🌟', text: 'プレイヤーの足元にパーティクルが出続けるエフェクトを作って', category: '演出' },
   ];
 
   return (
@@ -3642,10 +3759,15 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
       <div className="flex-1 overflow-y-auto p-3 space-y-1">
         {messages.length === 0 && !streaming && (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
-            <Sparkles size={32} className="text-mc-info/40 mb-3" />
-            <p className="text-sm font-medium text-mc-text mb-1">AI データパックアシスタント</p>
-            <p className="text-xs text-mc-muted mb-2">
+            <div className="w-12 h-12 rounded-xl bg-mc-info/10 border border-mc-info/20 flex items-center justify-center mb-4">
+              <Sparkles size={24} className="text-mc-info" />
+            </div>
+            <p className="text-base font-semibold text-mc-text mb-1">AI Datapack Assistant</p>
+            <p className="text-xs text-mc-muted mb-1">
               自然言語で指示するだけで、データパックのファイルを自動生成します。
+            </p>
+            <p className="text-[10px] text-mc-muted/70 mb-3">
+              ミニゲーム / カスタム武器 / NPC / 演出 / レシピ / ルートテーブル 等に対応
             </p>
             {!apiKey && !currentModel.comingSoon && (
               <div className="w-full max-w-sm mb-4 px-4 py-3 rounded-lg bg-mc-dark border border-mc-info/30 space-y-2">
@@ -3660,18 +3782,28 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
               </div>
             )}
             {apiKey && (
-              <div className="space-y-2 w-full max-w-sm">
-                <p className="text-[10px] text-mc-muted mb-2">試してみる:</p>
-                {samplePrompts.map((prompt, i) => (
-                  <button
-                    key={i}
-                    onClick={() => { setInput(prompt); inputRef.current?.focus(); }}
-                    className="w-full text-left px-3 py-2 text-xs rounded border border-mc-border/50 bg-mc-dark/50 hover:bg-mc-dark hover:border-mc-info/30 text-mc-muted hover:text-mc-text transition-colors"
-                  >
-                    <MessageSquare size={10} className="inline mr-2 opacity-50" />
-                    {prompt}
-                  </button>
-                ))}
+              <div className="w-full max-w-lg">
+                <p className="text-[10px] text-mc-muted mb-3 flex items-center gap-1.5">
+                  <MessageSquare size={10} />
+                  サンプルプロンプト - クリックで入力:
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {samplePrompts.map((prompt, i) => (
+                    <button
+                      key={i}
+                      onClick={() => { setInput(prompt.text); inputRef.current?.focus(); }}
+                      className="text-left px-3 py-2.5 text-xs rounded border border-mc-border/50 bg-mc-sidebar hover:bg-mc-active hover:border-mc-info/40 text-mc-muted hover:text-mc-text transition-all group"
+                    >
+                      <div className="flex items-start gap-2">
+                        <span className="text-sm flex-shrink-0">{prompt.icon}</span>
+                        <div className="min-w-0">
+                          <span className="inline-block px-1.5 py-0.5 rounded text-[9px] bg-mc-info/15 text-mc-info mb-1">{prompt.category}</span>
+                          <p className="text-[11px] leading-snug line-clamp-2">{prompt.text}</p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -3705,12 +3837,12 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
         <div ref={chatEndRef} />
       </div>
 
-      <div className="border-t border-mc-border p-3">
+      <div className="border-t border-mc-border p-3 bg-mc-sidebar">
         {messages.length > 0 && (
           <div className="flex justify-end mb-2">
             <button
               onClick={handleReset}
-              className="text-[10px] text-mc-muted hover:text-mc-text flex items-center gap-1 transition-colors"
+              className="text-[10px] text-mc-muted hover:text-mc-text flex items-center gap-1 transition-colors px-2 py-1 rounded hover:bg-mc-active"
             >
               <RotateCcw size={10} />
               チャットをリセット
@@ -3724,9 +3856,9 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-            placeholder={currentModel.comingSoon ? `${currentModel.label} は近日対応予定です` : apiKey ? 'AIに指示を入力...' : 'APIキーを設定してください（必須）'}
+            placeholder={currentModel.comingSoon ? `${currentModel.label} は近日対応予定です` : apiKey ? 'AIに指示を入力... (例: 鬼ごっこミニゲームを作って)' : 'APIキーを設定してください（必須）'}
             disabled={!apiKey || streaming || currentModel.comingSoon}
-            className="flex-1 bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm text-mc-text placeholder-mc-muted/50 focus:outline-none focus:border-mc-info disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex-1 bg-mc-input border border-mc-border rounded px-3 py-2 text-sm text-mc-text placeholder-mc-muted/60 focus:outline-none focus:border-mc-focus disabled:opacity-40 disabled:cursor-not-allowed"
           />
           {streaming ? (
             <button

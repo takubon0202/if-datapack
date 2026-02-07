@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Minecraft Datapack Builder</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%231a1a2e'/><text x='4' y='24' font-size='24'>⛏️</text></svg>" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%231e1e1e'/><text x='4' y='24' font-size='24'>⛏️</text></svg>" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -12,18 +12,32 @@
         extend: {
           colors: {
             mc: {
-              dark: '#1a1a2e',
-              darker: '#12122a',
-              sidebar: '#16213e',
-              panel: '#1e2a4a',
-              accent: '#e94560',
-              info: '#0f3460',
-              success: '#53d769',
-              warning: '#f5a623',
-              text: '#e0e0e0',
-              muted: '#8892a4',
+              dark: '#1e1e1e',
+              darker: '#181818',
+              sidebar: '#252526',
+              panel: '#2d2d2d',
+              accent: '#f44747',
+              info: '#007acc',
+              success: '#4ec9b0',
+              warning: '#dcdcaa',
+              text: '#d4d4d4',
+              muted: '#858585',
               bright: '#ffffff',
-              border: '#2a3a5e',
+              border: '#3e3e3e',
+              hover: '#2a2d2e',
+              active: '#37373d',
+              badge: '#4d4d4d',
+              input: '#3c3c3c',
+              focus: '#007fd4',
+              link: '#3794ff',
+              keyword: '#569cd6',
+              string: '#ce9178',
+              number: '#b5cea8',
+              comment: '#6a9955',
+              fn: '#dcdcaa',
+              type: '#4ec9b0',
+              titlebar: '#323233',
+              statusbar: '#007acc',
             }
           },
           fontFamily: {
@@ -41,17 +55,18 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Noto Sans JP', 'Inter', sans-serif;
-      background: #1a1a2e;
-      color: #e0e0e0;
+      background: #1e1e1e;
+      color: #d4d4d4;
       overflow: hidden;
       height: 100vh;
     }
     #root { height: 100vh; }
 
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #2a3a5e; border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: #3a4a6e; }
+    ::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4f4f4f; }
+    ::-webkit-scrollbar-corner { background: transparent; }
 
     textarea, pre, code {
       font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace !important;
@@ -60,7 +75,7 @@
       tab-size: 2;
       -moz-tab-size: 2;
     }
-    textarea::placeholder { color: #4a5568; }
+    textarea::placeholder { color: #5a5a5a; }
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(8px); }
@@ -78,10 +93,15 @@
       from { opacity: 0; transform: scale(0.95); }
       to { opacity: 1; transform: scale(1); }
     }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
     .anim-fade { animation: fadeIn 0.2s ease-out; }
     .anim-slide-l { animation: slideInLeft 0.2s ease-out; }
     .anim-slide-r { animation: slideInRight 0.2s ease-out; }
     .anim-scale { animation: scaleIn 0.15s ease-out; }
+    .anim-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
 
     .editor-area {
       line-height: 1.6;
@@ -90,6 +110,18 @@
     .line-num {
       line-height: 1.6;
       font-size: 13px;
+    }
+
+    /* VS Code style selection */
+    ::selection {
+      background: #264f78;
+      color: #d4d4d4;
+    }
+
+    /* VS Code style focus ring */
+    .vsc-focus:focus {
+      outline: 1px solid #007fd4;
+      outline-offset: -1px;
     }
   </style>
 </head>
