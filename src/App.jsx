@@ -24,6 +24,8 @@ const VERSION_FORMATS = {
   '1.21.11': { min: [94, 1], max: [94, 1], useNewFormat: true },
   '1.21.10': { min: [88, 0], max: [88, 0], useNewFormat: true },
   '1.21.9':  { min: [88, 0], max: [88, 0], useNewFormat: true },
+  '1.21.8':  { format: 81, useNewFormat: false },
+  '1.21.7':  { format: 81, useNewFormat: false },
   '1.21.6':  { format: 80, useNewFormat: false },
   '1.21.5':  { format: 71, useNewFormat: false },
   '1.21.4':  { format: 61, useNewFormat: false },
@@ -667,7 +669,12 @@ const AI_SYSTEM_PROMPT = (namespace, targetVersion) => {
 
   // pack_format
   let packFormat = 10;
-  if (gte('1.21.4')) packFormat = 61;
+  if (gte('1.21.11')) packFormat = 94;
+  else if (gte('1.21.9')) packFormat = 88;
+  else if (gte('1.21.7')) packFormat = 81;
+  else if (gte('1.21.6')) packFormat = 80;
+  else if (gte('1.21.5')) packFormat = 71;
+  else if (gte('1.21.4')) packFormat = 61;
   else if (gte('1.21.2')) packFormat = 57;
   else if (gte('1.21')) packFormat = 48;
   else if (gte('1.20.5')) packFormat = 41;
@@ -708,6 +715,15 @@ const AI_SYSTEM_PROMPT = (namespace, targetVersion) => {
   const hasItemCmd = gte('1.17');
   const hasTickCmd = gte('1.21');
   const hasDisplayName = gte('1.20.2');
+  const hasRotateCmd = gte('1.21.2');
+  const hasDamageCmd = gte('1.19.4');
+  const hasPlaceCmd = gte('1.19.3');
+  const hasTestCmd = gte('1.21.5');
+  const hasStopwatchCmd = gte('1.21.11');
+  const hasPaleGarden = gte('1.21.4');
+  const hasSpringToLife = gte('1.21.5');
+  const hasSpear = gte('1.21.11');
+  const hasNautilus = gte('1.21.11');
 
   // レシピ形式
   const recipeResultNote = hasComponents
@@ -727,7 +743,12 @@ const AI_SYSTEM_PROMPT = (namespace, targetVersion) => {
     commandNotes += `
 - アイテム: コンポーネント形式[...]を使用（NBT{...}は禁止）
   give @s minecraft:diamond_sword[damage=5,enchantments={levels:{"minecraft:sharpness":5}}]
-  コンポーネント: custom_name, lore, enchantments, damage, unbreakable, custom_data, item_model, custom_model_data, attribute_modifiers, potion_contents`;
+  コンポーネント: custom_name, lore, enchantments, damage, unbreakable, custom_data, item_model, custom_model_data, attribute_modifiers, potion_contents${hasSimplifiedIngredients ? `, consumable, equippable, glider, damage_resistant, death_protection
+  consumable={consume_seconds:1.6,animation:"eat",on_consume_effects:[...]}
+  equippable={slot:"head",swappable:true}
+  glider={}  ※エリトラのように滑空可能
+  damage_resistant={types:"#minecraft:is_fire"}
+  death_protection={death_effects:[...]}  ※不死のトーテム効果` : ''}`;
   } else {
     commandNotes += `
 - アイテムNBT: give @s minecraft:diamond_sword{Damage:5,Enchantments:[{id:"minecraft:sharpness",lvl:5}]}`;
@@ -757,6 +778,11 @@ const AI_SYSTEM_PROMPT = (namespace, targetVersion) => {
   if (hasItemCmd) commandNotes += `\n- /item コマンドでアイテム操作（/replaceitemの後継）`;
   if (hasTickCmd) commandNotes += `\n- /tick freeze|unfreeze|rate <tps>|step <time>|sprint <time>|query`;
   if (hasRandomCmd) commandNotes += `\n- /random value <min>..<max> でランダム整数生成`;
+  if (hasDamageCmd) commandNotes += `\n- /damage <target> <amount> [<damageType>] [at <pos>] [by <entity>] [from <entity>]`;
+  if (hasPlaceCmd) commandNotes += `\n- /place feature <feature> [<pos>] | template <template> [<pos>] | jigsaw <pool> <element> <depth> [<pos>]`;
+  if (hasRotateCmd) commandNotes += `\n- /rotate <target> <yaw> <pitch>  ※エンティティの向き変更`;
+  if (hasTestCmd) commandNotes += `\n- /test runfunction|runthese|clearall 等（テスト用）`;
+  if (hasStopwatchCmd) commandNotes += `\n- /stopwatch <name> start|stop|reset|query  ※リアルタイムストップウォッチ`;
 
   // データパック構造
   let structureNote = `data/
@@ -776,6 +802,7 @@ const AI_SYSTEM_PROMPT = (namespace, targetVersion) => {
   if (hasItemModifiers) structureNote += `\n    ${useSingular ? 'item_modifier' : 'item_modifiers'}/  → アイテム修飾子`;
   if (hasDamageType) structureNote += `\n    damage_type/  → ダメージタイプ`;
   if (hasEnchantmentRegistry) structureNote += `\n    enchantment/  → エンチャント定義`;
+  if (hasNautilus) structureNote += `\n    environment_attribute/  → 環境属性（1.21.11+）`;
 
   return `あなたはMinecraft Java Edition データパック専門のAIアシスタントです。
 ユーザーの指示に従い、正確なデータパックファイルを生成してください。
@@ -786,7 +813,7 @@ const AI_SYSTEM_PROMPT = (namespace, targetVersion) => {
 
 【pack.mcmeta（必須）】
 \`\`\`json:pack.mcmeta
-{"pack":{"pack_format":${packFormat},"description":"${namespace} datapack"}}
+${gte('1.21.9') ? `{"pack":{"pack_format":${packFormat},"description":"${namespace} datapack","supported_formats":{"min_inclusive":${packFormat},"max_inclusive":${packFormat}}}}` : `{"pack":{"pack_format":${packFormat},"description":"${namespace} datapack"}}`}
 \`\`\`
 
 【ファイル出力形式 ※必須】
@@ -893,6 +920,19 @@ ${hasEnchantmentRegistry ? `
 【エンチャントレジストリ（1.21+）】
 data/${namespace}/enchantment/<名前>.json で独自エンチャント定義可能
 構造: { description, supported_items, weight, max_level, min_cost, max_cost, anvil_cost, slots, effects }` : ''}
+${hasItemModifiers ? `
+【item_modifier（アイテム修飾子）関数タイプ】
+基本: set_count (個数), set_damage (耐久値), set_name (名前), set_lore (説明文)
+エンチャント: set_enchantments (直接設定), enchant_randomly (ランダム), enchant_with_levels (レベル指定)
+属性: set_attributes (攻撃力/速度等), ${hasComponents ? 'set_components (全コンポーネント), copy_components (コピー), set_custom_data (カスタムデータ), copy_custom_data' : 'set_nbt, copy_nbt'}
+コンテナ: set_contents (中身), set_loot_table (ルートテーブル紐付)
+特殊: set_potion (ポーション), set_stew_effect (シチュー効果), set_banner_pattern (旗模様), fill_player_head (プレイヤー頭), set_instrument (楽器)
+本: set_book_cover, set_writable_book_pages, set_written_book_pages
+花火: set_fireworks, set_firework_explosion
+計算: apply_bonus (幸運ボーナス), looting_enchant (ドロップ増加), limit_count (個数制限), explosion_decay (爆発減衰)
+コピー: copy_name (名前コピー)
+制御: sequence (順次実行), reference (別ファイル参照), filtered (条件付き適用)
+${hasComponents ? 'set_item (ID変更), toggle_tooltips (ツールチップ切替), modify_contents (中身修飾), set_ominous_bottle_amplifier' : ''}` : ''}
 
 【武器・ツール一覧】
 剣: wooden_sword, stone_sword, iron_sword, golden_sword, diamond_sword${gte('1.16') ? ', netherite_sword' : ''}
@@ -901,6 +941,7 @@ data/${namespace}/enchantment/<名前>.json で独自エンチャント定義可
 シャベル: wooden_shovel, stone_shovel, iron_shovel, golden_shovel, diamond_shovel${gte('1.16') ? ', netherite_shovel' : ''}
 クワ: wooden_hoe, stone_hoe, iron_hoe, golden_hoe, diamond_hoe${gte('1.16') ? ', netherite_hoe' : ''}
 遠距離: bow, crossbow, trident${gte('1.21') ? ', mace, wind_charge' : ''}
+${hasSpear ? '槍: wooden_spear, stone_spear, copper_spear, iron_spear, golden_spear, diamond_spear, netherite_spear  ※突き・チャージ攻撃' : ''}
 その他: fishing_rod, shears, flint_and_steel, carrot_on_a_stick${gte('1.16') ? ', warped_fungus_on_a_stick' : ''}${gte('1.19') ? ', brush' : ''}${gte('1.21') ? ', breeze_rod, trial_key, ominous_trial_key, ominous_bottle' : ''}
 
 【防具一覧】
@@ -915,6 +956,7 @@ ${gte('1.20') ? `トリムパターン: coast, dune, eye, host, raiser, rib, sen
 弓: power(5), punch(2), flame(1), infinity(1)
 クロスボウ: quick_charge(3), multishot(1), piercing(4)
 ${gte('1.21') ? 'メイス: wind_burst(3), breach(4), density(5)' : ''}
+${hasSpear ? '槍: lunge(3)  ※突き攻撃時に水平推進' : ''}
 ツルハシ/斧: efficiency(5), fortune(3), silk_touch(1)
 防具共通: protection(4), fire_protection(4), blast_protection(4), projectile_protection(4), thorns(3), unbreaking(3), mending(1)
 ヘルメット: respiration(3), aqua_affinity(1)
@@ -923,9 +965,10 @@ ${gte('1.21') ? 'メイス: wind_burst(3), breach(4), density(5)' : ''}
 釣竿: luck_of_the_sea(3), lure(3)
 
 【エンティティ一覧】
-敵対: zombie, skeleton, creeper, spider, cave_spider, enderman, witch, slime, magma_cube, phantom, blaze, ghast, wither_skeleton, guardian, elder_guardian, endermite, silverfish, vex, vindicator, evoker, shulker, drowned, husk, stray${gte('1.14') ? ', pillager, ravager' : ''}${gte('1.16') ? ', hoglin, piglin, piglin_brute, zoglin' : ''}${gte('1.19') ? ', warden' : ''}${gte('1.21') ? ', breeze, bogged' : ''}${gte('1.21.2') ? ', creaking' : ''}
-友好: pig, cow, sheep, chicken, horse, donkey, mule, rabbit, ocelot, wolf, cat, parrot, mooshroom, turtle, squid, bat, villager, wandering_trader${gte('1.14') ? ', fox' : ''}${gte('1.16') ? ', strider' : ''}${gte('1.17') ? ', axolotl, goat, glow_squid' : ''}${gte('1.19') ? ', frog, tadpole, allay' : ''}${gte('1.20') ? ', camel, sniffer' : ''}${gte('1.21') ? ', armadillo' : ''}
-中立: bee, dolphin, llama, polar_bear, iron_golem, snow_golem, ${gte('1.16') ? 'zombified_piglin' : 'zombie_pigman'}, panda, trader_llama
+敵対: zombie, skeleton, creeper, spider, cave_spider, enderman, witch, slime, magma_cube, phantom, blaze, ghast, wither_skeleton, guardian, elder_guardian, endermite, silverfish, vex, vindicator, evoker, shulker, drowned, husk, stray${gte('1.14') ? ', pillager, ravager' : ''}${gte('1.16') ? ', hoglin, piglin, piglin_brute, zoglin' : ''}${gte('1.19') ? ', warden' : ''}${gte('1.21') ? ', breeze, bogged' : ''}${hasPaleGarden ? ', creaking' : ''}${hasNautilus ? ', zombie_nautilus, camel_husk, parched' : ''}
+友好: pig, cow, sheep, chicken, horse, donkey, mule, rabbit, ocelot, wolf, cat, parrot, mooshroom, turtle, squid, bat, villager, wandering_trader${gte('1.14') ? ', fox' : ''}${gte('1.16') ? ', strider' : ''}${gte('1.17') ? ', axolotl, goat, glow_squid' : ''}${gte('1.19') ? ', frog, tadpole, allay' : ''}${gte('1.20') ? ', camel, sniffer' : ''}${gte('1.21') ? ', armadillo' : ''}${hasNautilus ? ', nautilus' : ''}
+${hasSpringToLife ? `動物バリアント: cold_pig, warm_pig, cold_cow, warm_cow, cold_chicken, warm_chicken  ※バイオーム固有
+` : ''}中立: bee, dolphin, llama, polar_bear, iron_golem, snow_golem, ${gte('1.16') ? 'zombified_piglin' : 'zombie_pigman'}, panda, trader_llama
 ボス: ender_dragon, wither
 マーカー: armor_stand (Invisible:true, NoGravity:true, Tags:["marker"])
 乗り物: minecart, boat${gte('1.19') ? ', chest_boat' : ''}
@@ -941,6 +984,9 @@ ${gte('1.21') ? 'メイス: wind_burst(3), breach(4), density(5)' : ''}
 便利: ender_pearl, blaze_rod, nether_star, elytra, totem_of_undying, name_tag, saddle, lead, compass, clock, map, experience_bottle
 レッドストーン: redstone, repeater, comparator, piston, sticky_piston, observer, dropper, dispenser, hopper, lever${gte('1.21') ? ', crafter' : ''}
 ${gte('1.21') ? '1.21新規: trial_spawner, vault, heavy_core, mace, breeze_rod, wind_charge, copper_bulb, crafter' : ''}
+${hasPaleGarden ? '1.21.4新規: pale_oak_planks, pale_oak_log, creaking_heart, pale_moss_block, pale_hanging_moss, eyeblossom, resin_clump, resin_block, resin_bricks' : ''}
+${hasSpringToLife ? '1.21.5新規: leaf_litter, wildflowers, bush, firefly_bush, cactus_flower, short_dry_grass, tall_dry_grass, test_block, blue_egg, brown_egg' : ''}
+${hasNautilus ? '1.21.11新規: spear(全素材), nautilus_armor, netherite_horse_armor, stopwatch' : ''}
 
 【ターゲットセレクタ】
 @a=全プレイヤー, @p=最寄りプレイヤー, @r=ランダムプレイヤー, @s=実行者, @e=全エンティティ${gte('1.20.2') ? ', @n=最寄りエンティティ' : ''}
