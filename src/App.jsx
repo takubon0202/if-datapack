@@ -688,6 +688,12 @@ const MC_SOUNDS = [
 
 const MC_COLORS = ['red','blue','green','yellow','aqua','gold','light_purple','dark_red','dark_blue','dark_green','dark_aqua','dark_purple','gray','dark_gray','white','black'];
 
+const MC_COLOR_HEX = {
+  red:'#FF5555', blue:'#5555FF', green:'#55FF55', yellow:'#FFFF55', aqua:'#55FFFF', gold:'#FFAA00',
+  light_purple:'#FF55FF', dark_red:'#AA0000', dark_blue:'#0000AA', dark_green:'#00AA00', dark_aqua:'#00AAAA',
+  dark_purple:'#AA00AA', gray:'#AAAAAA', dark_gray:'#555555', white:'#FFFFFF', black:'#000000',
+};
+
 // ════════════════════════════════════════════════════════════
 // MINECRAFT WIKI ICON SYSTEM
 // ════════════════════════════════════════════════════════════
@@ -905,21 +911,28 @@ const COMMAND_BUILDER_DEFS = [
     fields: [
       { key:'target', label:'対象', type:'select', options:['@s','@a','@a[tag=player]'], def:'@a[tag=player]' },
       { key:'position', label:'表示位置', type:'select', options:['title','subtitle','actionbar'], def:'title' },
-      { key:'text', label:'テキスト', type:'text', def:'Hello!' },
-      { key:'color', label:'色', type:'mc_color', def:'gold' },
-      { key:'bold', label:'太字', type:'checkbox', def:true },
+      { key:'richtext', label:'テキスト', type:'mc_richtext', def:'{"text":"Hello!","color":"gold","bold":true}' },
     ],
-    build: (f) => `title ${f.target} ${f.position} {"text":"${f.text}","color":"${f.color}"${f.bold ? ',"bold":true' : ''}}`,
+    build: (f) => `title ${f.target} ${f.position} ${f.richtext}`,
   },
   {
     id: 'tellraw', name: 'チャットメッセージ', icon: '💬', cat: 'テキスト',
     fields: [
       { key:'target', label:'対象', type:'select', options:['@s','@a','@a[tag=player]'], def:'@a[tag=player]' },
-      { key:'text', label:'テキスト', type:'text', def:'メッセージ' },
-      { key:'color', label:'色', type:'mc_color', def:'green' },
-      { key:'bold', label:'太字', type:'checkbox', def:false },
+      { key:'richtext', label:'テキスト', type:'mc_richtext', def:'{"text":"メッセージ","color":"green"}' },
     ],
-    build: (f) => `tellraw ${f.target} {"text":"${f.text}","color":"${f.color}"${f.bold ? ',"bold":true' : ''}}`,
+    build: (f) => `tellraw ${f.target} ${f.richtext}`,
+  },
+  {
+    id: 'give_named', name: 'カスタム名アイテム', icon: '🏷️', cat: 'アイテム',
+    fields: [
+      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@a[tag=player]'], def:'@a[tag=player]' },
+      { key:'item', label:'アイテム', type:'mc_item', def:'minecraft:diamond_sword' },
+      { key:'count', label:'個数', type:'number', min:1, max:64, def:1 },
+      { key:'name', label:'カスタム名', type:'mc_richtext', def:'{"text":"伝説の剣","color":"gold","bold":true,"italic":false}' },
+      { key:'lore1', label:'説明文1行目', type:'mc_richtext', def:'{"text":"攻撃力+10","color":"gray","italic":true}' },
+    ],
+    build: (f) => `give ${f.target} ${f.item}[custom_name=${f.name},lore=[${f.lore1}]] ${f.count}`,
   },
   {
     id: 'playsound', name: 'サウンド再生', icon: '🔊', cat: '演出',
@@ -5453,6 +5466,185 @@ function CodeEditor({ file, onChange, targetVersion }) {
 }
 
 // ════════════════════════════════════════════════════════════
+// MC RICH TEXT EDITOR (JSON Text Component WYSIWYG)
+// ════════════════════════════════════════════════════════════
+
+const EMPTY_SEGMENT = { text: '', color: 'white', bold: false, italic: false, underlined: false, strikethrough: false, obfuscated: false };
+
+function segmentsToJson(segments) {
+  if (!segments || segments.length === 0) return '{"text":""}';
+  const clean = segments.map(s => {
+    const obj = { text: s.text };
+    if (s.color && s.color !== 'white') obj.color = s.color;
+    if (s.bold) obj.bold = true;
+    if (s.italic) obj.italic = true;
+    if (s.underlined) obj.underlined = true;
+    if (s.strikethrough) obj.strikethrough = true;
+    if (s.obfuscated) obj.obfuscated = true;
+    if (s.clickAction && s.clickValue) obj.clickEvent = { action: s.clickAction, value: s.clickValue };
+    if (s.hoverText) obj.hoverEvent = { action: 'show_text', contents: s.hoverText };
+    return obj;
+  });
+  return clean.length === 1 ? JSON.stringify(clean[0]) : JSON.stringify(clean);
+}
+
+function parseSegmentsFromJson(jsonStr) {
+  try {
+    const parsed = JSON.parse(jsonStr);
+    const toSeg = (obj) => ({
+      text: obj.text || '', color: obj.color || 'white', bold: !!obj.bold, italic: !!obj.italic,
+      underlined: !!obj.underlined, strikethrough: !!obj.strikethrough, obfuscated: !!obj.obfuscated,
+      clickAction: obj.clickEvent?.action || '', clickValue: obj.clickEvent?.value || '',
+      hoverText: typeof obj.hoverEvent?.contents === 'string' ? obj.hoverEvent.contents : '',
+    });
+    if (Array.isArray(parsed)) return parsed.filter(p => typeof p === 'object').map(toSeg);
+    if (typeof parsed === 'object') return [toSeg(parsed)];
+  } catch {}
+  return [{ ...EMPTY_SEGMENT, text: jsonStr || '' }];
+}
+
+function McRichTextEditor({ value, onChange, compact }) {
+  const [segments, setSegments] = useState(() => parseSegmentsFromJson(value || ''));
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const active = segments[activeIdx] || { ...EMPTY_SEGMENT };
+
+  const updateSegments = (newSegs) => {
+    setSegments(newSegs);
+    onChange(segmentsToJson(newSegs));
+  };
+
+  const updateActive = (key, val) => {
+    const newSegs = [...segments];
+    newSegs[activeIdx] = { ...active, [key]: val };
+    updateSegments(newSegs);
+  };
+
+  const addSegment = () => {
+    const newSegs = [...segments, { ...EMPTY_SEGMENT }];
+    updateSegments(newSegs);
+    setActiveIdx(newSegs.length - 1);
+  };
+
+  const removeSegment = (idx) => {
+    if (segments.length <= 1) return;
+    const newSegs = segments.filter((_, i) => i !== idx);
+    updateSegments(newSegs);
+    setActiveIdx(Math.min(activeIdx, newSegs.length - 1));
+  };
+
+  const FmtBtn = ({ prop, label, title, style: btnStyle }) => (
+    <button onClick={() => updateActive(prop, !active[prop])} title={title}
+      style={{padding: compact ? '2px 5px' : '3px 8px', fontSize: compact ? 10 : 11, borderRadius:3, border:'1px solid', cursor:'pointer',
+        borderColor: active[prop] ? '#4fc3f7' : '#333', background: active[prop] ? '#4fc3f720' : '#1a1a2e', color: active[prop] ? '#4fc3f7' : '#888', fontWeight: active[prop] ? 700 : 400, ...btnStyle}}>
+      {label}
+    </button>
+  );
+
+  return (
+    <div style={{border:'1px solid #2a2a4a',borderRadius:6,background:'#0d0d1a',overflow:'hidden'}}>
+      {/* Segment tabs */}
+      <div style={{display:'flex',alignItems:'center',gap:2,padding:'4px 6px',background:'#111122',borderBottom:'1px solid #2a2a4a',flexWrap:'wrap'}}>
+        {segments.map((seg, i) => (
+          <div key={i} onClick={() => setActiveIdx(i)}
+            style={{display:'flex',alignItems:'center',gap:3,padding:'2px 8px',borderRadius:4,cursor:'pointer',fontSize:10,
+              background: i === activeIdx ? '#2a2a4a' : 'transparent',border: i === activeIdx ? '1px solid #4fc3f7' : '1px solid transparent',
+              color: MC_COLOR_HEX[seg.color] || '#fff', fontWeight: seg.bold ? 700 : 400, fontStyle: seg.italic ? 'italic' : 'normal',
+              textDecoration: `${seg.underlined ? 'underline' : ''} ${seg.strikethrough ? 'line-through' : ''}`.trim() || 'none'}}>
+            <span style={{maxWidth:80,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{seg.text || '(空)'}</span>
+            {segments.length > 1 && (
+              <button onClick={e => { e.stopPropagation(); removeSegment(i); }} style={{background:'none',border:'none',color:'#666',cursor:'pointer',fontSize:10,padding:0,lineHeight:1}}>x</button>
+            )}
+          </div>
+        ))}
+        <button onClick={addSegment} title="テキスト部品を追加"
+          style={{padding:'2px 6px',fontSize:10,borderRadius:3,border:'1px dashed #4fc3f7',background:'transparent',color:'#4fc3f7',cursor:'pointer'}}>
+          + 追加
+        </button>
+      </div>
+
+      {/* Text input */}
+      <div style={{padding:'6px 8px'}}>
+        <input type="text" value={active.text} onChange={e => updateActive('text', e.target.value)} placeholder="テキストを入力..."
+          style={{width:'100%',padding:'5px 8px',fontSize:12,borderRadius:4,border:'1px solid #333',background:'#1a1a2e',
+            color: MC_COLOR_HEX[active.color] || '#fff', fontWeight: active.bold ? 700 : 400, fontStyle: active.italic ? 'italic' : 'normal',
+            textDecoration: `${active.underlined ? 'underline' : ''} ${active.strikethrough ? 'line-through' : ''}`.trim() || 'none', outline:'none'}} />
+      </div>
+
+      {/* Formatting toolbar */}
+      <div style={{display:'flex',alignItems:'center',gap:3,padding:'4px 8px',flexWrap:'wrap'}}>
+        <FmtBtn prop="bold" label="B" title="太字" style={{fontWeight:800}} />
+        <FmtBtn prop="italic" label="I" title="斜体" style={{fontStyle:'italic'}} />
+        <FmtBtn prop="underlined" label="U" title="下線" style={{textDecoration:'underline'}} />
+        <FmtBtn prop="strikethrough" label="S" title="打消線" style={{textDecoration:'line-through'}} />
+        <FmtBtn prop="obfuscated" label="?" title="難読化 (文字化け)" />
+        <div style={{width:1,height:16,background:'#333',margin:'0 2px'}} />
+        <span style={{fontSize:9,color:'#666'}}>色:</span>
+      </div>
+
+      {/* Color picker */}
+      <div style={{display:'flex',flexWrap:'wrap',gap:2,padding:'2px 8px 6px'}}>
+        {MC_COLORS.map(c => (
+          <button key={c} onClick={() => updateActive('color', c)} title={c}
+            style={{width: compact ? 16 : 20, height: compact ? 16 : 20, borderRadius:3,cursor:'pointer',
+              border: active.color === c ? '2px solid #fff' : '1px solid #444', background: MC_COLOR_HEX[c] || '#888'}} />
+        ))}
+      </div>
+
+      {/* Advanced options toggle */}
+      <div style={{borderTop:'1px solid #1a1a2e'}}>
+        <button onClick={() => setShowAdvanced(!showAdvanced)}
+          style={{width:'100%',padding:'3px 8px',fontSize:9,background:'transparent',border:'none',color:'#555',cursor:'pointer',textAlign:'left'}}>
+          {showAdvanced ? '▼' : '▶'} クリックイベント / ホバー (上級者向け)
+        </button>
+        {showAdvanced && (
+          <div style={{padding:'4px 8px 8px',display:'flex',flexDirection:'column',gap:4}}>
+            <div style={{display:'flex',alignItems:'center',gap:4}}>
+              <label style={{fontSize:9,color:'#888',width:60,flexShrink:0}}>クリック:</label>
+              <select value={active.clickAction || ''} onChange={e => updateActive('clickAction', e.target.value)}
+                style={{flex:'0 0 auto',padding:'2px 4px',fontSize:10,borderRadius:3,border:'1px solid #333',background:'#1a1a2e',color:'#ddd'}}>
+                <option value="">なし</option>
+                <option value="run_command">コマンド実行</option>
+                <option value="suggest_command">コマンド候補</option>
+                <option value="open_url">URLを開く</option>
+                <option value="copy_to_clipboard">クリップボード</option>
+              </select>
+              {active.clickAction && (
+                <input type="text" value={active.clickValue || ''} onChange={e => updateActive('clickValue', e.target.value)}
+                  placeholder={active.clickAction === 'open_url' ? 'https://...' : '/command...'} style={{flex:1,padding:'2px 6px',fontSize:10,borderRadius:3,border:'1px solid #333',background:'#1a1a2e',color:'#ddd'}} />
+              )}
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:4}}>
+              <label style={{fontSize:9,color:'#888',width:60,flexShrink:0}}>ホバー:</label>
+              <input type="text" value={active.hoverText || ''} onChange={e => updateActive('hoverText', e.target.value)}
+                placeholder="マウスを乗せた時のテキスト" style={{flex:1,padding:'2px 6px',fontSize:10,borderRadius:3,border:'1px solid #333',background:'#1a1a2e',color:'#ddd'}} />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Live preview */}
+      <div style={{borderTop:'1px solid #2a2a4a',padding:'6px 8px',background:'#0a0a14'}}>
+        <div style={{fontSize:9,color:'#555',marginBottom:3}}>プレビュー (ゲーム内表示イメージ):</div>
+        <div style={{padding:'6px 10px',background:'#000',borderRadius:4,fontFamily:'"Minecraft","Courier New",monospace',fontSize: compact ? 12 : 14,lineHeight:1.4,minHeight:24}}>
+          {segments.map((seg, i) => (
+            <span key={i} style={{
+              color: MC_COLOR_HEX[seg.color] || '#fff', fontWeight: seg.bold ? 700 : 400, fontStyle: seg.italic ? 'italic' : 'normal',
+              textDecoration: `${seg.underlined ? 'underline' : ''} ${seg.strikethrough ? 'line-through' : ''}`.trim() || 'none',
+              ...(seg.obfuscated ? {background:'#666',color:'transparent',borderRadius:2} : {}),
+            }}>{seg.text || (segments.length === 1 ? 'テキストを入力...' : '')}</span>
+          ))}
+        </div>
+        <div style={{fontSize:8,color:'#444',marginTop:3,fontFamily:'monospace',wordBreak:'break-all',maxHeight:40,overflow:'hidden'}}>
+          {segmentsToJson(segments)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
 // MCFUNCTION VISUAL EDITOR
 // ════════════════════════════════════════════════════════════
 
@@ -6095,6 +6287,8 @@ function IntegratedMcfEditor({ file, onChange, targetVersion, namespace }) {
                                       background: MC_COLOR_HEX[c] || '#888',cursor:'pointer',fontSize:0}} title={c}>{c}</button>
                                 ))}
                               </div>
+                            ) : field.type === 'mc_richtext' ? (
+                              <McRichTextEditor value={builderFields[field.key] || field.def || ''} onChange={v => setBuilderFields(p => ({...p, [field.key]: v}))} compact />
                             ) : (
                               <input type="text" value={builderFields[field.key] || ''} onChange={e => setBuilderFields(p => ({...p, [field.key]: e.target.value}))}
                                 style={{width:'100%',padding:'4px 6px',fontSize:11,borderRadius:3,border:'1px solid #333',background:'#1a1a2e',color:'#ddd'}} />
@@ -7880,9 +8074,6 @@ function CommandBuilderPanel({ namespace, file, onInsert }) {
       );
     }
     if (f.type === 'mc_color') {
-      const MC_COLOR_HEX = { red:'#FF5555', blue:'#5555FF', green:'#55FF55', yellow:'#FFFF55', aqua:'#55FFFF', gold:'#FFAA00',
-        light_purple:'#FF55FF', dark_red:'#AA0000', dark_blue:'#0000AA', dark_green:'#00AA00', dark_aqua:'#00AAAA',
-        dark_purple:'#AA00AA', gray:'#AAAAAA', dark_gray:'#555555', white:'#FFFFFF', black:'#000000' };
       return (
         <div className="flex flex-wrap gap-1">
           {MC_COLORS.map(c => (
@@ -7908,6 +8099,9 @@ function CommandBuilderPanel({ namespace, file, onInsert }) {
           <span className="text-xs">{val ? 'ON' : 'OFF'}</span>
         </label>
       );
+    }
+    if (f.type === 'mc_richtext') {
+      return <McRichTextEditor value={val || f.def || ''} onChange={update} />;
     }
     return (
       <input className="w-full bg-mc-dark border border-mc-border rounded px-2 py-1.5 text-xs font-mono focus:border-mc-info focus:outline-none"
