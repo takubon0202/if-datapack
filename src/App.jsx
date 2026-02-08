@@ -1419,6 +1419,66 @@ const MC_AUTO = {
     { l: '@s', d: '実行者スコア' }, { l: '@p', d: '最寄りプレイヤー' },
     { l: '#', d: 'フェイクプレイヤー (#名前)' },
   ],
+  'execute.on': [
+    { l: 'passengers', d: '乗客', v: '1.19.4' }, { l: 'vehicle', d: '乗り物', v: '1.19.4' },
+    { l: 'origin', d: '発射元', v: '1.19.4' }, { l: 'owner', d: '飼い主', v: '1.19.4' },
+    { l: 'leasher', d: 'リード繋ぎ先', v: '1.19.4' }, { l: 'target', d: '攻撃対象', v: '1.19.4' },
+    { l: 'attacker', d: '攻撃者', v: '1.19.4' },
+  ],
+  'execute.positioned': [
+    { l: 'as', d: 'エンティティの位置' }, { l: 'over', d: 'ハイトマップ上', v: '1.20.2' },
+  ],
+  'execute.positioned.over': [
+    { l: 'world_surface', d: 'ワールド表面', v: '1.20.2' },
+    { l: 'ocean_floor', d: '海底', v: '1.20.2' },
+    { l: 'motion_blocking', d: '動作ブロック上', v: '1.20.2' },
+    { l: 'motion_blocking_no_leaves', d: '動作ブロック(葉除く)', v: '1.20.2' },
+  ],
+  ride: [
+    { l: '@s', d: '実行者' }, { l: '@e', d: 'エンティティ' },
+    { l: '@p', d: '最寄りプレイヤー' }, { l: '@a', d: '全プレイヤー' },
+  ],
+  'ride.action': [
+    { l: 'mount', d: '乗せる', v: '1.19.4' }, { l: 'dismount', d: '降ろす', v: '1.19.4' },
+  ],
+  'item.replace': [
+    { l: 'entity', d: 'エンティティのスロット', v: '1.17' },
+    { l: 'block', d: 'ブロックのスロット', v: '1.17' },
+  ],
+  'item.modify': [
+    { l: 'entity', d: 'エンティティのアイテム変更', v: '1.17' },
+    { l: 'block', d: 'ブロックのアイテム変更', v: '1.17' },
+  ],
+  _attributes: [
+    { l: 'generic.max_health', d: '最大HP' }, { l: 'generic.follow_range', d: '追跡範囲' },
+    { l: 'generic.knockback_resistance', d: 'ノックバック耐性' },
+    { l: 'generic.movement_speed', d: '移動速度' }, { l: 'generic.attack_damage', d: '攻撃力' },
+    { l: 'generic.armor', d: '防御力' }, { l: 'generic.armor_toughness', d: '防御強度' },
+    { l: 'generic.attack_knockback', d: '攻撃ノックバック' },
+    { l: 'generic.attack_speed', d: '攻撃速度' }, { l: 'generic.luck', d: '幸運' },
+    { l: 'generic.flying_speed', d: '飛行速度' },
+    { l: 'generic.scale', d: 'スケール', v: '1.20.5' },
+    { l: 'generic.step_height', d: '段差高さ', v: '1.20.5' },
+    { l: 'generic.gravity', d: '重力', v: '1.20.5' },
+    { l: 'generic.safe_fall_distance', d: '安全落下距離', v: '1.20.5' },
+    { l: 'generic.fall_damage_multiplier', d: '落下ダメージ倍率', v: '1.20.5' },
+    { l: 'generic.jump_strength', d: 'ジャンプ力', v: '1.20.5' },
+    { l: 'generic.burning_time', d: '燃焼時間', v: '1.21' },
+    { l: 'generic.explosion_knockback_resistance', d: '爆発ノックバック耐性', v: '1.21' },
+    { l: 'generic.mining_efficiency', d: '採掘効率', v: '1.21' },
+    { l: 'generic.movement_efficiency', d: '移動効率', v: '1.21' },
+    { l: 'generic.oxygen_bonus', d: '酸素ボーナス', v: '1.21' },
+    { l: 'generic.sneaking_speed', d: 'スニーク速度', v: '1.21' },
+    { l: 'generic.submerged_mining_speed', d: '水中採掘速度', v: '1.21' },
+    { l: 'generic.sweeping_damage_ratio', d: '範囲攻撃比率', v: '1.21' },
+    { l: 'generic.water_movement_efficiency', d: '水中移動効率', v: '1.21' },
+    { l: 'player.block_interaction_range', d: 'ブロック操作範囲', v: '1.20.5' },
+    { l: 'player.entity_interaction_range', d: 'エンティティ操作範囲', v: '1.20.5' },
+    { l: 'player.block_break_speed', d: 'ブロック破壊速度', v: '1.20.5' },
+    { l: 'player.mining_efficiency', d: '採掘効率', v: '1.21' },
+    { l: 'zombie.spawn_reinforcements', d: 'ゾンビ増援' },
+    { l: 'horse.jump_strength', d: '馬ジャンプ力' },
+  ],
   _selectors: [
     { l: '@a', d: '全プレイヤー' }, { l: '@p', d: '最寄りプレイヤー' },
     { l: '@r', d: 'ランダムプレイヤー' }, { l: '@s', d: '実行者' },
@@ -2419,8 +2479,15 @@ function getAutocompleteSuggestions(lineText, cursorCol, targetVersion) {
       if (tok === 'if' || tok === 'unless') { ctx = 'execute.if'; expectArg = false; continue; }
       if (tok === 'store') { ctx = 'execute.store'; expectArg = false; continue; }
       if (tok === 'result' || tok === 'success') { ctx = 'execute.store.result'; expectArg = false; continue; }
-      if (['as', 'at', 'on'].includes(tok)) { expectArg = true; ctx = 'execute'; continue; }
-      if (['positioned', 'rotated'].includes(tok)) {
+      if (['as', 'at'].includes(tok)) { expectArg = true; ctx = 'execute'; continue; }
+      if (tok === 'on') { ctx = 'execute.on'; expectArg = false; continue; }
+      if (tok === 'positioned') {
+        const next = completed[i + 1]?.toLowerCase();
+        if (next === 'over') { ctx = 'execute.positioned.over'; i += 1; continue; }
+        if (next === 'as') { i += 2; } else { i += 2; }
+        ctx = 'execute'; continue;
+      }
+      if (['rotated'].includes(tok)) {
         const next = completed[i + 1]?.toLowerCase();
         if (next === 'as') { i += 2; } else { i += 2; }
         ctx = 'execute'; continue;
@@ -2507,10 +2574,9 @@ function getAutocompleteSuggestions(lineText, cursorCol, targetVersion) {
   }
 
   // Commands where arg[1] is a selector and arg[2] is a subcommand (tag @s add, attribute @s ...)
-  const SELECTOR_THEN_SUB = ['tag', 'attribute'];
+  const SELECTOR_THEN_SUB = ['tag', 'ride'];
   if (SELECTOR_THEN_SUB.includes(cmd) && completed.length >= 2) {
     if (completed[1]?.startsWith('@') || completed[1]?.match(/^[A-Za-z0-9_]+$/)) {
-      // Selector/player name at pos 1, show action subcommands at pos 2
       const actionKey = `${cmd}.action`;
       if (completed.length === 2) {
         const actionItems = filterByVersion(MC_AUTO[actionKey] || [], targetVersion);
@@ -2518,6 +2584,24 @@ function getAutocompleteSuggestions(lineText, cursorCol, targetVersion) {
           if (!currentWord) return actionItems;
           return actionItems.filter(s => s.l.toLowerCase().startsWith(cw));
         }
+      }
+    }
+  }
+
+  // attribute @s <attribute_name> <action>: selector, then attribute name, then action
+  if (cmd === 'attribute' && completed.length >= 2) {
+    if (completed[1]?.startsWith('@') || completed[1]?.match(/^[A-Za-z0-9_]+$/)) {
+      if (completed.length === 2) {
+        // Show attribute names
+        const cleanWord = cw.replace(/^minecraft:/, '');
+        const attrs = filterByVersion(MC_AUTO._attributes || [], targetVersion);
+        return attrs.filter(s => s.l.startsWith(cleanWord)).slice(0, 15);
+      }
+      if (completed.length === 3) {
+        // Show actions (get/base/modifier)
+        const actionItems = filterByVersion(MC_AUTO['attribute.action'] || [], targetVersion);
+        if (!currentWord) return actionItems;
+        return actionItems.filter(s => s.l.toLowerCase().startsWith(cw));
       }
     }
   }
