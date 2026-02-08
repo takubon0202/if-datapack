@@ -390,7 +390,673 @@ const MINIGAME_TYPES = [
     color: 'text-purple-400',
     defaults: { gameTime: 300, targetItem: 'minecraft:diamond' },
   },
+  {
+    id: 'king_of_hill',
+    name: '陣取り',
+    icon: '👑',
+    description: '指定エリアを制圧してポイントを稼ぐゲーム。目標ポイントに先に到達したチームが勝利。',
+    color: 'text-yellow-400',
+    defaults: { gameTime: 300, teamA: '赤チーム', teamB: '青チーム', colorA: 'red', colorB: 'blue', targetScore: 100 },
+  },
+  {
+    id: 'zombie_survival',
+    name: 'ゾンビサバイバル',
+    icon: '🧟',
+    description: '押し寄せるゾンビから生き残れ！ウェーブ制で徐々に難易度が上がる。',
+    color: 'text-green-500',
+    defaults: { gameTime: 600, maxWaves: 10, zombiesPerWave: 5 },
+  },
+  {
+    id: 'build_battle',
+    name: '建築バトル',
+    icon: '🏗️',
+    description: '制限時間内にお題に沿った建築をするゲーム。投票で最も良い建築が勝利。',
+    color: 'text-amber-400',
+    defaults: { gameTime: 300, buildTime: 180, voteTime: 60 },
+  },
+  {
+    id: 'capture_flag',
+    name: '旗取り (CTF)',
+    icon: '🚩',
+    description: 'チーム対抗で相手チームの旗を奪って自陣に持ち帰るゲーム。先に規定回数奪取したチームの勝利。',
+    color: 'text-rose-400',
+    defaults: { gameTime: 600, teamA: '赤チーム', teamB: '青チーム', colorA: 'red', colorB: 'blue', capturesNeeded: 3 },
+  },
+  {
+    id: 'tnt_run',
+    name: 'TNTラン',
+    icon: '💣',
+    description: '走った場所のブロックが消える！最後まで落ちずに残ったプレイヤーが勝利。',
+    color: 'text-red-500',
+    defaults: { gameTime: 180, fallY: 0, layerCount: 3 },
+  },
 ];
+
+// ════════════════════════════════════════════════════════════
+// SYSTEM TYPES (for SystemWizard)
+// ════════════════════════════════════════════════════════════
+
+const SYSTEM_TYPES = [
+  {
+    id: 'custom_weapon',
+    name: 'カスタム武器',
+    icon: '⚔️',
+    description: '特殊効果付きの武器を生成するシステム。右クリックでスキル発動やエンチャント付与。',
+    color: 'text-orange-400',
+    defaults: { weaponName: '炎の剣', weaponItem: 'minecraft:diamond_sword', particleEffect: 'flame', damage: 10, cooldown: 60 },
+  },
+  {
+    id: 'shop_npc',
+    name: 'ショップNPC',
+    icon: '🏪',
+    description: 'アイテムの購入・売却ができるNPCショップシステム。スコアを通貨として使用。',
+    color: 'text-emerald-400',
+    defaults: { shopName: 'ショップ', currency: 'coins', items: 3 },
+  },
+  {
+    id: 'teleport_system',
+    name: 'テレポートシステム',
+    icon: '🌀',
+    description: '名前付きワープポイント間を移動するシステム。トリガーによるテレポート。',
+    color: 'text-violet-400',
+    defaults: { pointCount: 3 },
+  },
+  {
+    id: 'loot_box',
+    name: 'ルートボックス',
+    icon: '🎁',
+    description: 'ランダムにアイテムが入手できるガチャシステム。レア度別のドロップテーブル付き。',
+    color: 'text-pink-400',
+    defaults: { boxName: '宝箱', tiers: 3, cost: 10, currency: 'coins' },
+  },
+  {
+    id: 'recipe_set',
+    name: 'レシピセット',
+    icon: '📖',
+    description: 'カスタムレシピのセットを一括生成。武器・防具・ツール・食料のレシピパック。',
+    color: 'text-cyan-400',
+    defaults: { recipeType: 'weapon', recipeCount: 3 },
+  },
+  {
+    id: 'boss_fight',
+    name: 'ボス戦',
+    icon: '💀',
+    description: '強化されたボスモブとの戦闘システム。フェーズ制・スキル・ドロップ報酬付き。',
+    color: 'text-red-400',
+    defaults: { bossName: 'ドラゴンロード', bossEntity: 'minecraft:wither_skeleton', bossHp: 100, phases: 3 },
+  },
+  {
+    id: 'lobby_system',
+    name: 'ロビーシステム',
+    icon: '🏠',
+    description: 'ゲーム待機用のロビーシステム。プレイヤー管理・準備完了・ゲーム開始カウントダウン。',
+    color: 'text-sky-400',
+    defaults: { lobbyName: 'ロビー', minPlayers: 2, maxPlayers: 16, countdown: 30 },
+  },
+];
+
+// ════════════════════════════════════════════════════════════
+// MC DATA (items / entities / effects / particles / sounds)
+// ════════════════════════════════════════════════════════════
+
+const MC_ITEMS = [
+  // 武器
+  { id:'minecraft:diamond_sword', n:'ダイヤモンドの剣', c:'武器' },{ id:'minecraft:iron_sword', n:'鉄の剣', c:'武器' },
+  { id:'minecraft:netherite_sword', n:'ネザライトの剣', c:'武器' },{ id:'minecraft:mace', n:'メイス', c:'武器' },
+  { id:'minecraft:bow', n:'弓', c:'武器' },{ id:'minecraft:crossbow', n:'クロスボウ', c:'武器' },{ id:'minecraft:trident', n:'トライデント', c:'武器' },
+  { id:'minecraft:wind_charge', n:'ウィンドチャージ', c:'武器' },
+  // ツール
+  { id:'minecraft:diamond_pickaxe', n:'ダイヤモンドのツルハシ', c:'ツール' },{ id:'minecraft:diamond_axe', n:'ダイヤモンドの斧', c:'ツール' },
+  { id:'minecraft:diamond_shovel', n:'ダイヤモンドのシャベル', c:'ツール' },{ id:'minecraft:fishing_rod', n:'釣り竿', c:'ツール' },
+  { id:'minecraft:netherite_pickaxe', n:'ネザライトのツルハシ', c:'ツール' },{ id:'minecraft:flint_and_steel', n:'火打ち石と打ち金', c:'ツール' },
+  // 防具
+  { id:'minecraft:shield', n:'盾', c:'防具' },{ id:'minecraft:diamond_helmet', n:'ダイヤのヘルメット', c:'防具' },
+  { id:'minecraft:diamond_chestplate', n:'ダイヤのチェストプレート', c:'防具' },{ id:'minecraft:diamond_leggings', n:'ダイヤのレギンス', c:'防具' },
+  { id:'minecraft:diamond_boots', n:'ダイヤのブーツ', c:'防具' },{ id:'minecraft:netherite_helmet', n:'ネザライトのヘルメット', c:'防具' },
+  { id:'minecraft:netherite_chestplate', n:'ネザライトのチェストプレート', c:'防具' },{ id:'minecraft:elytra', n:'エリトラ', c:'防具' },
+  // 素材
+  { id:'minecraft:diamond', n:'ダイヤモンド', c:'素材' },{ id:'minecraft:iron_ingot', n:'鉄インゴット', c:'素材' },
+  { id:'minecraft:gold_ingot', n:'金インゴット', c:'素材' },{ id:'minecraft:copper_ingot', n:'銅インゴット', c:'素材' },
+  { id:'minecraft:netherite_ingot', n:'ネザライトインゴット', c:'素材' },{ id:'minecraft:emerald', n:'エメラルド', c:'素材' },
+  { id:'minecraft:lapis_lazuli', n:'ラピスラズリ', c:'素材' },{ id:'minecraft:redstone', n:'レッドストーン', c:'素材' },
+  { id:'minecraft:coal', n:'石炭', c:'素材' },{ id:'minecraft:quartz', n:'ネザークォーツ', c:'素材' },
+  { id:'minecraft:amethyst_shard', n:'アメジストの欠片', c:'素材' },{ id:'minecraft:echo_shard', n:'残響の欠片', c:'素材' },
+  { id:'minecraft:stick', n:'棒', c:'素材' },{ id:'minecraft:blaze_rod', n:'ブレイズロッド', c:'素材' },
+  { id:'minecraft:blaze_powder', n:'ブレイズパウダー', c:'素材' },{ id:'minecraft:breeze_rod', n:'ブリーズロッド', c:'素材' },
+  { id:'minecraft:heavy_core', n:'ヘビーコア', c:'素材' },{ id:'minecraft:ender_pearl', n:'エンダーパール', c:'素材' },
+  { id:'minecraft:ender_eye', n:'エンダーアイ', c:'素材' },{ id:'minecraft:nether_star', n:'ネザースター', c:'素材' },
+  { id:'minecraft:heart_of_the_sea', n:'海洋の心', c:'素材' },{ id:'minecraft:string', n:'糸', c:'素材' },
+  { id:'minecraft:leather', n:'革', c:'素材' },{ id:'minecraft:bone', n:'骨', c:'素材' },
+  { id:'minecraft:gunpowder', n:'火薬', c:'素材' },{ id:'minecraft:ghast_tear', n:'ガストの涙', c:'素材' },
+  { id:'minecraft:slime_ball', n:'スライムボール', c:'素材' },{ id:'minecraft:paper', n:'紙', c:'素材' },
+  { id:'minecraft:book', n:'本', c:'素材' },{ id:'minecraft:feather', n:'羽根', c:'素材' },
+  // 弾薬
+  { id:'minecraft:arrow', n:'矢', c:'弾薬' },{ id:'minecraft:spectral_arrow', n:'光の矢', c:'弾薬' },
+  { id:'minecraft:tipped_arrow', n:'効能付きの矢', c:'弾薬' },
+  // 食料
+  { id:'minecraft:golden_apple', n:'金のリンゴ', c:'食料' },{ id:'minecraft:enchanted_golden_apple', n:'エンチャントされた金リンゴ', c:'食料' },
+  { id:'minecraft:cooked_beef', n:'ステーキ', c:'食料' },{ id:'minecraft:bread', n:'パン', c:'食料' },
+  // 探索 (1.21)
+  { id:'minecraft:trial_key', n:'試練の鍵', c:'探索' },{ id:'minecraft:ominous_trial_key', n:'不吉な試練の鍵', c:'探索' },
+  { id:'minecraft:ominous_bottle', n:'不吉な瓶', c:'探索' },
+  // その他
+  { id:'minecraft:potion', n:'ポーション', c:'その他' },{ id:'minecraft:totem_of_undying', n:'不死のトーテム', c:'その他' },
+  { id:'minecraft:experience_bottle', n:'経験値の瓶', c:'その他' },{ id:'minecraft:enchanted_book', n:'エンチャントの本', c:'その他' },
+  { id:'minecraft:firework_rocket', n:'ロケット花火', c:'その他' },{ id:'minecraft:name_tag', n:'名札', c:'その他' },
+  { id:'minecraft:carrot_on_a_stick', n:'ニンジン付きの棒', c:'その他' },{ id:'minecraft:snowball', n:'雪玉', c:'その他' },
+  // ブロック
+  { id:'minecraft:stone', n:'石', c:'ブロック' },{ id:'minecraft:cobblestone', n:'丸石', c:'ブロック' },
+  { id:'minecraft:oak_planks', n:'オークの板材', c:'ブロック' },{ id:'minecraft:glass', n:'ガラス', c:'ブロック' },
+  { id:'minecraft:tnt', n:'TNT', c:'ブロック' },{ id:'minecraft:sand', n:'砂', c:'ブロック' },
+  { id:'minecraft:obsidian', n:'黒曜石', c:'ブロック' },{ id:'minecraft:bedrock', n:'岩盤', c:'ブロック' },
+  { id:'minecraft:barrier', n:'バリアブロック', c:'ブロック' },{ id:'minecraft:air', n:'空気', c:'ブロック' },
+  { id:'minecraft:command_block', n:'コマンドブロック', c:'ブロック' },{ id:'minecraft:structure_block', n:'ストラクチャーブロック', c:'ブロック' },
+  { id:'minecraft:trial_spawner', n:'トライアルスポナー', c:'ブロック' },{ id:'minecraft:vault', n:'ヴォルト', c:'ブロック' },
+];
+const MC_ITEM_CATS = [...new Set(MC_ITEMS.map(i=>i.c))];
+
+const MC_ENTITIES = [
+  // 敵対 - アンデッド
+  { id:'minecraft:zombie', n:'ゾンビ', c:'敵対' },{ id:'minecraft:husk', n:'ハスク', c:'敵対' },
+  { id:'minecraft:drowned', n:'ドラウンド', c:'敵対' },{ id:'minecraft:zombie_villager', n:'村人ゾンビ', c:'敵対' },
+  { id:'minecraft:skeleton', n:'スケルトン', c:'敵対' },{ id:'minecraft:stray', n:'ストレイ', c:'敵対' },
+  { id:'minecraft:bogged', n:'ボグド', c:'敵対' },{ id:'minecraft:wither_skeleton', n:'ウィザースケルトン', c:'敵対' },
+  { id:'minecraft:phantom', n:'ファントム', c:'敵対' },
+  // 敵対 - 節足動物
+  { id:'minecraft:creeper', n:'クリーパー', c:'敵対' },{ id:'minecraft:spider', n:'クモ', c:'敵対' },
+  { id:'minecraft:cave_spider', n:'洞窟グモ', c:'敵対' },{ id:'minecraft:silverfish', n:'シルバーフィッシュ', c:'敵対' },
+  { id:'minecraft:endermite', n:'エンダーマイト', c:'敵対' },
+  // 敵対 - ネザー
+  { id:'minecraft:blaze', n:'ブレイズ', c:'敵対' },{ id:'minecraft:ghast', n:'ガスト', c:'敵対' },
+  { id:'minecraft:magma_cube', n:'マグマキューブ', c:'敵対' },{ id:'minecraft:hoglin', n:'ホグリン', c:'敵対' },
+  { id:'minecraft:zoglin', n:'ゾグリン', c:'敵対' },{ id:'minecraft:piglin_brute', n:'ピグリンブルート', c:'敵対' },
+  // 敵対 - 襲撃
+  { id:'minecraft:pillager', n:'ピリジャー', c:'敵対' },{ id:'minecraft:vindicator', n:'ヴィンディケーター', c:'敵対' },
+  { id:'minecraft:evoker', n:'エヴォーカー', c:'敵対' },{ id:'minecraft:ravager', n:'ラヴェジャー', c:'敵対' },
+  { id:'minecraft:witch', n:'ウィッチ', c:'敵対' },
+  // 敵対 - 水中・ガーディアン
+  { id:'minecraft:guardian', n:'ガーディアン', c:'敵対' },{ id:'minecraft:elder_guardian', n:'エルダーガーディアン', c:'敵対' },
+  // 敵対 - エンド
+  { id:'minecraft:enderman', n:'エンダーマン', c:'中立' },{ id:'minecraft:shulker', n:'シュルカー', c:'敵対' },
+  // 敵対 - 特殊
+  { id:'minecraft:warden', n:'ウォーデン', c:'敵対' },{ id:'minecraft:breeze', n:'ブリーズ', c:'敵対' },
+  { id:'minecraft:creaking', n:'クリーキング', c:'敵対' },{ id:'minecraft:slime', n:'スライム', c:'敵対' },
+  // 中立
+  { id:'minecraft:piglin', n:'ピグリン', c:'中立' },{ id:'minecraft:zombified_piglin', n:'ゾンビピグリン', c:'中立' },
+  { id:'minecraft:wolf', n:'オオカミ', c:'中立' },{ id:'minecraft:bee', n:'ミツバチ', c:'中立' },
+  // 友好
+  { id:'minecraft:villager', n:'村人', c:'友好' },{ id:'minecraft:cow', n:'ウシ', c:'友好' },
+  { id:'minecraft:pig', n:'ブタ', c:'友好' },{ id:'minecraft:sheep', n:'ヒツジ', c:'友好' },
+  { id:'minecraft:chicken', n:'ニワトリ', c:'友好' },{ id:'minecraft:horse', n:'ウマ', c:'友好' },
+  { id:'minecraft:cat', n:'ネコ', c:'友好' },{ id:'minecraft:allay', n:'アレイ', c:'友好' },
+  { id:'minecraft:sniffer', n:'スニッファー', c:'友好' },{ id:'minecraft:armadillo', n:'アルマジロ', c:'友好' },
+  { id:'minecraft:axolotl', n:'ウーパールーパー', c:'友好' },{ id:'minecraft:frog', n:'カエル', c:'友好' },
+  // ユーティリティ
+  { id:'minecraft:iron_golem', n:'アイアンゴーレム', c:'ユーティリティ' },{ id:'minecraft:snow_golem', n:'スノーゴーレム', c:'ユーティリティ' },
+  // ボス
+  { id:'minecraft:ender_dragon', n:'エンダードラゴン', c:'ボス' },{ id:'minecraft:wither', n:'ウィザー', c:'ボス' },
+  // 特殊
+  { id:'minecraft:armor_stand', n:'防具立て', c:'特殊' },{ id:'minecraft:marker', n:'マーカー', c:'特殊' },
+  { id:'minecraft:area_effect_cloud', n:'エリアエフェクト', c:'特殊' },{ id:'minecraft:item_display', n:'アイテムディスプレイ', c:'特殊' },
+  { id:'minecraft:text_display', n:'テキストディスプレイ', c:'特殊' },{ id:'minecraft:block_display', n:'ブロックディスプレイ', c:'特殊' },
+  { id:'minecraft:interaction', n:'インタラクション', c:'特殊' },
+];
+
+const MC_EFFECTS = [
+  // バフ
+  { id:'speed', n:'移動速度上昇' },{ id:'haste', n:'採掘速度上昇' },{ id:'strength', n:'攻撃力上昇' },
+  { id:'jump_boost', n:'跳躍力上昇' },{ id:'regeneration', n:'再生能力' },{ id:'resistance', n:'耐性' },
+  { id:'fire_resistance', n:'火炎耐性' },{ id:'water_breathing', n:'水中呼吸' },{ id:'night_vision', n:'暗視' },
+  { id:'invisibility', n:'透明化' },{ id:'slow_falling', n:'落下速度低下' },{ id:'conduit_power', n:'コンジットパワー' },
+  { id:'dolphins_grace', n:'イルカの好意' },{ id:'absorption', n:'衝撃吸収' },{ id:'saturation', n:'満腹度回復' },
+  { id:'health_boost', n:'体力増強' },{ id:'hero_of_the_village', n:'村の英雄' },
+  // デバフ
+  { id:'slowness', n:'移動速度低下' },{ id:'mining_fatigue', n:'採掘速度低下' },{ id:'weakness', n:'弱体化' },
+  { id:'hunger', n:'空腹' },{ id:'poison', n:'毒' },{ id:'wither', n:'衰弱' },
+  { id:'blindness', n:'盲目' },{ id:'nausea', n:'吐き気' },{ id:'levitation', n:'浮遊' },
+  { id:'darkness', n:'暗闇' },{ id:'bad_omen', n:'不吉な予感' },
+  // 即時
+  { id:'instant_health', n:'即時回復' },{ id:'instant_damage', n:'即時ダメージ' },
+  // ユーティリティ
+  { id:'glowing', n:'発光' },{ id:'luck', n:'幸運' },{ id:'unluck', n:'不運' },
+  // 1.21 新エフェクト
+  { id:'trial_omen', n:'試練の予兆' },{ id:'raid_omen', n:'襲撃の予兆' },
+  { id:'wind_charged', n:'風力帯電' },{ id:'weaving', n:'織り込み' },
+  { id:'oozing', n:'滲出' },{ id:'infested', n:'寄生' },
+];
+
+const MC_PARTICLES = [
+  // 炎・煙
+  'flame','soul_fire_flame','smoke','white_smoke','large_smoke','campfire_cosy_smoke','lava',
+  // 環境
+  'cloud','rain','snowflake','ash','white_ash','cherry_leaves','crimson_spore','warped_spore','spore_blossom_air',
+  // 戦闘
+  'crit','enchanted_hit','sweep_attack','damage_indicator',
+  // 感情・村人
+  'heart','happy_villager','angry_villager','witch','note',
+  // エフェクト
+  'end_rod','portal','reverse_portal','dragon_breath','soul','dust','glow',
+  // 爆発・花火
+  'explosion','explosion_emitter','firework','flash',
+  // 水中
+  'bubble','bubble_pop','bubble_column_up','splash','underwater','nautilus','dolphin','dripping_water','dripping_lava',
+  // スカルク
+  'sculk_soul','sculk_charge','shriek','sonic_boom',
+  // 1.21 ブリーズ・トライアル
+  'gust','small_gust','gust_emitter_large','gust_emitter_small',
+  'trial_spawner_detected_player','trial_spawner_detected_player_ominous',
+  'vault_connection','ominous_spawning','raid_omen','trial_omen',
+];
+
+const MC_SOUNDS = [
+  // UI・システム
+  { id:'minecraft:entity.experience_orb.pickup', n:'経験値取得音' },
+  { id:'minecraft:ui.toast.challenge_complete', n:'進捗達成音' },
+  { id:'minecraft:entity.player.levelup', n:'レベルアップ音' },
+  { id:'minecraft:ui.button.click', n:'ボタンクリック音' },
+  // ノートブロック
+  { id:'minecraft:block.note_block.pling', n:'ノートブロック(プリン)' },
+  { id:'minecraft:block.note_block.bell', n:'ノートブロック(ベル)' },
+  { id:'minecraft:block.note_block.chime', n:'ノートブロック(チャイム)' },
+  { id:'minecraft:block.note_block.harp', n:'ノートブロック(ハープ)' },
+  { id:'minecraft:block.note_block.xylophone', n:'ノートブロック(木琴)' },
+  // ボス・敵対
+  { id:'minecraft:entity.wither.spawn', n:'ウィザー出現音' },
+  { id:'minecraft:entity.ender_dragon.growl', n:'ドラゴンの咆哮' },
+  { id:'minecraft:entity.warden.emerge', n:'ウォーデン出現音' },
+  { id:'minecraft:entity.warden.roar', n:'ウォーデンの咆哮' },
+  { id:'minecraft:entity.breeze.shoot', n:'ブリーズ発射音' },
+  { id:'minecraft:entity.breeze.land', n:'ブリーズ着地音' },
+  // エンティティ
+  { id:'minecraft:entity.enderman.teleport', n:'テレポート音' },
+  { id:'minecraft:entity.blaze.shoot', n:'ブレイズ発射音' },
+  { id:'minecraft:entity.zombie.ambient', n:'ゾンビの声' },
+  { id:'minecraft:entity.firework_rocket.blast', n:'花火音' },
+  { id:'minecraft:entity.lightning_bolt.impact', n:'雷鳴' },
+  // ブロック
+  { id:'minecraft:block.anvil.land', n:'金床落下音' },
+  { id:'minecraft:block.chest.open', n:'チェスト開閉音' },
+  { id:'minecraft:block.beacon.activate', n:'ビーコン起動音' },
+  { id:'minecraft:block.amethyst_block.hit', n:'アメジストブロック音' },
+  // 1.21 トライアル
+  { id:'minecraft:block.trial_spawner.detect_player', n:'トライアルスポナー検知音' },
+  { id:'minecraft:block.trial_spawner.spawn_mob', n:'トライアルスポナーMOB出現音' },
+  { id:'minecraft:block.vault.open_shutter', n:'ヴォルト開放音' },
+  { id:'minecraft:entity.player.hurt', n:'プレイヤーダメージ音' },
+  { id:'minecraft:entity.generic.explode', n:'爆発音' },
+];
+
+const MC_COLORS = ['red','blue','green','yellow','aqua','gold','light_purple','dark_red','dark_blue','dark_green','dark_aqua','dark_purple','gray','dark_gray','white','black'];
+
+// ════════════════════════════════════════════════════════════
+// MINECRAFT WIKI ICON SYSTEM
+// ════════════════════════════════════════════════════════════
+
+const WIKI_ICON_MAP = {
+  // 特殊名称マッピング (minecraft_id → Wiki_File_Name)
+  ender_eye: "Eye_of_Ender.png", experience_bottle: "Bottle_o%27_Enchanting.png",
+  redstone: "Redstone_Dust.png", map: "Map_(item).png", filled_map: "Map_(item).png",
+  nether_star: "Nether_Star.png", fire_charge: "Fire_Charge.png",
+  // アニメーション付き (.gif)
+  enchanted_golden_apple: "Enchanted_Golden_Apple.gif", enchanted_book: "Enchanted_Book.gif",
+  command_block: "Command_Block.gif", chain_command_block: "Chain_Command_Block.gif",
+  repeating_command_block: "Repeating_Command_Block.gif",
+  // 原石・鉱石
+  raw_iron: "Raw_Iron.png", raw_gold: "Raw_Gold.png", raw_copper: "Raw_Copper.png",
+  // ポーション系
+  potion: "Potion.png", splash_potion: "Splash_Potion.png", lingering_potion: "Lingering_Potion.png",
+  // 特殊ブロック
+  grass_block: "Grass_Block.png", podzol: "Podzol.png", mycelium: "Mycelium.png",
+  farmland: "Farmland.png", dirt_path: "Dirt_Path.png",
+  // 略称・別名
+  oak_planks: "Oak_Planks.png", spruce_planks: "Spruce_Planks.png",
+  // レッドストーン
+  redstone_torch: "Redstone_Torch.png", repeater: "Redstone_Repeater.png", comparator: "Redstone_Comparator.png",
+  // 頭
+  player_head: "Player_Head.png", zombie_head: "Zombie_Head.png",
+  skeleton_skull: "Skeleton_Skull.png", creeper_head: "Creeper_Head.png",
+  wither_skeleton_skull: "Wither_Skeleton_Skull.png", dragon_head: "Dragon_Head.png",
+  piglin_head: "Piglin_Head.png",
+  // 1.21 トライアルチャンバー
+  trial_spawner: "Trial_Spawner.png", vault: "Vault.png", heavy_core: "Heavy_Core.png",
+  wind_charge: "Wind_Charge.png", breeze_rod: "Breeze_Rod.png", mace: "Mace.png",
+  trial_key: "Trial_Key.png", ominous_trial_key: "Ominous_Trial_Key.png", ominous_bottle: "Ominous_Bottle.png",
+  // 防具テンプレート
+  netherite_upgrade_smithing_template: "Netherite_Upgrade.png",
+  // ディスク
+  music_disc_13: "Music_Disc_13.png", music_disc_cat: "Music_Disc_Cat.png",
+  music_disc_blocks: "Music_Disc_Blocks.png", music_disc_chirp: "Music_Disc_Chirp.png",
+  music_disc_pigstep: "Music_Disc_Pigstep.png", music_disc_otherside: "Music_Disc_Otherside.png",
+  music_disc_5: "Music_Disc_5.png", music_disc_relic: "Music_Disc_Relic.png",
+  music_disc_precipice: "Music_Disc_Precipice.png", music_disc_creator: "Music_Disc_Creator.png",
+  // 染色系
+  white_wool: "White_Wool.png", white_bed: "White_Bed.png", white_banner: "White_Banner.png",
+  // 食料
+  cooked_beef: "Steak.png", cooked_porkchop: "Cooked_Porkchop.png",
+  cooked_chicken: "Cooked_Chicken.png", cooked_mutton: "Cooked_Mutton.png",
+  baked_potato: "Baked_Potato.png", pumpkin_pie: "Pumpkin_Pie.png",
+  golden_apple: "Golden_Apple.png", golden_carrot: "Golden_Carrot.png",
+  // エンティティ関連
+  armor_stand: "Armor_Stand.png", elytra: "Elytra.png",
+  totem_of_undying: "Totem_of_Undying.png", shield: "Shield.png",
+  // チェスト・シュルカー
+  chest: "Chest.png", ender_chest: "Ender_Chest.png",
+  trapped_chest: "Trapped_Chest.png", barrel: "Barrel.png",
+  // 看板
+  oak_sign: "Oak_Sign.png", spruce_sign: "Spruce_Sign.png",
+  // その他
+  structure_block: "Structure_Block.png", barrier: "Barrier.png",
+  spawner: "Spawner.png", bedrock: "Bedrock.png",
+  name_tag: "Name_Tag.png", lead: "Lead.png", saddle: "Saddle.png",
+  carrot_on_a_stick: "Carrot_on_a_Stick.png",
+  // TNT・爆発物
+  tnt: "TNT.png", tnt_minecart: "TNT_Minecart.png",
+  firework_rocket: "Firework_Rocket.png", firework_star: "Firework_Star.png",
+  // Codex検証済み: 特殊ID→表示名マッピング
+  writable_book: "Book_and_Quill.png", turtle_helmet: "Turtle_Shell.png",
+  scute: "Turtle_Scute.png", quartz: "Nether_Quartz.png",
+  furnace_minecart: "Minecart_with_Furnace.png", chest_minecart: "Minecart_with_Chest.png",
+  hopper_minecart: "Minecart_with_Hopper.png", tnt_minecart: "Minecart_with_TNT.png",
+  command_block_minecart: "Minecart_with_Command_Block.png",
+  oak_boat: "Oak_Boat.png", oak_chest_boat: "Oak_Boat_with_Chest.png",
+  lapis_block: "Block_of_Lapis_Lazuli.png", iron_block: "Block_of_Iron.png",
+  gold_block: "Block_of_Gold.png", diamond_block: "Block_of_Diamond.png",
+  emerald_block: "Block_of_Emerald.png", netherite_block: "Block_of_Netherite.png",
+  copper_block: "Block_of_Copper.png", redstone_block: "Block_of_Redstone.png",
+  coal_block: "Block_of_Coal.png", amethyst_block: "Block_of_Amethyst.png",
+  bamboo_block: "Block_of_Bamboo.png",
+  rotten_flesh: "Rotten_Flesh.png", red_banner: "Red_Banner.png", compass: "Compass.png",
+  crafting_table: "Crafting_Table.png", wither_skeleton_skull: "Wither_Skeleton_Skull.png",
+  // 黄金系
+  golden_boots: "Golden_Boots.png", golden_helmet: "Golden_Helmet.png",
+  golden_chestplate: "Golden_Chestplate.png", golden_leggings: "Golden_Leggings.png",
+  golden_sword: "Golden_Sword.png", golden_pickaxe: "Golden_Pickaxe.png",
+  // ブリック
+  bricks: "Bricks.png", nether_bricks: "Nether_Bricks.png",
+  // その他
+  spawner: "Spawner.gif", conduit: "Conduit.gif",
+  end_crystal: "End_Crystal.png", glow_ink_sac: "Glow_Ink_Sac.png",
+  recovery_compass: "Recovery_Compass.gif", clock: "Clock.gif",
+};
+
+const WIKI_BASE = 'https://minecraft.wiki/images/Invicon_';
+
+function getInviconUrl(id) {
+  const name = id.replace('minecraft:', '');
+  if (WIKI_ICON_MAP[name]) return `https://minecraft.wiki/images/Invicon_${WIKI_ICON_MAP[name]}`;
+  const titleCase = name.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('_');
+  return `${WIKI_BASE}${titleCase}.png`;
+}
+
+function getEffectIconUrl(id) {
+  const name = id.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('_');
+  return `https://minecraft.wiki/images/Effect_${name}_JE.png`;
+}
+
+function getSpawnEggUrl(entityId) {
+  const name = entityId.replace('minecraft:', '').split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('_');
+  return `${WIKI_BASE}${name}_Spawn_Egg.png`;
+}
+
+function McIcon({ id, size = 24, type = 'item', className = '' }) {
+  const [errored, setErrored] = useState(false);
+  const url = type === 'effect' ? getEffectIconUrl(id) : type === 'entity' ? getSpawnEggUrl(id) : getInviconUrl(id);
+  if (errored) {
+    return (
+      <span className={`inline-flex items-center justify-center rounded ${className}`}
+        style={{ width: size, height: size, background: 'linear-gradient(135deg, #555 0%, #333 100%)', fontSize: size * 0.5 }}>
+        ?
+      </span>
+    );
+  }
+  return (
+    <img src={url} alt={id} width={size} height={size} loading="lazy"
+      className={`inline-block ${className}`}
+      style={{ imageRendering: 'pixelated' }}
+      onError={() => setErrored(true)} />
+  );
+}
+
+function McInvSlot({ id, size = 48, count, onClick, selected, children }) {
+  return (
+    <div onClick={onClick}
+      className={`relative inline-flex items-center justify-center transition-all ${onClick ? 'cursor-pointer hover:brightness-125' : ''} ${selected ? 'ring-2 ring-yellow-400' : ''}`}
+      style={{
+        width: size, height: size,
+        background: 'linear-gradient(135deg, #8b8b8b 0%, #373737 100%)',
+        border: '2px solid', borderColor: '#555 #1a1a1a #1a1a1a #555',
+        boxShadow: 'inset 1px 1px 0 #636363, inset -1px -1px 0 #2a2a2a',
+      }}>
+      {children || (id ? <McIcon id={id} size={Math.round(size * 0.7)} /> : null)}
+      {count > 1 && (
+        <span className="absolute bottom-0 right-0.5 text-white font-bold leading-none"
+          style={{ fontSize: size * 0.28, textShadow: '1px 1px 0 #3f3f3f' }}>
+          {count}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+// VISUAL COMMAND BUILDER DEFINITIONS
+// ════════════════════════════════════════════════════════════
+
+const COMMAND_BUILDER_DEFS = [
+  {
+    id: 'give', name: 'アイテム付与', icon: '🎒', cat: 'アイテム',
+    fields: [
+      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@a[tag=player]','@r'], def:'@a[tag=player]' },
+      { key:'item', label:'アイテム', type:'mc_item', def:'minecraft:diamond_sword' },
+      { key:'count', label:'個数', type:'number', min:1, max:64, def:1 },
+    ],
+    build: (f) => `give ${f.target} ${f.item} ${f.count}`,
+  },
+  {
+    id: 'clear', name: 'アイテム消去', icon: '🗑️', cat: 'アイテム',
+    fields: [
+      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@a[tag=player]'], def:'@a[tag=player]' },
+      { key:'item', label:'アイテム(空=全部)', type:'mc_item_optional', def:'' },
+    ],
+    build: (f) => f.item ? `clear ${f.target} ${f.item}` : `clear ${f.target}`,
+  },
+  {
+    id: 'effect_give', name: 'エフェクト付与', icon: '✨', cat: 'エフェクト',
+    fields: [
+      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@a[tag=player]','@e[type=zombie]'], def:'@a[tag=player]' },
+      { key:'effect', label:'エフェクト', type:'mc_effect', def:'speed' },
+      { key:'duration', label:'秒数', type:'number', min:1, max:999999, def:10 },
+      { key:'amplifier', label:'レベル(0=Lv1)', type:'number', min:0, max:255, def:0 },
+      { key:'hide', label:'パーティクル非表示', type:'checkbox', def:false },
+    ],
+    build: (f) => `effect give ${f.target} ${f.effect} ${f.duration} ${f.amplifier}${f.hide ? ' true' : ''}`,
+  },
+  {
+    id: 'effect_clear', name: 'エフェクト解除', icon: '🚫', cat: 'エフェクト',
+    fields: [
+      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@a[tag=player]'], def:'@a[tag=player]' },
+      { key:'effect', label:'エフェクト(空=全部)', type:'mc_effect_optional', def:'' },
+    ],
+    build: (f) => f.effect ? `effect clear ${f.target} ${f.effect}` : `effect clear ${f.target}`,
+  },
+  {
+    id: 'tp', name: 'テレポート', icon: '🌀', cat: '移動',
+    fields: [
+      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@a[tag=player]'], def:'@a[tag=player]' },
+      { key:'x', label:'X座標', type:'text', def:'~' },
+      { key:'y', label:'Y座標', type:'text', def:'~' },
+      { key:'z', label:'Z座標', type:'text', def:'~' },
+    ],
+    build: (f) => `tp ${f.target} ${f.x} ${f.y} ${f.z}`,
+  },
+  {
+    id: 'summon', name: 'エンティティ召喚', icon: '👾', cat: '移動',
+    fields: [
+      { key:'entity', label:'エンティティ', type:'mc_entity', def:'minecraft:zombie' },
+      { key:'x', label:'X座標', type:'text', def:'~' },
+      { key:'y', label:'Y座標', type:'text', def:'~' },
+      { key:'z', label:'Z座標', type:'text', def:'~' },
+      { key:'nbt', label:'NBTデータ', type:'text', def:'{}' },
+    ],
+    build: (f) => f.nbt && f.nbt !== '{}' ? `summon ${f.entity} ${f.x} ${f.y} ${f.z} ${f.nbt}` : `summon ${f.entity} ${f.x} ${f.y} ${f.z}`,
+  },
+  {
+    id: 'title', name: 'タイトル表示', icon: '📺', cat: 'テキスト',
+    fields: [
+      { key:'target', label:'対象', type:'select', options:['@s','@a','@a[tag=player]'], def:'@a[tag=player]' },
+      { key:'position', label:'表示位置', type:'select', options:['title','subtitle','actionbar'], def:'title' },
+      { key:'text', label:'テキスト', type:'text', def:'Hello!' },
+      { key:'color', label:'色', type:'mc_color', def:'gold' },
+      { key:'bold', label:'太字', type:'checkbox', def:true },
+    ],
+    build: (f) => `title ${f.target} ${f.position} {"text":"${f.text}","color":"${f.color}"${f.bold ? ',"bold":true' : ''}}`,
+  },
+  {
+    id: 'tellraw', name: 'チャットメッセージ', icon: '💬', cat: 'テキスト',
+    fields: [
+      { key:'target', label:'対象', type:'select', options:['@s','@a','@a[tag=player]'], def:'@a[tag=player]' },
+      { key:'text', label:'テキスト', type:'text', def:'メッセージ' },
+      { key:'color', label:'色', type:'mc_color', def:'green' },
+      { key:'bold', label:'太字', type:'checkbox', def:false },
+    ],
+    build: (f) => `tellraw ${f.target} {"text":"${f.text}","color":"${f.color}"${f.bold ? ',"bold":true' : ''}}`,
+  },
+  {
+    id: 'playsound', name: 'サウンド再生', icon: '🔊', cat: '演出',
+    fields: [
+      { key:'sound', label:'サウンド', type:'mc_sound', def:'minecraft:entity.experience_orb.pickup' },
+      { key:'source', label:'カテゴリ', type:'select', options:['master','music','record','weather','block','hostile','neutral','player','ambient','voice'], def:'master' },
+      { key:'target', label:'対象', type:'select', options:['@s','@a','@a[tag=player]','@p'], def:'@a[tag=player]' },
+    ],
+    build: (f) => `playsound ${f.sound} ${f.source} ${f.target}`,
+  },
+  {
+    id: 'particle', name: 'パーティクル', icon: '🎆', cat: '演出',
+    fields: [
+      { key:'particle', label:'パーティクル', type:'mc_particle', def:'flame' },
+      { key:'x', label:'X', type:'text', def:'~ ~1 ~' },
+      { key:'delta', label:'広がり', type:'text', def:'0.5 0.5 0.5' },
+      { key:'speed', label:'速度', type:'number', min:0, max:10, def:0.1, step:0.01 },
+      { key:'count', label:'数', type:'number', min:1, max:1000, def:20 },
+    ],
+    build: (f) => `particle ${f.particle} ${f.x} ${f.delta} ${f.speed} ${f.count}`,
+  },
+  {
+    id: 'scoreboard_add', name: 'スコアボード作成', icon: '📊', cat: 'スコア',
+    fields: [
+      { key:'name', label:'目的名', type:'text', def:'my_score' },
+      { key:'criteria', label:'基準', type:'select', options:['dummy','deathCount','playerKillCount','totalKillCount','health','trigger','minecraft.used:minecraft.carrot_on_a_stick'], def:'dummy' },
+      { key:'display', label:'表示名', type:'text', def:'スコア' },
+    ],
+    build: (f) => `scoreboard objectives add ${f.name} ${f.criteria} "${f.display}"`,
+  },
+  {
+    id: 'scoreboard_set', name: 'スコア設定', icon: '🔢', cat: 'スコア',
+    fields: [
+      { key:'action', label:'操作', type:'select', options:['set','add','remove'], def:'set' },
+      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@a[tag=player]','#変数'], def:'@s' },
+      { key:'objective', label:'目的', type:'text', def:'my_score' },
+      { key:'value', label:'値', type:'number', min:-2147483648, max:2147483647, def:0 },
+    ],
+    build: (f) => `scoreboard players ${f.action} ${f.target} ${f.objective} ${f.value}`,
+  },
+  {
+    id: 'gamemode', name: 'ゲームモード', icon: '🎮', cat: 'ゲーム管理',
+    fields: [
+      { key:'mode', label:'モード', type:'select', options:['adventure','survival','creative','spectator'], def:'adventure' },
+      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@a[tag=player]'], def:'@a[tag=player]' },
+    ],
+    build: (f) => `gamemode ${f.mode} ${f.target}`,
+  },
+  {
+    id: 'tag', name: 'タグ操作', icon: '🏷️', cat: 'ゲーム管理',
+    fields: [
+      { key:'action', label:'操作', type:'select', options:['add','remove'], def:'add' },
+      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@a[tag=player]','@a[distance=..5]'], def:'@a[tag=player]' },
+      { key:'tag', label:'タグ名', type:'text', def:'player' },
+    ],
+    build: (f) => `tag ${f.target} ${f.action} ${f.tag}`,
+  },
+  {
+    id: 'team_add', name: 'チーム作成', icon: '👥', cat: 'チーム',
+    fields: [
+      { key:'name', label:'チーム名', type:'text', def:'team_red' },
+      { key:'display', label:'表示名', type:'text', def:'赤チーム' },
+      { key:'color', label:'色', type:'mc_color', def:'red' },
+      { key:'ff', label:'フレンドリーファイア', type:'checkbox', def:false },
+    ],
+    build: (f) => `team add ${f.name} "${f.display}"\nteam modify ${f.name} color ${f.color}\nteam modify ${f.name} friendlyFire ${f.ff}`,
+  },
+  {
+    id: 'team_join', name: 'チーム参加', icon: '➕', cat: 'チーム',
+    fields: [
+      { key:'team', label:'チーム名', type:'text', def:'team_red' },
+      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@a[tag=player]','@a[tag=team1]'], def:'@a[tag=player]' },
+    ],
+    build: (f) => `team join ${f.team} ${f.target}`,
+  },
+  {
+    id: 'bossbar_add', name: 'ボスバー作成', icon: '📏', cat: 'ボスバー',
+    fields: [
+      { key:'id', label:'ID', type:'text', def:'my_bar' },
+      { key:'name', label:'表示名', type:'text', def:'タイマー' },
+      { key:'color', label:'色', type:'select', options:['red','blue','green','yellow','purple','pink','white'], def:'yellow' },
+      { key:'max', label:'最大値', type:'number', min:1, max:99999, def:300 },
+      { key:'style', label:'スタイル', type:'select', options:['progress','notched_6','notched_10','notched_12','notched_20'], def:'notched_10' },
+    ],
+    build: (f) => `bossbar add ${f.id} "${f.name}"\nbossbar set ${f.id} color ${f.color}\nbossbar set ${f.id} max ${f.max}\nbossbar set ${f.id} value ${f.max}\nbossbar set ${f.id} style ${f.style}\nbossbar set ${f.id} players @a`,
+  },
+  {
+    id: 'execute_if', name: '条件実行 (execute)', icon: '⚡', cat: '条件分岐',
+    fields: [
+      { key:'condition', label:'条件タイプ', type:'select', options:['if score','if entity','if block','unless score','unless entity'], def:'if score' },
+      { key:'param1', label:'パラメータ1', type:'text', def:'#game game_state matches 1' },
+      { key:'run', label:'実行コマンド', type:'text', def:'say ゲーム中' },
+    ],
+    build: (f) => `execute ${f.condition} ${f.param1} run ${f.run}`,
+  },
+  {
+    id: 'execute_as', name: '対象として実行 (execute)', icon: '👤', cat: '条件分岐',
+    fields: [
+      { key:'target', label:'対象セレクター', type:'select', options:['@a','@a[tag=player]','@e[type=zombie]','@a[scores={alive=1}]','@p'], def:'@a[tag=player]' },
+      { key:'at', label:'at @s も付ける', type:'checkbox', def:true },
+      { key:'run', label:'実行コマンド', type:'text', def:'say hello' },
+    ],
+    build: (f) => `execute as ${f.target}${f.at ? ' at @s' : ''} run ${f.run}`,
+  },
+  {
+    id: 'setblock', name: 'ブロック設置', icon: '🧱', cat: 'ブロック',
+    fields: [
+      { key:'x', label:'X', type:'text', def:'~' },
+      { key:'y', label:'Y', type:'text', def:'~' },
+      { key:'z', label:'Z', type:'text', def:'~' },
+      { key:'block', label:'ブロック', type:'text', def:'minecraft:stone' },
+      { key:'mode', label:'モード', type:'select', options:['replace','destroy','keep'], def:'replace' },
+    ],
+    build: (f) => `setblock ${f.x} ${f.y} ${f.z} ${f.block} ${f.mode}`,
+  },
+  {
+    id: 'fill', name: 'ブロック一括設置', icon: '⬜', cat: 'ブロック',
+    fields: [
+      { key:'from', label:'開始座標', type:'text', def:'~-5 ~ ~-5' },
+      { key:'to', label:'終了座標', type:'text', def:'~5 ~3 ~5' },
+      { key:'block', label:'ブロック', type:'text', def:'minecraft:stone' },
+      { key:'mode', label:'モード', type:'select', options:['replace','destroy','hollow','outline','keep'], def:'replace' },
+    ],
+    build: (f) => `fill ${f.from} ${f.to} ${f.block} ${f.mode}`,
+  },
+  {
+    id: 'spawnpoint', name: 'スポーン地点設定', icon: '🛏️', cat: 'ゲーム管理',
+    fields: [
+      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@a[tag=player]'], def:'@a[tag=player]' },
+      { key:'x', label:'X', type:'text', def:'~' },
+      { key:'y', label:'Y', type:'text', def:'~' },
+      { key:'z', label:'Z', type:'text', def:'~' },
+    ],
+    build: (f) => `spawnpoint ${f.target} ${f.x} ${f.y} ${f.z}`,
+  },
+];
+const COMMAND_BUILDER_CATS = [...new Set(COMMAND_BUILDER_DEFS.map(d=>d.cat))];
 
 // ════════════════════════════════════════════════════════════
 // COMMAND SNIPPETS (for CommandReference)
@@ -693,17 +1359,21 @@ const MC_AUTO = {
 
 const AI_GEMINI_KEY = 'mc-datapack-ai-gemini-key';
 const AI_OPENAI_KEY = 'mc-datapack-ai-openai-key';
+const AI_ANTHROPIC_KEY = 'mc-datapack-ai-anthropic-key';
 const AI_MODEL_KEY = 'mc-datapack-ai-model';
 
 const AI_MODELS = [
   { id: 'gemini-3-flash', label: 'Gemini 3 Flash', provider: 'gemini', apiModel: 'gemini-3-flash-preview', thinking: null, desc: '高速・無料' },
   { id: 'gemini-3-flash-thinking', label: 'Gemini 3 Flash Thinking', provider: 'gemini', apiModel: 'gemini-3-flash-preview', thinking: 'high', desc: '深い推論' },
   { id: 'gemini-3-pro', label: 'Gemini 3 Pro', provider: 'gemini', apiModel: 'gemini-3-pro-preview', thinking: null, desc: '高性能' },
-  { id: 'gpt-5.3-codex', label: 'GPT 5.3 Codex', provider: 'openai', apiModel: 'gpt-5.3-codex', thinking: null, desc: '近日対応予定', comingSoon: true },
+  { id: 'claude-sonnet-4-5', label: 'Claude Sonnet 4.5', provider: 'anthropic', apiModel: 'claude-sonnet-4-5-20250929', thinking: null, desc: '高性能バランス' },
+  { id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5', provider: 'anthropic', apiModel: 'claude-haiku-4-5-20251001', thinking: null, desc: '高速・低コスト' },
+  { id: 'gpt-5.3-codex', label: 'GPT 5.3 Codex', provider: 'openai', apiModel: 'gpt-5.3-codex', thinking: null, desc: 'デスクトップ版で対応予定（CORS制限）', comingSoon: true },
 ];
 
 const AI_PROVIDERS = {
   gemini: { name: 'Google Gemini', storageKey: AI_GEMINI_KEY, link: 'https://aistudio.google.com/apikey', linkLabel: 'Google AI Studio' },
+  anthropic: { name: 'Anthropic Claude', storageKey: AI_ANTHROPIC_KEY, link: 'https://console.anthropic.com/settings/keys', linkLabel: 'Anthropic Console' },
   openai: { name: 'OpenAI', storageKey: AI_OPENAI_KEY, link: 'https://platform.openai.com/api-keys', linkLabel: 'OpenAI Platform' },
 };
 
@@ -868,13 +1538,76 @@ const AI_SYSTEM_PROMPT = (namespace, targetVersion) => {
   if (hasTimeline) structureNote += `\n    timeline/  → タイムライン定義（1.21.11+）`;
   if (hasTestCmd) structureNote += `\n    test_instance/  → テストインスタンス（1.21.5+）\n    test_environment/  → テスト環境（1.21.5+）`;
 
+  // バージョン別変更タイムライン
+  let versionTimeline = `
+【バージョン別・破壊的変更タイムライン】※対象は ${targetVersion} のみ生成
+`;
+  if (lt('1.14')) {
+    versionTimeline += `- 1.13 "The Flattening": 数値ID→文字列ID完全移行、/execute新構文、名前空間必須化
+`;
+  }
+  if (gte('1.14') && lt('1.15')) {
+    versionTimeline += `- 1.13: 数値ID廃止→文字列ID、/execute新構文
+- 1.14: Predicate条件なし（1.15で導入）、村人刷新、略奪者追加
+`;
+  }
+  if (gte('1.15')) {
+    versionTimeline += `- 1.13: The Flattening（数値ID→文字列ID）
+- 1.14: 村人取引刷新、略奪者追加
+- 1.15: predicate（条件JSON）導入、ミツバチ追加
+`;
+  }
+  if (gte('1.16')) {
+    versionTimeline += `- 1.16: ネザーアップデート、ネザライト、UUID配列形式[I;a,b,c,d]、Piglin追加
+`;
+  }
+  if (gte('1.17')) {
+    versionTimeline += `- 1.17: /item コマンド導入（/replaceitem廃止）、item_modifier追加、銅・アメジスト
+`;
+  }
+  if (gte('1.19')) {
+    versionTimeline += `- 1.19: chat_type、ウォーデン、アレイ、execute on/summon（1.19.4）、damage_type（1.19.4）
+`;
+  }
+  if (gte('1.20')) {
+    versionTimeline += `- 1.20: マクロ $() 構文（1.20.2）、/return コマンド（1.20.2）、/random（1.20.2）
+`;
+  }
+  if (gte('1.20.5')) {
+    versionTimeline += `- 1.20.5: ★最大の破壊的変更★ NBT→コンポーネント完全移行
+  アイテム: {Damage:5} → [damage=5]、CustomModelData→custom_model_data
+  give/clear/replaceitemの構文が全て変更。NBT形式は使用不可
+`;
+  }
+  if (gte('1.21')) {
+    versionTimeline += `- 1.21: フォルダ名単数形化、エンチャントレジストリ、/tick、Trial Chamber
+`;
+  }
+  if (gte('1.21.2')) {
+    versionTimeline += `- 1.21.2: レシピ材料簡略化（オブジェクト→文字列）、/rotate
+`;
+  }
+  if (gte('1.21.5')) {
+    versionTimeline += `- 1.21.5: SNBT形式テキスト、/test コマンド、動物バリアント（cold_pig等）
+`;
+  }
+  if (gte('1.21.10')) {
+    versionTimeline += `- 1.21.10: /dialog コマンド（NPC UI）、ダイアログシステム
+`;
+  }
+  if (gte('1.21.11')) {
+    versionTimeline += `- 1.21.11: /stopwatch、環境属性、タイムライン、槍（Spear）、ノーチラス、pack_format=[94,1]
+`;
+  }
+
   return `あなたはMinecraft Java Edition データパック専門のAIアシスタントです。
 ユーザーの指示に従い、正確なデータパックファイルを生成してください。
 初心者にも分かりやすく、高度なミニゲームやシステムも構築できます。
+バイブコーディング形式: ユーザーが自然言語で「こんなの作って」と言えば、完動するデータパックを丸ごと生成します。
 
 【対象: Minecraft ${targetVersion} / pack_format: ${packFormat}】
 名前空間: ${namespace}
-
+${versionTimeline}
 【pack.mcmeta（必須）】
 \`\`\`json:pack.mcmeta
 ${gte('1.21.9') ? `{"pack":{"pack_format":${packFormat},"description":"${namespace} datapack","supported_formats":{"min_inclusive":[${packFormat},${packFormatMinor}],"max_inclusive":[${packFormat},${packFormatMinor}]}}}` : `{"pack":{"pack_format":${packFormat},"description":"${namespace} datapack"}}`}
@@ -1197,20 +1930,72 @@ ${hasDialogCmd ? `■ ダイアログ活用パターン（1.21.10+）:
   /dialog show @s ${namespace}:shop
   # dialog/shop.json: multi_action → 各ボタンがfunction実行 → アイテム付与
   # NPCとの対話 → advancement trigger → function → /dialog show` : ''}
+■ data storage活用（動的データ管理）:
+  # プレイヤー固有データの保存
+  execute store result storage ${namespace}:players this.health int 1 run data get entity @s Health
+  # 座標を保存してtp先に使用
+  data modify storage ${namespace}:temp pos set from entity @s Pos
+  # リスト操作
+  data modify storage ${namespace}:queue list append value {name:"player1",score:0}
+  data remove storage ${namespace}:queue list[0]  ※先頭削除（キュー）
+${hasFunctionMacros ? `■ 高度なマクロ活用パターン:
+  # 動的コマンド生成: ストレージ→マクロで任意のID/座標を展開
+  data modify storage ${namespace}:temp item set from entity @s SelectedItem.id
+  function ${namespace}:give_item with storage ${namespace}:temp
+  # give_item.mcfunction: $give @s $(item) 1
+  # 複数プレイヤーへの個別メッセージ
+  execute as @a run function ${namespace}:personal_msg
+  # personal_msg.mcfunction:
+  # execute store result storage ${namespace}:msg score int 1 run scoreboard players get @s kills
+  # function ${namespace}:show_msg with storage ${namespace}:msg
+  # show_msg.mcfunction: $tellraw @s [{"text":"あなたのキル数: "},{"text":"$(score)","color":"gold"}]` : ''}
+■ パーティクル演出パターン:
+  # 円形パーティクル（三角関数マクロ）
+  scoreboard players set #angle ${namespace} 0
+  function ${namespace}:circle_step
+  # circle_step.mcfunction:
+  execute store result storage ${namespace}:circle x double 0.05 run scoreboard players get #cos ${namespace}
+  execute store result storage ${namespace}:circle z double 0.05 run scoreboard players get #sin ${namespace}
+  # 渦巻き: y += 0.1 per step, radius *= 0.98
+■ ゲームモード一覧と用途:
+  gamemode adventure @a[tag=playing]  ※ミニゲーム中（ブロック破壊/設置不可）
+  gamemode spectator @a[tag=dead]  ※死亡→観戦
+  gamemode survival @a  ※終了後リセット
+  gamemode creative @a[tag=builder]  ※建築モード
+■ 音響演出（playsound）:
+  playsound minecraft:entity.experience_orb.pickup master @a ~ ~ ~ 1 1  ※レベルアップ音
+  playsound minecraft:entity.ender_dragon.growl master @a ~ ~ ~ 1 0.5  ※ボス出現
+  playsound minecraft:entity.wither.spawn master @a ~ ~ ~ 0.8 1  ※緊迫感
+  playsound minecraft:ui.toast.challenge_complete master @a ~ ~ ~ 1 1  ※達成音
+  playsound minecraft:block.note_block.pling master @a ~ ~ ~ 1 2  ※高音通知
+${hasTimeline ? `■ タイムラインと環境属性の連携（1.21.11+）:
+  # カスタムワールドの昼夜サイクル色変更
+  # timeline/sky.json: period=24000, tracks: sky_color, fog_color
+  # environment_attribute/horror.json: fog_start_distance=0, fog_end_distance=30, sky_light_level=0
+  # 夜だけ暗くなるホラーマップ等に活用` : ''}
 
 【バージョン固有の重要ルール】
 - 対象は Minecraft ${targetVersion} のみ（pack_format: ${packFormat}）
 - ${useSingular ? 'フォルダ名は単数形（function, recipe, advancement等）' : 'フォルダ名は複数形（functions, recipes, advancements等）'}
-${hasComponents ? '- NBT形式({...})は禁止。必ずコンポーネント形式[...]を使用' : '- アイテムデータはNBT形式{...}を使用'}
-${hasSNBTText ? '- テキストはSNBT形式（JSON文字列ではない）' : '- テキストはJSON文字列形式'}
+${hasComponents ? '- ★重要★ NBT形式({...})は完全禁止。必ずコンポーネント形式[...]を使用\n  give @s diamond_sword{Enchantments:[...]} ← 絶対NG\n  give @s minecraft:diamond_sword[enchantments={levels:{"minecraft:sharpness":5}}] ← 正しい' : '- アイテムデータはNBT形式{...}を使用（コンポーネント形式は1.20.5以降）'}
+${hasSNBTText ? '- テキストはインラインSNBT形式: custom_name={text:"名前",color:"gold"}（JSON文字列非推奨）' : '- テキストはJSON文字列形式: custom_name=\'{"text":"名前","color":"gold"}\''}
+${hasFunctionMacros ? '- 関数マクロ: $行で$(変数)展開。呼出し時にwith句でデータソース指定' : '- 関数マクロは未対応（1.20.2以降）'}
+${hasReturnCmd ? '- /return で関数から値を返却可能（return <値>, return run <cmd>, return fail）' : ''}
+${gte('1.21.9') ? '- pack_formatはセマンティック形式: supported_formats: {"min_inclusive":[' + packFormat + ',' + packFormatMinor + '],"max_inclusive":[' + packFormat + ',' + packFormatMinor + ']}' : ''}
 
 【注意事項】
 - 名前空間は必ず "${namespace}" を使用
 - ファイル名は英小文字・数字・アンダースコア・ハイフンのみ
-- JSONは有効な形式。コメント不可
+- JSONは有効な形式。コメント不可。末尾カンマ不可
 - mcfunctionのコメントは # で開始
 - 説明はコードブロック外に日本語で記述
-- 数値ID・データ値は絶対に使用しない`;
+- 数値ID・データ値は絶対に使用しない（1.13 The Flattening以降）
+- セレクタ引数のスペースは禁止: @a[tag=playing] ○、@a[ tag = playing ] ×
+- ブロック状態とNBT/コンポーネントの構文を混同しない
+  ブロック状態: minecraft:oak_door[half=upper,facing=north]
+  ${hasComponents ? 'アイテムコンポーネント: minecraft:diamond_sword[damage=5,enchantments={...}]' : 'アイテムNBT: minecraft:diamond_sword{Damage:5}'}
+- execute chainは必ず run で終端: execute as @a at @s run say hello
+- 座標: 絶対(x y z)、相対(~ ~ ~)、ローカル(^ ^ ^) は混在不可`;
 };
 
 const MC_ALL_COMMANDS = new Set(MC_AUTO._root.map(c => c.l));
@@ -1756,8 +2541,90 @@ function callOpenAIStream(apiKey, modelId, messages, systemPrompt, onChunk, onDo
     });
 }
 
+function callAnthropicStream(apiKey, modelId, messages, systemPrompt, onChunk, onDone, onError, signal) {
+  const url = 'https://api.anthropic.com/v1/messages';
+
+  const apiMessages = messages.map(m => ({
+    role: m.role === 'user' ? 'user' : 'assistant',
+    content: m.content,
+  }));
+
+  const body = {
+    model: modelId,
+    max_tokens: 8192,
+    system: systemPrompt,
+    messages: apiMessages,
+    stream: true,
+  };
+
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify(body),
+    signal,
+  })
+    .then(response => {
+      if (!response.ok) {
+        const status = response.status;
+        if (status === 401) throw new Error('APIキーが無効です。正しいAnthropic APIキーを設定してください。');
+        if (status === 429) throw new Error('レート制限に達しました。しばらく待ってから再試行してください。');
+        if (status === 400) throw new Error('リクエストが不正です。入力内容を確認してください。');
+        if (status === 529) throw new Error('Anthropic APIが過負荷状態です。しばらく待ってから再試行してください。');
+        throw new Error(`Anthropic APIエラー (${status})`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullText = '';
+
+      function read() {
+        reader.read().then(({ done, value }) => {
+          if (done) { onDone(fullText); return; }
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const jsonStr = line.slice(6).trim();
+            if (!jsonStr) continue;
+            try {
+              const parsed = JSON.parse(jsonStr);
+              if (parsed.type === 'content_block_delta' && parsed.delta?.type === 'text_delta') {
+                fullText += parsed.delta.text;
+                onChunk(fullText);
+              }
+            } catch {}
+          }
+          read();
+        }).catch(err => {
+          if (err.name === 'AbortError') { onDone(fullText); }
+          else { onError(err.message || 'ストリーム読み取りエラー'); }
+        });
+      }
+      read();
+    })
+    .catch(err => {
+      if (err.name === 'AbortError') return;
+      if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError')) {
+        onError('ネットワークエラー: Anthropic APIへの接続に失敗しました。');
+      } else {
+        onError(err.message || 'ネットワークエラーが発生しました。');
+      }
+    });
+}
+
 function callAIStream(provider, apiKey, modelId, messages, systemPrompt, onChunk, onDone, onError, signal, thinkingLevel) {
-  if (provider === 'openai') {
+  if (provider === 'anthropic') {
+    callAnthropicStream(apiKey, modelId, messages, systemPrompt, onChunk, onDone, onError, signal);
+  } else if (provider === 'openai') {
     callOpenAIStream(apiKey, modelId, messages, systemPrompt, onChunk, onDone, onError, signal);
   } else {
     callGeminiStream(apiKey, modelId, messages, systemPrompt, onChunk, onDone, onError, signal, thinkingLevel);
@@ -1902,6 +2769,106 @@ function callGeminiAgent(apiKey, modelId, conversationHistory, systemPrompt, too
           }
 
           allContents.push({ role: 'user', parts: results });
+          iterate();
+        } else {
+          onDone({ type: 'complete', text: textParts.join('') });
+        }
+      })
+      .catch(err => {
+        if (err.name === 'AbortError') { onDone({ type: 'aborted' }); return; }
+        onError(err.message || 'エージェントエラー');
+      });
+  }
+
+  iterate();
+}
+
+function convertToolsToAnthropicFormat(tools) {
+  return tools.map(t => ({
+    name: t.name,
+    description: t.description,
+    input_schema: {
+      type: t.parameters.type || 'object',
+      properties: t.parameters.properties || {},
+      required: t.parameters.required || [],
+    },
+  }));
+}
+
+function callAnthropicAgent(apiKey, modelId, conversationHistory, systemPrompt, tools, onStep, onChunk, onDone, onError, signal) {
+  const maxIterations = 8;
+  let iteration = 0;
+  const anthropicTools = convertToolsToAnthropicFormat(tools);
+
+  let allMessages = conversationHistory.map(m => ({
+    role: m.role === 'user' ? 'user' : 'assistant',
+    content: m.toolUse ? m.toolUse
+      : m.toolResult ? m.toolResult
+      : m.content,
+  }));
+
+  function iterate() {
+    if (iteration >= maxIterations) {
+      onDone({ type: 'max_iterations' });
+      return;
+    }
+    iteration++;
+
+    const body = {
+      model: modelId,
+      max_tokens: 16384,
+      system: systemPrompt,
+      messages: allMessages,
+      tools: anthropicTools,
+    };
+
+    fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify(body),
+      signal,
+    })
+      .then(r => {
+        if (!r.ok) {
+          if (r.status === 401) throw new Error('APIキーが無効です。');
+          if (r.status === 429) throw new Error('レート制限に達しました。');
+          if (r.status === 529) throw new Error('Anthropic APIが過負荷状態です。');
+          throw new Error(`APIエラー (${r.status})`);
+        }
+        return r.json();
+      })
+      .then(data => {
+        if (!data.content || data.content.length === 0) {
+          onDone({ type: 'empty' });
+          return;
+        }
+
+        const textParts = data.content.filter(b => b.type === 'text').map(b => b.text);
+        const toolUseParts = data.content.filter(b => b.type === 'tool_use');
+
+        if (textParts.length > 0) {
+          onChunk(textParts.join(''));
+        }
+
+        if (toolUseParts.length > 0) {
+          allMessages.push({ role: 'assistant', content: data.content });
+
+          const toolResults = [];
+          for (const tu of toolUseParts) {
+            const result = onStep(tu.name, tu.input);
+            toolResults.push({
+              type: 'tool_result',
+              tool_use_id: tu.id,
+              content: JSON.stringify(result),
+            });
+          }
+
+          allMessages.push({ role: 'user', content: toolResults });
           iterate();
         } else {
           onDone({ type: 'complete', text: textParts.join('') });
@@ -2590,6 +3557,1137 @@ clear @a[tag=player]
 effect clear @a[tag=player]
 tag @a remove player
 tellraw @a {"text":"ゲームリセット完了","color":"gray"}` });
+
+  } else if (gameType === 'king_of_hill') {
+    const tA = settings.teamA || '赤チーム';
+    const tB = settings.teamB || '青チーム';
+    const ts = settings.targetScore || 100;
+    files.push({ path: `data/${ns}/function/reload.mcfunction`, content:
+`# ═══ 陣取り 初期化 ═══
+scoreboard objectives add game_state dummy "ゲーム状態"
+scoreboard objectives add timer_tick dummy "tick"
+scoreboard objectives add timer_sec dummy "秒"
+scoreboard objectives add pre_count dummy "カウントダウン"
+scoreboard objectives add hill_score dummy "占領ポイント"
+scoreboard objectives add on_hill dummy "丘の上"
+
+team add team_a "${tA}"
+team add team_b "${tB}"
+team modify team_a color ${settings.colorA || 'red'}
+team modify team_b color ${settings.colorB || 'blue'}
+team modify team_a friendlyFire false
+team modify team_b friendlyFire false
+
+scoreboard players set #game game_state 0
+scoreboard players set #team_a hill_score 0
+scoreboard players set #team_b hill_score 0
+say [陣取り] 読み込み完了！` });
+
+    files.push({ path: `data/${ns}/function/main.mcfunction`, content:
+`execute if score #game game_state matches 1 run function ${ns}:game_loop` });
+
+    files.push({ path: `data/${ns}/function/start.mcfunction`, content:
+`# ═══ 陣取り 開始 ═══
+# 事前: tag @a add player / tag <赤> add team_a_pick
+team join team_a @a[tag=team_a_pick]
+team join team_b @a[tag=player,tag=!team_a_pick]
+tag @a[tag=player,tag=!team_a_pick] add team_b_tag
+tag @a[tag=team_a_pick] add team_a_tag
+tag @a remove team_a_pick
+
+clear @a[tag=player]
+effect clear @a[tag=player]
+scoreboard players set #team_a hill_score 0
+scoreboard players set #team_b hill_score 0
+gamemode adventure @a[tag=player]
+
+scoreboard players set #timer timer_tick 0
+scoreboard players set #timer timer_sec ${gt}
+scoreboard players set #timer pre_count 60
+
+bossbar add ${ns}:timer ""
+bossbar set ${ns}:timer players @a[tag=player]
+bossbar set ${ns}:timer max ${gt}
+bossbar set ${ns}:timer value ${gt}
+bossbar set ${ns}:timer color yellow
+
+scoreboard players set #game game_state 1
+title @a[tag=player] title {"text":"陣取り","bold":true,"color":"gold"}
+title @a[tag=player] subtitle {"text":"丘を制圧せよ！","color":"yellow"}` });
+
+    files.push({ path: `data/${ns}/function/game_loop.mcfunction`, content:
+`# ═══ 陣取り ゲームループ ═══
+
+# カウントダウン
+execute if score #timer pre_count matches 60 run title @a[tag=player] title {"text":"3","bold":true,"color":"light_purple"}
+execute if score #timer pre_count matches 40 run title @a[tag=player] title {"text":"2","bold":true,"color":"yellow"}
+execute if score #timer pre_count matches 20 run title @a[tag=player] title {"text":"1","bold":true,"color":"red"}
+execute if score #timer pre_count matches 1 run title @a[tag=player] title {"text":"占領開始！","bold":true,"color":"green"}
+execute if score #timer pre_count matches 1.. run scoreboard players remove #timer pre_count 1
+
+# タイマー
+execute if score #timer pre_count matches 0 run scoreboard players add #timer timer_tick 1
+execute if score #timer pre_count matches 0 if score #timer timer_tick matches 20.. run scoreboard players set #timer timer_tick 0
+execute if score #timer pre_count matches 0 if score #timer timer_tick matches 0 if score #timer timer_sec matches 1.. run scoreboard players remove #timer timer_sec 1
+execute store result bossbar ${ns}:timer value run scoreboard players get #timer timer_sec
+
+# ── 丘の上の判定（タグ "hill_zone" のマーカー周辺3ブロック） ──
+# 事前に /summon marker <x> <y> <z> {Tags:["hill_zone"]} を配置
+scoreboard players set @a[tag=player] on_hill 0
+execute as @a[tag=player] at @s if entity @e[tag=hill_zone,distance=..5] run scoreboard players set @s on_hill 1
+
+# 毎秒ポイント加算
+execute if score #timer pre_count matches 0 if score #timer timer_tick matches 0 as @a[tag=team_a_tag,scores={on_hill=1}] run scoreboard players add #team_a hill_score 1
+execute if score #timer pre_count matches 0 if score #timer timer_tick matches 0 as @a[tag=team_b_tag,scores={on_hill=1}] run scoreboard players add #team_b hill_score 1
+
+# HUD
+bossbar set ${ns}:timer name ["",{"text":"${tA}: ","color":"${settings.colorA || 'red'}"},{"score":{"name":"#team_a","objective":"hill_score"}},{"text":" | ${tB}: ","color":"${settings.colorB || 'blue'}"},{"score":{"name":"#team_b","objective":"hill_score"}},{"text":" / ${ts}","color":"gray"}]
+
+# 勝利判定
+execute if score #team_a hill_score matches ${ts}.. run function ${ns}:win_a
+execute if score #team_b hill_score matches ${ts}.. run function ${ns}:win_b
+execute if score #timer pre_count matches 0 if score #timer timer_sec matches 0 run function ${ns}:win_check` });
+
+    files.push({ path: `data/${ns}/function/win_a.mcfunction`, content:
+`title @a[tag=player] title {"text":"${tA}の勝利！","bold":true,"color":"${settings.colorA || 'red'}"}
+execute as @a[tag=team_a_tag] at @s run playsound minecraft:ui.toast.challenge_complete master @s
+function ${ns}:end` });
+
+    files.push({ path: `data/${ns}/function/win_b.mcfunction`, content:
+`title @a[tag=player] title {"text":"${tB}の勝利！","bold":true,"color":"${settings.colorB || 'blue'}"}
+execute as @a[tag=team_b_tag] at @s run playsound minecraft:ui.toast.challenge_complete master @s
+function ${ns}:end` });
+
+    files.push({ path: `data/${ns}/function/win_check.mcfunction`, content:
+`# 時間切れ: スコアが多いチームの勝利
+execute if score #team_a hill_score > #team_b hill_score run function ${ns}:win_a
+execute if score #team_b hill_score > #team_a hill_score run function ${ns}:win_b
+execute if score #team_a hill_score = #team_b hill_score run tellraw @a[tag=player] {"text":"引き分け！","color":"yellow","bold":true}
+execute if score #team_a hill_score = #team_b hill_score run function ${ns}:end` });
+
+    files.push({ path: `data/${ns}/function/end.mcfunction`, content:
+`scoreboard players set #game game_state 0
+bossbar remove ${ns}:timer
+gamemode adventure @a[tag=player]
+clear @a[tag=player]
+effect clear @a[tag=player]
+tag @a remove team_a_tag
+tag @a remove team_b_tag
+team empty team_a
+team empty team_b
+tellraw @a[tag=player] {"text":"ゲームリセット完了","color":"gray"}` });
+
+  } else if (gameType === 'zombie_survival') {
+    const maxW = settings.maxWaves || 10;
+    const zpw = settings.zombiesPerWave || 5;
+    files.push({ path: `data/${ns}/function/reload.mcfunction`, content:
+`# ═══ ゾンビサバイバル 初期化 ═══
+scoreboard objectives add game_state dummy "ゲーム状態"
+scoreboard objectives add timer_tick dummy "tick"
+scoreboard objectives add timer_sec dummy "秒"
+scoreboard objectives add pre_count dummy "カウントダウン"
+scoreboard objectives add wave dummy "ウェーブ"
+scoreboard objectives add alive dummy "生存"
+scoreboard objectives add deaths deathCount "死亡検知"
+scoreboard objectives add kills dummy "キル数"
+scoreboard objectives add wave_mobs dummy "残りモブ"
+scoreboard players set #game game_state 0
+say [ゾンビサバイバル] 読み込み完了！` });
+
+    files.push({ path: `data/${ns}/function/main.mcfunction`, content:
+`execute if score #game game_state matches 1 run function ${ns}:game_loop` });
+
+    files.push({ path: `data/${ns}/function/start.mcfunction`, content:
+`# ═══ ゾンビサバイバル 開始 ═══
+# 事前: tag @a add player
+clear @a[tag=player]
+effect clear @a[tag=player]
+scoreboard players set @a[tag=player] alive 1
+scoreboard players set @a[tag=player] deaths 0
+scoreboard players set @a[tag=player] kills 0
+gamemode adventure @a[tag=player]
+
+scoreboard players set #wave wave 0
+scoreboard players set #wave_mobs wave_mobs 0
+scoreboard players set #timer timer_tick 0
+scoreboard players set #timer timer_sec ${gt}
+scoreboard players set #timer pre_count 60
+
+bossbar add ${ns}:timer ""
+bossbar set ${ns}:timer players @a[tag=player]
+bossbar set ${ns}:timer max ${gt}
+bossbar set ${ns}:timer value ${gt}
+bossbar set ${ns}:timer color green
+
+# 装備付与
+give @a[tag=player] iron_sword
+give @a[tag=player] bow
+give @a[tag=player] arrow 32
+
+scoreboard players set #game game_state 1
+title @a[tag=player] title {"text":"ゾンビサバイバル","bold":true,"color":"dark_green"}
+title @a[tag=player] subtitle {"text":"生き残れ！","color":"green"}` });
+
+    files.push({ path: `data/${ns}/function/game_loop.mcfunction`, content:
+`# ═══ ゾンビサバイバル ゲームループ ═══
+
+# カウントダウン
+execute if score #timer pre_count matches 60 run title @a[tag=player] title {"text":"3","bold":true,"color":"light_purple"}
+execute if score #timer pre_count matches 40 run title @a[tag=player] title {"text":"2","bold":true,"color":"yellow"}
+execute if score #timer pre_count matches 20 run title @a[tag=player] title {"text":"1","bold":true,"color":"red"}
+execute if score #timer pre_count matches 1 run title @a[tag=player] title {"text":"サバイバル開始！","bold":true,"color":"green"}
+execute if score #timer pre_count matches 1.. run scoreboard players remove #timer pre_count 1
+
+# タイマー
+execute if score #timer pre_count matches 0 run scoreboard players add #timer timer_tick 1
+execute if score #timer pre_count matches 0 if score #timer timer_tick matches 20.. run scoreboard players set #timer timer_tick 0
+execute if score #timer pre_count matches 0 if score #timer timer_tick matches 0 if score #timer timer_sec matches 1.. run scoreboard players remove #timer timer_sec 1
+execute store result bossbar ${ns}:timer value run scoreboard players get #timer timer_sec
+
+# 死亡検知
+execute as @a[tag=player,scores={deaths=1..}] run scoreboard players set @s alive 0
+execute as @a[tag=player,scores={deaths=1..}] run tellraw @a[tag=player] [{"selector":"@s","color":"red"},{"text":" がやられた！","color":"gray"}]
+execute as @a[tag=player,scores={alive=0}] run gamemode spectator @s
+scoreboard players set @a[tag=player] deaths 0
+
+# ── ウェーブ管理（残りモブ0で次ウェーブ） ──
+execute store result score #wave_mobs wave_mobs run execute if entity @e[tag=${ns}_zombie]
+execute if score #timer pre_count matches 0 if score #wave_mobs wave_mobs matches 0 if score #wave wave matches ..${maxW - 1} run function ${ns}:next_wave
+
+# HUD
+bossbar set ${ns}:timer name ["",{"text":"Wave ","color":"dark_green"},{"score":{"name":"#wave","objective":"wave"},"color":"green"},{"text":"/${maxW} | 残り: ","color":"gray"},{"score":{"name":"#wave_mobs","objective":"wave_mobs"},"color":"white"},{"text":"体","color":"gray"}]
+
+# 全員死亡 → ゲームオーバー
+scoreboard players set #alive_count alive 0
+execute as @a[tag=player,scores={alive=1}] run scoreboard players add #alive_count alive 1
+execute if score #alive_count alive matches 0 run function ${ns}:game_over
+
+# 全ウェーブクリア判定
+execute if score #wave wave matches ${maxW}.. if score #wave_mobs wave_mobs matches 0 run function ${ns}:win
+
+# 時間切れ
+execute if score #timer pre_count matches 0 if score #timer timer_sec matches 0 run function ${ns}:game_over` });
+
+    files.push({ path: `data/${ns}/function/next_wave.mcfunction`, content:
+`# ═══ 次ウェーブ ═══
+scoreboard players add #wave wave 1
+
+# ウェーブ数に応じてゾンビ召喚数を増加
+# 基本${zpw}体 + ウェーブ数×2
+tellraw @a[tag=player] ["",{"text":"Wave ","color":"dark_green","bold":true},{"score":{"name":"#wave","objective":"wave"},"color":"green","bold":true},{"text":" 開始！","color":"yellow"}]
+title @a[tag=player] title ["",{"text":"Wave ","color":"dark_green"},{"score":{"name":"#wave","objective":"wave"},"color":"green"}]
+playsound minecraft:entity.wither.spawn master @a[tag=player]
+
+# ゾンビ召喚（プレイヤーの近くにランダム配置）
+# 実際のゲームではここを調整してください
+execute at @a[tag=player,scores={alive=1},limit=1,sort=random] run summon zombie ~5 ~ ~5 {Tags:["${ns}_zombie"],CustomName:'"サバイバルゾンビ"'}
+execute at @a[tag=player,scores={alive=1},limit=1,sort=random] run summon zombie ~-5 ~ ~5 {Tags:["${ns}_zombie"]}
+execute at @a[tag=player,scores={alive=1},limit=1,sort=random] run summon zombie ~5 ~ ~-5 {Tags:["${ns}_zombie"]}
+execute at @a[tag=player,scores={alive=1},limit=1,sort=random] run summon zombie ~-5 ~ ~-5 {Tags:["${ns}_zombie"]}
+execute at @a[tag=player,scores={alive=1},limit=1,sort=random] run summon zombie ~3 ~ ~0 {Tags:["${ns}_zombie"]}` });
+
+    files.push({ path: `data/${ns}/function/win.mcfunction`, content:
+`# ═══ サバイバル成功！ ═══
+title @a[tag=player] title {"text":"サバイバル成功！","bold":true,"color":"gold"}
+title @a[tag=player] subtitle {"text":"全ウェーブクリア！","color":"green"}
+tellraw @a[tag=player] {"text":"═══ 生存者の勝利！ ═══","color":"gold","bold":true}
+execute as @a[tag=player,scores={alive=1}] at @s run playsound minecraft:ui.toast.challenge_complete master @s
+function ${ns}:end` });
+
+    files.push({ path: `data/${ns}/function/game_over.mcfunction`, content:
+`# ═══ ゲームオーバー ═══
+title @a[tag=player] title {"text":"ゲームオーバー","bold":true,"color":"red"}
+title @a[tag=player] subtitle ["",{"text":"Wave ","color":"gray"},{"score":{"name":"#wave","objective":"wave"},"color":"yellow"},{"text":" まで到達","color":"gray"}]
+tellraw @a[tag=player] {"text":"═══ 全滅... ═══","color":"red","bold":true}
+function ${ns}:end` });
+
+    files.push({ path: `data/${ns}/function/end.mcfunction`, content:
+`scoreboard players set #game game_state 0
+bossbar remove ${ns}:timer
+kill @e[tag=${ns}_zombie]
+gamemode adventure @a[tag=player]
+clear @a[tag=player]
+effect clear @a[tag=player]
+scoreboard players set @a[tag=player] alive 0
+tag @a remove player
+tellraw @a {"text":"ゲームリセット完了","color":"gray"}` });
+
+  } else if (gameType === 'build_battle') {
+    const bt = settings.buildTime || 180;
+    const vt = settings.voteTime || 60;
+    files.push({ path: `data/${ns}/function/reload.mcfunction`, content:
+`# ═══ 建築バトル 初期化 ═══
+scoreboard objectives add game_state dummy "ゲーム状態"
+scoreboard objectives add timer_tick dummy "tick"
+scoreboard objectives add timer_sec dummy "秒"
+scoreboard objectives add pre_count dummy "カウントダウン"
+scoreboard objectives add phase dummy "フェーズ"
+scoreboard objectives add votes dummy "投票数"
+scoreboard objectives add vote_trigger trigger "投票"
+scoreboard players set #game game_state 0
+say [建築バトル] 読み込み完了！` });
+
+    files.push({ path: `data/${ns}/function/main.mcfunction`, content:
+`execute if score #game game_state matches 1 run function ${ns}:game_loop` });
+
+    files.push({ path: `data/${ns}/function/start.mcfunction`, content:
+`# ═══ 建築バトル 開始 ═══
+# 事前: tag @a add player
+clear @a[tag=player]
+effect clear @a[tag=player]
+scoreboard players set @a[tag=player] votes 0
+gamemode creative @a[tag=player]
+
+scoreboard players set #phase phase 1
+scoreboard players set #timer timer_tick 0
+scoreboard players set #timer timer_sec ${bt}
+scoreboard players set #timer pre_count 60
+
+bossbar add ${ns}:timer ""
+bossbar set ${ns}:timer players @a[tag=player]
+bossbar set ${ns}:timer max ${bt}
+bossbar set ${ns}:timer value ${bt}
+bossbar set ${ns}:timer color yellow
+
+scoreboard players set #game game_state 1
+title @a[tag=player] title {"text":"建築バトル","bold":true,"color":"gold"}
+title @a[tag=player] subtitle {"text":"建築時間: ${bt}秒","color":"yellow"}` });
+
+    files.push({ path: `data/${ns}/function/game_loop.mcfunction`, content:
+`# ═══ 建築バトル ゲームループ ═══
+
+# カウントダウン
+execute if score #timer pre_count matches 60 run title @a[tag=player] title {"text":"3","bold":true,"color":"light_purple"}
+execute if score #timer pre_count matches 40 run title @a[tag=player] title {"text":"2","bold":true,"color":"yellow"}
+execute if score #timer pre_count matches 20 run title @a[tag=player] title {"text":"1","bold":true,"color":"red"}
+execute if score #timer pre_count matches 1 if score #phase phase matches 1 run title @a[tag=player] title {"text":"建築開始！","bold":true,"color":"green"}
+execute if score #timer pre_count matches 1 if score #phase phase matches 2 run title @a[tag=player] title {"text":"投票開始！","bold":true,"color":"aqua"}
+execute if score #timer pre_count matches 1.. run scoreboard players remove #timer pre_count 1
+
+# タイマー
+execute if score #timer pre_count matches 0 run scoreboard players add #timer timer_tick 1
+execute if score #timer pre_count matches 0 if score #timer timer_tick matches 20.. run scoreboard players set #timer timer_tick 0
+execute if score #timer pre_count matches 0 if score #timer timer_tick matches 0 if score #timer timer_sec matches 1.. run scoreboard players remove #timer timer_sec 1
+execute store result bossbar ${ns}:timer value run scoreboard players get #timer timer_sec
+
+# HUD
+execute if score #phase phase matches 1 run bossbar set ${ns}:timer name ["",{"text":"建築中 | 残り ","color":"yellow"},{"score":{"name":"#timer","objective":"timer_sec"},"color":"white"},{"text":"秒","color":"yellow"}]
+execute if score #phase phase matches 2 run bossbar set ${ns}:timer name ["",{"text":"投票中 | 残り ","color":"aqua"},{"score":{"name":"#timer","objective":"timer_sec"},"color":"white"},{"text":"秒","color":"aqua"}]
+
+# フェーズ遷移: 建築時間終了 → 投票フェーズ
+execute if score #phase phase matches 1 if score #timer pre_count matches 0 if score #timer timer_sec matches 0 run function ${ns}:start_vote
+
+# 投票フェーズ終了 → 結果発表
+execute if score #phase phase matches 2 if score #timer pre_count matches 0 if score #timer timer_sec matches 0 run function ${ns}:result` });
+
+    files.push({ path: `data/${ns}/function/start_vote.mcfunction`, content:
+`# ═══ 投票フェーズ開始 ═══
+scoreboard players set #phase phase 2
+gamemode adventure @a[tag=player]
+
+scoreboard players set #timer timer_tick 0
+scoreboard players set #timer timer_sec ${vt}
+scoreboard players set #timer pre_count 40
+bossbar set ${ns}:timer max ${vt}
+bossbar set ${ns}:timer value ${vt}
+bossbar set ${ns}:timer color aqua
+
+title @a[tag=player] title {"text":"建築終了！","bold":true,"color":"red"}
+title @a[tag=player] subtitle {"text":"投票が始まります...","color":"yellow"}
+tellraw @a[tag=player] {"text":"投票するには /trigger vote_trigger set <番号> を使ってください","color":"aqua"}` });
+
+    files.push({ path: `data/${ns}/function/result.mcfunction`, content:
+`# ═══ 結果発表 ═══
+title @a[tag=player] title {"text":"結果発表！","bold":true,"color":"gold"}
+tellraw @a[tag=player] {"text":"═══ 建築バトル結果 ═══","color":"gold","bold":true}
+execute as @a[tag=player] run tellraw @a[tag=player] [{"selector":"@s"},{"text":": ","color":"gray"},{"score":{"name":"@s","objective":"votes"},"color":"white"},{"text":"票","color":"gray"}]
+function ${ns}:end` });
+
+    files.push({ path: `data/${ns}/function/end.mcfunction`, content:
+`scoreboard players set #game game_state 0
+bossbar remove ${ns}:timer
+gamemode adventure @a[tag=player]
+clear @a[tag=player]
+effect clear @a[tag=player]
+tag @a remove player
+tellraw @a[tag=player] {"text":"ゲームリセット完了","color":"gray"}` });
+
+  } else if (gameType === 'capture_flag') {
+    const tA = settings.teamA || '赤チーム';
+    const tB = settings.teamB || '青チーム';
+    const cn = settings.capturesNeeded || 3;
+    files.push({ path: `data/${ns}/function/reload.mcfunction`, content:
+`# ═══ 旗取り(CTF) 初期化 ═══
+scoreboard objectives add game_state dummy "ゲーム状態"
+scoreboard objectives add timer_tick dummy "tick"
+scoreboard objectives add timer_sec dummy "秒"
+scoreboard objectives add pre_count dummy "カウントダウン"
+scoreboard objectives add captures dummy "奪取回数"
+scoreboard objectives add has_flag dummy "旗を持っている"
+scoreboard objectives add deaths deathCount "死亡検知"
+
+team add team_a "${tA}"
+team add team_b "${tB}"
+team modify team_a color ${settings.colorA || 'red'}
+team modify team_b color ${settings.colorB || 'blue'}
+team modify team_a friendlyFire false
+team modify team_b friendlyFire false
+
+scoreboard players set #game game_state 0
+scoreboard players set #team_a captures 0
+scoreboard players set #team_b captures 0
+say [旗取り(CTF)] 読み込み完了！` });
+
+    files.push({ path: `data/${ns}/function/main.mcfunction`, content:
+`execute if score #game game_state matches 1 run function ${ns}:game_loop` });
+
+    files.push({ path: `data/${ns}/function/start.mcfunction`, content:
+`# ═══ 旗取り(CTF) 開始 ═══
+# 事前: tag @a add player / tag <赤> add team_a_pick
+# 旗のマーカー配置: /summon marker <x> <y> <z> {Tags:["flag_a"]}
+#                    /summon marker <x> <y> <z> {Tags:["flag_b"]}
+# 自陣マーカー:      /summon marker <x> <y> <z> {Tags:["base_a"]}
+#                    /summon marker <x> <y> <z> {Tags:["base_b"]}
+
+team join team_a @a[tag=team_a_pick]
+team join team_b @a[tag=player,tag=!team_a_pick]
+tag @a[tag=player,tag=!team_a_pick] add team_b_tag
+tag @a[tag=team_a_pick] add team_a_tag
+tag @a remove team_a_pick
+
+clear @a[tag=player]
+effect clear @a[tag=player]
+scoreboard players set #team_a captures 0
+scoreboard players set #team_b captures 0
+scoreboard players set @a[tag=player] has_flag 0
+scoreboard players set @a[tag=player] deaths 0
+gamemode adventure @a[tag=player]
+
+scoreboard players set #timer timer_tick 0
+scoreboard players set #timer timer_sec ${gt}
+scoreboard players set #timer pre_count 60
+
+bossbar add ${ns}:timer ""
+bossbar set ${ns}:timer players @a[tag=player]
+bossbar set ${ns}:timer max ${gt}
+bossbar set ${ns}:timer value ${gt}
+bossbar set ${ns}:timer color yellow
+
+give @a[tag=player] iron_sword
+give @a[tag=player] bow
+give @a[tag=player] arrow 16
+
+scoreboard players set #game game_state 1
+title @a[tag=player] title {"text":"旗取り(CTF)","bold":true,"color":"gold"}
+title @a[tag=player] subtitle {"text":"相手の旗を奪え！","color":"yellow"}` });
+
+    files.push({ path: `data/${ns}/function/game_loop.mcfunction`, content:
+`# ═══ 旗取り(CTF) ゲームループ ═══
+
+# カウントダウン
+execute if score #timer pre_count matches 60 run title @a[tag=player] title {"text":"3","bold":true,"color":"light_purple"}
+execute if score #timer pre_count matches 40 run title @a[tag=player] title {"text":"2","bold":true,"color":"yellow"}
+execute if score #timer pre_count matches 20 run title @a[tag=player] title {"text":"1","bold":true,"color":"red"}
+execute if score #timer pre_count matches 1 run title @a[tag=player] title {"text":"開戦！","bold":true,"color":"green"}
+execute if score #timer pre_count matches 1.. run scoreboard players remove #timer pre_count 1
+
+# タイマー
+execute if score #timer pre_count matches 0 run scoreboard players add #timer timer_tick 1
+execute if score #timer pre_count matches 0 if score #timer timer_tick matches 20.. run scoreboard players set #timer timer_tick 0
+execute if score #timer pre_count matches 0 if score #timer timer_tick matches 0 if score #timer timer_sec matches 1.. run scoreboard players remove #timer timer_sec 1
+execute store result bossbar ${ns}:timer value run scoreboard players get #timer timer_sec
+
+# ── 旗の取得判定 ──
+# チームAが敵旗(flag_b)を取得
+execute as @a[tag=team_a_tag,scores={has_flag=0}] at @s if entity @e[tag=flag_b,distance=..3] run scoreboard players set @s has_flag 1
+execute as @a[tag=team_a_tag,scores={has_flag=0}] at @s if entity @e[tag=flag_b,distance=..3] run tellraw @a[tag=player] [{"selector":"@s","color":"${settings.colorA || 'red'}"},{"text":" が旗を奪った！","color":"yellow"}]
+execute as @a[tag=team_a_tag,scores={has_flag=0}] at @s if entity @e[tag=flag_b,distance=..3] run playsound minecraft:entity.experience_orb.pickup master @a[tag=player]
+
+# チームBが敵旗(flag_a)を取得
+execute as @a[tag=team_b_tag,scores={has_flag=0}] at @s if entity @e[tag=flag_a,distance=..3] run scoreboard players set @s has_flag 1
+execute as @a[tag=team_b_tag,scores={has_flag=0}] at @s if entity @e[tag=flag_a,distance=..3] run tellraw @a[tag=player] [{"selector":"@s","color":"${settings.colorB || 'blue'}"},{"text":" が旗を奪った！","color":"yellow"}]
+
+# ── 旗を自陣に持ち帰り判定 ──
+execute as @a[tag=team_a_tag,scores={has_flag=1}] at @s if entity @e[tag=base_a,distance=..3] run function ${ns}:capture_a
+execute as @a[tag=team_b_tag,scores={has_flag=1}] at @s if entity @e[tag=base_b,distance=..3] run function ${ns}:capture_b
+
+# ── 旗持ちが死亡したら旗ドロップ ──
+execute as @a[tag=player,scores={has_flag=1,deaths=1..}] run scoreboard players set @s has_flag 0
+execute as @a[tag=player,scores={has_flag=1,deaths=1..}] run tellraw @a[tag=player] [{"selector":"@s"},{"text":" が旗を落とした！","color":"red"}]
+scoreboard players set @a[tag=player] deaths 0
+
+# 旗持ちにエフェクト（光る）
+effect give @a[tag=player,scores={has_flag=1}] glowing 2 0 true
+
+# HUD
+bossbar set ${ns}:timer name ["",{"text":"${tA}: ","color":"${settings.colorA || 'red'}"},{"score":{"name":"#team_a","objective":"captures"}},{"text":" | ${tB}: ","color":"${settings.colorB || 'blue'}"},{"score":{"name":"#team_b","objective":"captures"}},{"text":" (${cn}奪取で勝利)","color":"gray"}]
+
+# 勝利判定
+execute if score #team_a captures matches ${cn}.. run function ${ns}:win_a
+execute if score #team_b captures matches ${cn}.. run function ${ns}:win_b
+execute if score #timer pre_count matches 0 if score #timer timer_sec matches 0 run function ${ns}:win_check` });
+
+    files.push({ path: `data/${ns}/function/capture_a.mcfunction`, content:
+`# チームAの奪取成功
+scoreboard players add #team_a captures 1
+scoreboard players set @s has_flag 0
+title @a[tag=player] title {"text":"${tA}が奪取！","bold":true,"color":"${settings.colorA || 'red'}"}
+playsound minecraft:ui.toast.challenge_complete master @a[tag=team_a_tag]` });
+
+    files.push({ path: `data/${ns}/function/capture_b.mcfunction`, content:
+`# チームBの奪取成功
+scoreboard players add #team_b captures 1
+scoreboard players set @s has_flag 0
+title @a[tag=player] title {"text":"${tB}が奪取！","bold":true,"color":"${settings.colorB || 'blue'}"}
+playsound minecraft:ui.toast.challenge_complete master @a[tag=team_b_tag]` });
+
+    files.push({ path: `data/${ns}/function/win_a.mcfunction`, content:
+`title @a[tag=player] title {"text":"${tA}の勝利！","bold":true,"color":"${settings.colorA || 'red'}"}
+execute as @a[tag=team_a_tag] at @s run playsound minecraft:ui.toast.challenge_complete master @s
+function ${ns}:end` });
+
+    files.push({ path: `data/${ns}/function/win_b.mcfunction`, content:
+`title @a[tag=player] title {"text":"${tB}の勝利！","bold":true,"color":"${settings.colorB || 'blue'}"}
+execute as @a[tag=team_b_tag] at @s run playsound minecraft:ui.toast.challenge_complete master @s
+function ${ns}:end` });
+
+    files.push({ path: `data/${ns}/function/win_check.mcfunction`, content:
+`execute if score #team_a captures > #team_b captures run function ${ns}:win_a
+execute if score #team_b captures > #team_a captures run function ${ns}:win_b
+execute if score #team_a captures = #team_b captures run tellraw @a[tag=player] {"text":"引き分け！","color":"yellow","bold":true}
+execute if score #team_a captures = #team_b captures run function ${ns}:end` });
+
+    files.push({ path: `data/${ns}/function/end.mcfunction`, content:
+`scoreboard players set #game game_state 0
+bossbar remove ${ns}:timer
+gamemode adventure @a[tag=player]
+clear @a[tag=player]
+effect clear @a[tag=player]
+scoreboard players set @a[tag=player] has_flag 0
+tag @a remove team_a_tag
+tag @a remove team_b_tag
+team empty team_a
+team empty team_b
+tellraw @a[tag=player] {"text":"ゲームリセット完了","color":"gray"}` });
+
+  } else if (gameType === 'tnt_run') {
+    const fallY = settings.fallY || 0;
+    const layers = settings.layerCount || 3;
+    files.push({ path: `data/${ns}/function/reload.mcfunction`, content:
+`# ═══ TNTラン 初期化 ═══
+scoreboard objectives add game_state dummy "ゲーム状態"
+scoreboard objectives add timer_tick dummy "tick"
+scoreboard objectives add timer_sec dummy "秒"
+scoreboard objectives add pre_count dummy "カウントダウン"
+scoreboard objectives add alive dummy "生存"
+scoreboard players set #game game_state 0
+say [TNTラン] 読み込み完了！
+# 注: フロアはTNTの上にサンド/砂利を置いてください（${layers}層推奨）` });
+
+    files.push({ path: `data/${ns}/function/main.mcfunction`, content:
+`execute if score #game game_state matches 1 run function ${ns}:game_loop` });
+
+    files.push({ path: `data/${ns}/function/start.mcfunction`, content:
+`# ═══ TNTラン 開始 ═══
+# 事前: tag @a add player
+# フロア構造: TNTの上にサンド/砂利を配置（複数層）
+clear @a[tag=player]
+effect clear @a[tag=player]
+scoreboard players set @a[tag=player] alive 1
+gamemode adventure @a[tag=player]
+
+scoreboard players set #timer timer_tick 0
+scoreboard players set #timer timer_sec ${gt}
+scoreboard players set #timer pre_count 60
+
+bossbar add ${ns}:timer ""
+bossbar set ${ns}:timer players @a[tag=player]
+bossbar set ${ns}:timer max ${gt}
+bossbar set ${ns}:timer value ${gt}
+bossbar set ${ns}:timer color red
+
+scoreboard players set #game game_state 1
+title @a[tag=player] title {"text":"TNTラン","bold":true,"color":"red"}
+title @a[tag=player] subtitle {"text":"走れ！止まるな！","color":"yellow"}` });
+
+    files.push({ path: `data/${ns}/function/game_loop.mcfunction`, content:
+`# ═══ TNTラン ゲームループ ═══
+
+# カウントダウン
+execute if score #timer pre_count matches 60 run title @a[tag=player] title {"text":"3","bold":true,"color":"light_purple"}
+execute if score #timer pre_count matches 40 run title @a[tag=player] title {"text":"2","bold":true,"color":"yellow"}
+execute if score #timer pre_count matches 20 run title @a[tag=player] title {"text":"1","bold":true,"color":"red"}
+execute if score #timer pre_count matches 1 run title @a[tag=player] title {"text":"走れ！","bold":true,"color":"red"}
+execute if score #timer pre_count matches 1.. run scoreboard players remove #timer pre_count 1
+
+# タイマー
+execute if score #timer pre_count matches 0 run scoreboard players add #timer timer_tick 1
+execute if score #timer pre_count matches 0 if score #timer timer_tick matches 20.. run scoreboard players set #timer timer_tick 0
+execute if score #timer pre_count matches 0 if score #timer timer_tick matches 0 if score #timer timer_sec matches 1.. run scoreboard players remove #timer timer_sec 1
+execute store result bossbar ${ns}:timer value run scoreboard players get #timer timer_sec
+
+# ── 足元のブロックを遅延消去（プレイヤーの足元を3tick後に消す） ──
+execute if score #timer pre_count matches 0 as @a[tag=player,scores={alive=1}] at @s run function ${ns}:remove_block
+
+# ── 落下検知（Y=${fallY}以下で脱落） ──
+execute as @a[tag=player,scores={alive=1}] at @s if entity @s[y=-64,dy=${fallY + 64}] run scoreboard players set @s alive 0
+execute as @a[tag=player,scores={alive=0}] run gamemode spectator @s
+execute as @a[tag=player,scores={alive=0}] run tellraw @a[tag=player] [{"selector":"@s","color":"red"},{"text":" が落ちた！","color":"gray"}]
+execute as @a[tag=player,scores={alive=0}] run scoreboard players set @s alive -1
+
+# 生存者カウント
+scoreboard players set #alive_count alive 0
+execute as @a[tag=player,scores={alive=1}] run scoreboard players add #alive_count alive 1
+
+# HUD
+bossbar set ${ns}:timer name ["",{"text":"生存者: ","color":"red"},{"score":{"name":"#alive_count","objective":"alive"},"color":"white"},{"text":"人 | 残り","color":"red"},{"score":{"name":"#timer","objective":"timer_sec"},"color":"white"},{"text":"秒","color":"red"}]
+
+# 勝利判定（残り1人以下）
+execute if score #alive_count alive matches ..1 run function ${ns}:win
+execute if score #timer pre_count matches 0 if score #timer timer_sec matches 0 run function ${ns}:win` });
+
+    files.push({ path: `data/${ns}/function/remove_block.mcfunction`, content:
+`# ═══ 足元のブロック消去 ═══
+# プレイヤーの足元のブロックをairに置換（2tick遅延風の演出）
+# sand/gravel の場合は自然落下するので TNT+sand の構造が推奨
+execute at @s run setblock ~ ~-1 ~ air replace` });
+
+    files.push({ path: `data/${ns}/function/win.mcfunction`, content:
+`# ═══ 勝者決定 ═══
+execute as @a[tag=player,scores={alive=1}] run title @a[tag=player] title [{"selector":"@s","bold":true,"color":"gold"},{"text":"の勝利！","bold":true,"color":"yellow"}]
+execute as @a[tag=player,scores={alive=1}] at @s run playsound minecraft:ui.toast.challenge_complete master @s
+execute unless entity @a[tag=player,scores={alive=1}] run title @a[tag=player] title {"text":"全員落下！","bold":true,"color":"red"}
+function ${ns}:end` });
+
+    files.push({ path: `data/${ns}/function/end.mcfunction`, content:
+`scoreboard players set #game game_state 0
+bossbar remove ${ns}:timer
+gamemode adventure @a[tag=player]
+clear @a[tag=player]
+effect clear @a[tag=player]
+scoreboard players set @a[tag=player] alive 0
+tag @a remove player
+tellraw @a {"text":"ゲームリセット完了","color":"gray"}` });
+  }
+
+  return files;
+}
+
+// ════════════════════════════════════════════════════════════
+// SYSTEM FILE GENERATOR
+// ════════════════════════════════════════════════════════════
+
+function generateSystemFiles(ns, systemType, settings) {
+  const files = [];
+
+  if (systemType === 'custom_weapon') {
+    const wName = settings.weaponName || '炎の剣';
+    const wItem = settings.weaponItem || 'minecraft:diamond_sword';
+    const particle = settings.particleEffect || 'flame';
+    const dmg = settings.damage || 10;
+    const cd = settings.cooldown || 60;
+
+    files.push({ path: `data/minecraft/tags/function/load.json`, content: JSON.stringify({ values: [`${ns}:weapon/setup`] }, null, 2), merge: true });
+    files.push({ path: `data/minecraft/tags/function/tick.json`, content: JSON.stringify({ values: [`${ns}:weapon/tick`] }, null, 2), merge: true });
+
+    files.push({ path: `data/${ns}/function/weapon/setup.mcfunction`, content:
+`# ═══ カスタム武器: ${wName} セットアップ ═══
+scoreboard objectives add ${ns}_cd dummy "クールダウン"
+scoreboard objectives add ${ns}_use minecraft.used:minecraft.carrot_on_a_stick "使用検知"
+say [カスタム武器] ${wName} が読み込まれました！` });
+
+    files.push({ path: `data/${ns}/function/weapon/tick.mcfunction`, content:
+`# ═══ カスタム武器 Tick処理 ═══
+# クールダウン減少
+execute as @a[scores={${ns}_cd=1..}] run scoreboard players remove @s ${ns}_cd 1
+
+# 使用検知（carrot_on_a_stickを右クリック）
+execute as @a[scores={${ns}_use=1..},nbt={SelectedItem:{tag:{${ns}_weapon:1b}}}] run function ${ns}:weapon/activate
+scoreboard players set @a ${ns}_use 0` });
+
+    files.push({ path: `data/${ns}/function/weapon/activate.mcfunction`, content:
+`# ═══ ${wName} スキル発動 ═══
+# クールダウンチェック
+execute if score @s ${ns}_cd matches 1.. run tellraw @s {"text":"クールダウン中...","color":"red"}
+execute if score @s ${ns}_cd matches 1.. run return 0
+
+# スキル発動
+scoreboard players set @s ${ns}_cd ${cd}
+title @s actionbar {"text":"${wName} 発動！","color":"gold","bold":true}
+playsound minecraft:entity.blaze.shoot master @s
+
+# 前方のエンティティにダメージ
+execute at @s anchored eyes run damage @e[distance=..5,limit=3,sort=nearest,tag=!${ns}_immune] ${dmg} minecraft:magic by @s
+
+# パーティクル演出
+execute at @s run particle ${particle} ~ ~1 ~ 0.5 0.5 0.5 0.1 30` });
+
+    files.push({ path: `data/${ns}/function/weapon/give.mcfunction`, content:
+`# ═══ ${wName} を付与 ═══
+give @s ${wItem}{display:{Name:'[{"text":"${wName}","italic":false,"color":"gold","bold":true}]',Lore:['[{"text":"右クリックでスキル発動","italic":true,"color":"gray"}]']},${ns}_weapon:1b}
+tellraw @s [{"text":"[武器] ","color":"gold"},{"text":"${wName}","color":"yellow","bold":true},{"text":" を入手！","color":"gold"}]` });
+
+  } else if (systemType === 'shop_npc') {
+    const sName = settings.shopName || 'ショップ';
+    const cur = settings.currency || 'coins';
+    const itemCount = settings.items || 3;
+
+    files.push({ path: `data/minecraft/tags/function/load.json`, content: JSON.stringify({ values: [`${ns}:shop/setup`] }, null, 2), merge: true });
+    files.push({ path: `data/minecraft/tags/function/tick.json`, content: JSON.stringify({ values: [`${ns}:shop/tick`] }, null, 2), merge: true });
+
+    files.push({ path: `data/${ns}/function/shop/setup.mcfunction`, content:
+`# ═══ ${sName} セットアップ ═══
+scoreboard objectives add ${cur} dummy "${sName}の通貨"
+scoreboard objectives add shop_trigger trigger "${sName}"
+
+# NPC召喚コマンド（任意の場所で実行）:
+# summon villager ~ ~ ~ {CustomName:'"${sName}"',NoAI:1b,Invulnerable:1b,Tags:["${ns}_shop"]}
+
+say [${sName}] ショップシステムが読み込まれました！
+tellraw @a {"text":"ショップを利用するには /trigger shop_trigger set <番号>","color":"green"}` });
+
+    files.push({ path: `data/${ns}/function/shop/tick.mcfunction`, content:
+`# ═══ ${sName} Tick処理 ═══
+# triggerの処理
+execute as @a[scores={shop_trigger=1}] run function ${ns}:shop/buy_1
+execute as @a[scores={shop_trigger=2}] run function ${ns}:shop/buy_2
+execute as @a[scores={shop_trigger=3}] run function ${ns}:shop/buy_3
+
+# triggerリセット
+scoreboard players set @a shop_trigger 0
+scoreboard players enable @a shop_trigger
+
+# NPC近くにいるプレイヤーにメニュー表示
+execute as @a at @s if entity @e[tag=${ns}_shop,distance=..3] run title @s actionbar ["",{"text":"${sName} ","color":"green","bold":true},{"text":"| /trigger shop_trigger set <番号>","color":"gray"}]` });
+
+    files.push({ path: `data/${ns}/function/shop/menu.mcfunction`, content:
+`# ═══ ${sName} メニュー表示 ═══
+tellraw @s {"text":"","extra":[{"text":"═══ ${sName} ═══","color":"gold","bold":true}]}
+tellraw @s {"text":"","extra":[{"text":"所持金: ","color":"gray"},{"score":{"name":"@s","objective":"${cur}"},"color":"yellow"},{"text":" コイン","color":"gray"}]}
+tellraw @s {"text":""}
+tellraw @s [{"text":"[1] ","color":"green","clickEvent":{"action":"run_command","value":"/trigger shop_trigger set 1"}},{"text":"鉄の剣 - 10コイン","color":"white"}]
+tellraw @s [{"text":"[2] ","color":"green","clickEvent":{"action":"run_command","value":"/trigger shop_trigger set 2"}},{"text":"弓 - 15コイン","color":"white"}]
+tellraw @s [{"text":"[3] ","color":"green","clickEvent":{"action":"run_command","value":"/trigger shop_trigger set 3"}},{"text":"金リンゴ - 20コイン","color":"white"}]` });
+
+    files.push({ path: `data/${ns}/function/shop/buy_1.mcfunction`, content:
+`# ═══ 商品1: 鉄の剣（10コイン） ═══
+execute if score @s ${cur} matches 10.. run scoreboard players remove @s ${cur} 10
+execute if score @s ${cur} matches 10.. run give @s iron_sword
+execute if score @s ${cur} matches 10.. run tellraw @s {"text":"鉄の剣を購入しました！","color":"green"}
+execute unless score @s ${cur} matches 10.. run tellraw @s {"text":"コインが足りません！","color":"red"}` });
+
+    files.push({ path: `data/${ns}/function/shop/buy_2.mcfunction`, content:
+`# ═══ 商品2: 弓（15コイン） ═══
+execute if score @s ${cur} matches 15.. run scoreboard players remove @s ${cur} 15
+execute if score @s ${cur} matches 15.. run give @s bow
+execute if score @s ${cur} matches 15.. run give @s arrow 16
+execute if score @s ${cur} matches 15.. run tellraw @s {"text":"弓を購入しました！","color":"green"}
+execute unless score @s ${cur} matches 15.. run tellraw @s {"text":"コインが足りません！","color":"red"}` });
+
+    files.push({ path: `data/${ns}/function/shop/buy_3.mcfunction`, content:
+`# ═══ 商品3: 金リンゴ（20コイン） ═══
+execute if score @s ${cur} matches 20.. run scoreboard players remove @s ${cur} 20
+execute if score @s ${cur} matches 20.. run give @s golden_apple
+execute if score @s ${cur} matches 20.. run tellraw @s {"text":"金リンゴを購入しました！","color":"green"}
+execute unless score @s ${cur} matches 20.. run tellraw @s {"text":"コインが足りません！","color":"red"}` });
+
+    files.push({ path: `data/${ns}/function/shop/add_coins.mcfunction`, content:
+`# ═══ コイン付与 ═══
+# 使い方: execute as <プレイヤー> run function ${ns}:shop/add_coins
+scoreboard players add @s ${cur} 10
+tellraw @s [{"text":"[+10] ","color":"gold"},{"score":{"name":"@s","objective":"${cur}"},"color":"yellow"},{"text":" コイン","color":"gray"}]
+playsound minecraft:entity.experience_orb.pickup master @s` });
+
+  } else if (systemType === 'teleport_system') {
+    const pc = settings.pointCount || 3;
+
+    files.push({ path: `data/minecraft/tags/function/load.json`, content: JSON.stringify({ values: [`${ns}:teleport/setup`] }, null, 2), merge: true });
+    files.push({ path: `data/minecraft/tags/function/tick.json`, content: JSON.stringify({ values: [`${ns}:teleport/tick`] }, null, 2), merge: true });
+
+    files.push({ path: `data/${ns}/function/teleport/setup.mcfunction`, content:
+`# ═══ テレポートシステム セットアップ ═══
+scoreboard objectives add tp_trigger trigger "テレポート"
+scoreboard players enable @a tp_trigger
+
+# ワープポイントの設置:
+${Array.from({length: pc}, (_, i) => `# ポイント${i+1}: /summon marker <x> <y> <z> {Tags:["${ns}_tp${i+1}"],CustomName:'"ポイント${i+1}"'}`).join('\n')}
+
+say [テレポート] システムが読み込まれました！
+tellraw @a {"text":"/trigger tp_trigger set <番号> でテレポート","color":"aqua"}` });
+
+    files.push({ path: `data/${ns}/function/teleport/tick.mcfunction`, content:
+`# ═══ テレポートシステム Tick処理 ═══
+${Array.from({length: pc}, (_, i) => `execute as @a[scores={tp_trigger=${i+1}}] run function ${ns}:teleport/go_${i+1}`).join('\n')}
+
+# triggerリセット
+scoreboard players set @a tp_trigger 0
+scoreboard players enable @a tp_trigger` });
+
+    for (let i = 1; i <= pc; i++) {
+      files.push({ path: `data/${ns}/function/teleport/go_${i}.mcfunction`, content:
+`# ═══ ポイント${i}にテレポート ═══
+execute at @e[tag=${ns}_tp${i},limit=1] run tp @s ~ ~ ~
+title @s actionbar {"text":"ポイント${i}にテレポート！","color":"aqua"}
+playsound minecraft:entity.enderman.teleport master @s
+particle portal ~ ~1 ~ 0.5 1 0.5 0.1 50` });
+    }
+
+    files.push({ path: `data/${ns}/function/teleport/menu.mcfunction`, content:
+`# ═══ テレポートメニュー ═══
+tellraw @s {"text":"═══ テレポート ═══","color":"aqua","bold":true}
+${Array.from({length: pc}, (_, i) => `tellraw @s [{"text":"[${i+1}] ","color":"aqua","clickEvent":{"action":"run_command","value":"/trigger tp_trigger set ${i+1}"}},{"text":"ポイント${i+1}","color":"white"}]`).join('\n')}` });
+
+  } else if (systemType === 'loot_box') {
+    const bName = settings.boxName || '宝箱';
+    const cost = settings.cost || 10;
+    const cur = settings.currency || 'coins';
+
+    files.push({ path: `data/minecraft/tags/function/load.json`, content: JSON.stringify({ values: [`${ns}:lootbox/setup`] }, null, 2), merge: true });
+
+    files.push({ path: `data/${ns}/function/lootbox/setup.mcfunction`, content:
+`# ═══ ${bName}（ルートボックス）セットアップ ═══
+scoreboard objectives add ${cur} dummy "通貨"
+scoreboard objectives add loot_trigger trigger "${bName}"
+scoreboard players enable @a loot_trigger
+say [${bName}] ルートボックスシステムが読み込まれました！` });
+
+    files.push({ path: `data/${ns}/function/lootbox/open.mcfunction`, content:
+`# ═══ ${bName}を開ける ═══
+# コスト: ${cost}コイン
+execute unless score @s ${cur} matches ${cost}.. run tellraw @s {"text":"コインが足りません！（${cost}コイン必要）","color":"red"}
+execute unless score @s ${cur} matches ${cost}.. run return 0
+
+scoreboard players remove @s ${cur} ${cost}
+title @s title {"text":"${bName}","bold":true,"color":"gold"}
+playsound minecraft:block.chest.open master @s
+playsound minecraft:entity.player.levelup master @s
+
+# ランダム抽選（loot_tableを使用）
+loot give @s loot ${ns}:lootbox/common
+tellraw @s [{"text":"[${bName}] ","color":"gold"},{"text":"アイテムを入手！","color":"yellow"}]` });
+
+    files.push({ path: `data/${ns}/loot_table/lootbox/common.json`, content: JSON.stringify({
+      pools: [{
+        rolls: 1,
+        entries: [
+          { type: "minecraft:item", name: "minecraft:iron_ingot", weight: 40, functions: [{ function: "minecraft:set_count", count: { min: 1, max: 5 } }] },
+          { type: "minecraft:item", name: "minecraft:gold_ingot", weight: 30, functions: [{ function: "minecraft:set_count", count: { min: 1, max: 3 } }] },
+          { type: "minecraft:item", name: "minecraft:diamond", weight: 20 },
+          { type: "minecraft:item", name: "minecraft:emerald", weight: 8, functions: [{ function: "minecraft:set_count", count: { min: 1, max: 3 } }] },
+          { type: "minecraft:item", name: "minecraft:netherite_ingot", weight: 2 },
+        ]
+      }]
+    }, null, 2) });
+
+    files.push({ path: `data/${ns}/loot_table/lootbox/rare.json`, content: JSON.stringify({
+      pools: [{
+        rolls: 1,
+        entries: [
+          { type: "minecraft:item", name: "minecraft:diamond", weight: 40, functions: [{ function: "minecraft:set_count", count: { min: 1, max: 3 } }] },
+          { type: "minecraft:item", name: "minecraft:emerald_block", weight: 25 },
+          { type: "minecraft:item", name: "minecraft:netherite_ingot", weight: 20 },
+          { type: "minecraft:item", name: "minecraft:enchanted_golden_apple", weight: 10 },
+          { type: "minecraft:item", name: "minecraft:totem_of_undying", weight: 5 },
+        ]
+      }]
+    }, null, 2) });
+
+  } else if (systemType === 'recipe_set') {
+    const rType = settings.recipeType || 'weapon';
+    const rCount = settings.recipeCount || 3;
+
+    if (rType === 'weapon') {
+      files.push({ path: `data/${ns}/recipe/fire_sword.json`, content: JSON.stringify({
+        type: "minecraft:crafting_shaped",
+        pattern: ["B","S","S"],
+        key: { B: "minecraft:blaze_powder", S: "minecraft:iron_sword" },
+        result: { id: "minecraft:iron_sword", count: 1 }
+      }, null, 2) });
+      files.push({ path: `data/${ns}/recipe/thunder_axe.json`, content: JSON.stringify({
+        type: "minecraft:crafting_shaped",
+        pattern: ["LL","LS"," S"],
+        key: { L: "minecraft:lightning_rod", S: "minecraft:stick" },
+        result: { id: "minecraft:diamond_axe", count: 1 }
+      }, null, 2) });
+      files.push({ path: `data/${ns}/recipe/ender_bow.json`, content: JSON.stringify({
+        type: "minecraft:crafting_shaped",
+        pattern: [" ES","E S"," ES"],
+        key: { E: "minecraft:ender_pearl", S: "minecraft:string" },
+        result: { id: "minecraft:bow", count: 1 }
+      }, null, 2) });
+    } else if (rType === 'armor') {
+      files.push({ path: `data/${ns}/recipe/reinforced_helmet.json`, content: JSON.stringify({
+        type: "minecraft:crafting_shaped",
+        pattern: ["DID","I I"],
+        key: { D: "minecraft:diamond", I: "minecraft:iron_ingot" },
+        result: { id: "minecraft:diamond_helmet", count: 1 }
+      }, null, 2) });
+      files.push({ path: `data/${ns}/recipe/reinforced_chestplate.json`, content: JSON.stringify({
+        type: "minecraft:crafting_shaped",
+        pattern: ["D D","DID","DID"],
+        key: { D: "minecraft:diamond", I: "minecraft:iron_ingot" },
+        result: { id: "minecraft:diamond_chestplate", count: 1 }
+      }, null, 2) });
+      files.push({ path: `data/${ns}/recipe/reinforced_boots.json`, content: JSON.stringify({
+        type: "minecraft:crafting_shaped",
+        pattern: ["D D","I I"],
+        key: { D: "minecraft:diamond", I: "minecraft:iron_ingot" },
+        result: { id: "minecraft:diamond_boots", count: 1 }
+      }, null, 2) });
+    } else if (rType === 'food') {
+      files.push({ path: `data/${ns}/recipe/super_stew.json`, content: JSON.stringify({
+        type: "minecraft:crafting_shapeless",
+        ingredients: ["minecraft:mushroom_stew", "minecraft:golden_carrot", "minecraft:honey_bottle"],
+        result: { id: "minecraft:suspicious_stew", count: 1 }
+      }, null, 2) });
+      files.push({ path: `data/${ns}/recipe/golden_bread.json`, content: JSON.stringify({
+        type: "minecraft:crafting_shaped",
+        pattern: ["GGG"],
+        key: { G: "minecraft:gold_nugget" },
+        result: { id: "minecraft:bread", count: 3 }
+      }, null, 2) });
+      files.push({ path: `data/${ns}/recipe/energy_cookie.json`, content: JSON.stringify({
+        type: "minecraft:crafting_shapeless",
+        ingredients: ["minecraft:cookie", "minecraft:sugar", "minecraft:glowstone_dust"],
+        result: { id: "minecraft:cookie", count: 8 }
+      }, null, 2) });
+    } else {
+      files.push({ path: `data/${ns}/recipe/packed_cobble.json`, content: JSON.stringify({
+        type: "minecraft:crafting_shaped",
+        pattern: ["CCC","CCC","CCC"],
+        key: { C: "minecraft:cobblestone" },
+        result: { id: "minecraft:stone", count: 9 }
+      }, null, 2) });
+      files.push({ path: `data/${ns}/recipe/easy_chain.json`, content: JSON.stringify({
+        type: "minecraft:crafting_shaped",
+        pattern: ["N","I","N"],
+        key: { N: "minecraft:iron_nugget", I: "minecraft:iron_ingot" },
+        result: { id: "minecraft:chain", count: 2 }
+      }, null, 2) });
+      files.push({ path: `data/${ns}/recipe/compact_quartz.json`, content: JSON.stringify({
+        type: "minecraft:crafting_shaped",
+        pattern: ["QQ","QQ"],
+        key: { Q: "minecraft:quartz" },
+        result: { id: "minecraft:quartz_block", count: 1 }
+      }, null, 2) });
+    }
+
+  } else if (systemType === 'boss_fight') {
+    const bossName = settings.bossName || 'ドラゴンロード';
+    const bossEntity = settings.bossEntity || 'minecraft:wither_skeleton';
+    const bossHp = settings.bossHp || 100;
+    const phases = settings.phases || 3;
+
+    files.push({ path: `data/minecraft/tags/function/load.json`, content: JSON.stringify({ values: [`${ns}:boss/setup`] }, null, 2), merge: true });
+    files.push({ path: `data/minecraft/tags/function/tick.json`, content: JSON.stringify({ values: [`${ns}:boss/tick`] }, null, 2), merge: true });
+
+    files.push({ path: `data/${ns}/function/boss/setup.mcfunction`, content:
+`# ═══ ボス戦: ${bossName} セットアップ ═══
+scoreboard objectives add boss_hp dummy "ボスHP"
+scoreboard objectives add boss_phase dummy "フェーズ"
+scoreboard objectives add boss_active dummy "ボス活性"
+scoreboard players set #boss boss_hp ${bossHp}
+scoreboard players set #boss boss_phase 1
+scoreboard players set #boss boss_active 0
+say [ボス戦] ${bossName} システムが読み込まれました！` });
+
+    files.push({ path: `data/${ns}/function/boss/tick.mcfunction`, content:
+`# ═══ ボス戦 Tick処理 ═══
+execute if score #boss boss_active matches 1 run function ${ns}:boss/loop` });
+
+    files.push({ path: `data/${ns}/function/boss/summon.mcfunction`, content:
+`# ═══ ${bossName} 召喚 ═══
+# ボスを召喚
+summon ${bossEntity} ~ ~ ~ {CustomName:'"${bossName}"',CustomNameVisible:1b,Tags:["${ns}_boss"],PersistenceRequired:1b,Attributes:[{Name:"generic.max_health",Base:${bossHp}},{Name:"generic.attack_damage",Base:10}],Health:${bossHp}f}
+
+# ボスバー作成
+bossbar add ${ns}:boss "${bossName}"
+bossbar set ${ns}:boss players @a[distance=..50]
+bossbar set ${ns}:boss max ${bossHp}
+bossbar set ${ns}:boss value ${bossHp}
+bossbar set ${ns}:boss color red
+
+scoreboard players set #boss boss_hp ${bossHp}
+scoreboard players set #boss boss_phase 1
+scoreboard players set #boss boss_active 1
+
+title @a[distance=..50] title {"text":"${bossName}","bold":true,"color":"dark_red"}
+title @a[distance=..50] subtitle {"text":"フェーズ 1","color":"red"}
+playsound minecraft:entity.wither.spawn master @a[distance=..50]` });
+
+    files.push({ path: `data/${ns}/function/boss/loop.mcfunction`, content:
+`# ═══ ${bossName} ループ ═══
+# ボスHP同期
+execute store result score #boss boss_hp run data get entity @e[tag=${ns}_boss,limit=1] Health
+
+# ボスバー更新
+execute store result bossbar ${ns}:boss value run scoreboard players get #boss boss_hp
+bossbar set ${ns}:boss name ["",{"text":"${bossName} ","color":"dark_red","bold":true},{"text":"[フェーズ ","color":"gray"},{"score":{"name":"#boss","objective":"boss_phase"},"color":"yellow"},{"text":"/${phases}]","color":"gray"}]
+
+# フェーズ遷移
+${Array.from({length: phases - 1}, (_, i) => {
+  const threshold = Math.floor(bossHp * (phases - i - 1) / phases);
+  return `execute if score #boss boss_phase matches ${i+1} if score #boss boss_hp matches ..${threshold} run function ${ns}:boss/phase_${i+2}`;
+}).join('\n')}
+
+# ボス死亡判定
+execute unless entity @e[tag=${ns}_boss] run function ${ns}:boss/defeated
+
+# ボススキル（各フェーズで毎秒異なるスキル）
+execute if score #boss boss_phase matches 1 at @e[tag=${ns}_boss,limit=1] run particle flame ~ ~2 ~ 1 1 1 0.05 10
+execute if score #boss boss_phase matches 2 at @e[tag=${ns}_boss,limit=1] run particle soul_fire_flame ~ ~2 ~ 1 1 1 0.05 15
+execute if score #boss boss_phase matches ${phases} at @e[tag=${ns}_boss,limit=1] run particle dragon_breath ~ ~2 ~ 2 1 2 0.02 20` });
+
+    for (let p = 2; p <= phases; p++) {
+      files.push({ path: `data/${ns}/function/boss/phase_${p}.mcfunction`, content:
+`# ═══ ${bossName} フェーズ${p} ═══
+scoreboard players set #boss boss_phase ${p}
+title @a[distance=..50] title {"text":"フェーズ ${p}","bold":true,"color":"red"}
+playsound minecraft:entity.ender_dragon.growl master @a[distance=..50]
+# フェーズ${p}の強化（速度UP・攻撃力UP）
+effect give @e[tag=${ns}_boss,limit=1] speed ${10 + p * 5} ${p - 1} true
+effect give @e[tag=${ns}_boss,limit=1] strength ${10 + p * 5} ${p - 1} true
+tellraw @a[distance=..50] {"text":"${bossName}がフェーズ${p}に移行！","color":"red","bold":true}` });
+    }
+
+    files.push({ path: `data/${ns}/function/boss/defeated.mcfunction`, content:
+`# ═══ ${bossName} 撃破！ ═══
+scoreboard players set #boss boss_active 0
+bossbar remove ${ns}:boss
+title @a[distance=..50] title {"text":"${bossName} 撃破！","bold":true,"color":"gold"}
+playsound minecraft:ui.toast.challenge_complete master @a[distance=..50]
+
+# 報酬ドロップ
+loot give @a[distance=..50,limit=1,sort=nearest] loot ${ns}:boss/reward
+tellraw @a[distance=..50] {"text":"═══ 報酬を獲得！ ═══","color":"gold","bold":true}` });
+
+    files.push({ path: `data/${ns}/loot_table/boss/reward.json`, content: JSON.stringify({
+      pools: [{
+        rolls: { min: 2, max: 4 },
+        entries: [
+          { type: "minecraft:item", name: "minecraft:diamond", weight: 30, functions: [{ function: "minecraft:set_count", count: { min: 3, max: 8 } }] },
+          { type: "minecraft:item", name: "minecraft:netherite_ingot", weight: 15 },
+          { type: "minecraft:item", name: "minecraft:enchanted_golden_apple", weight: 10 },
+          { type: "minecraft:item", name: "minecraft:totem_of_undying", weight: 5 },
+          { type: "minecraft:item", name: "minecraft:experience_bottle", weight: 40, functions: [{ function: "minecraft:set_count", count: { min: 5, max: 15 } }] },
+        ]
+      }]
+    }, null, 2) });
+
+  } else if (systemType === 'lobby_system') {
+    const lName = settings.lobbyName || 'ロビー';
+    const minP = settings.minPlayers || 2;
+    const maxP = settings.maxPlayers || 16;
+    const cd = settings.countdown || 30;
+
+    files.push({ path: `data/minecraft/tags/function/load.json`, content: JSON.stringify({ values: [`${ns}:lobby/setup`] }, null, 2), merge: true });
+    files.push({ path: `data/minecraft/tags/function/tick.json`, content: JSON.stringify({ values: [`${ns}:lobby/tick`] }, null, 2), merge: true });
+
+    files.push({ path: `data/${ns}/function/lobby/setup.mcfunction`, content:
+`# ═══ ${lName} セットアップ ═══
+scoreboard objectives add lobby_state dummy "ロビー状態"
+scoreboard objectives add lobby_count dummy "参加人数"
+scoreboard objectives add lobby_cd dummy "カウントダウン"
+scoreboard objectives add lobby_ready dummy "準備完了"
+scoreboard objectives add ready_trigger trigger "準備"
+
+scoreboard players set #lobby lobby_state 0
+scoreboard players set #lobby lobby_cd ${cd}
+scoreboard players enable @a ready_trigger
+
+# ロビーのスポーン地点にマーカー配置:
+# /summon marker <x> <y> <z> {Tags:["${ns}_lobby_spawn"]}
+
+say [${lName}] ロビーシステムが読み込まれました！` });
+
+    files.push({ path: `data/${ns}/function/lobby/tick.mcfunction`, content:
+`# ═══ ${lName} Tick処理 ═══
+# 準備完了トリガー処理
+execute as @a[scores={ready_trigger=1..}] run function ${ns}:lobby/toggle_ready
+scoreboard players set @a ready_trigger 0
+scoreboard players enable @a ready_trigger
+
+# 参加者カウント
+scoreboard players set #lobby lobby_count 0
+execute as @a[tag=lobby_player] run scoreboard players add #lobby lobby_count 1
+
+# 準備完了者カウント
+scoreboard players set #ready_count lobby_ready 0
+execute as @a[tag=lobby_player,scores={lobby_ready=1}] run scoreboard players add #ready_count lobby_ready 1
+
+# 待機中 → 全員準備完了かつ最低人数以上でカウントダウン開始
+execute if score #lobby lobby_state matches 0 if score #lobby lobby_count matches ${minP}.. if score #ready_count lobby_ready >= #lobby lobby_count run scoreboard players set #lobby lobby_state 1
+
+# カウントダウン中
+execute if score #lobby lobby_state matches 1 run function ${ns}:lobby/countdown
+
+# HUD
+execute as @a[tag=lobby_player] run title @s actionbar ["",{"text":"${lName} ","color":"green","bold":true},{"text":"| ","color":"gray"},{"score":{"name":"#lobby","objective":"lobby_count"},"color":"white"},{"text":"/${maxP}人 ","color":"gray"},{"text":"| /trigger ready_trigger で準備完了","color":"aqua"}]` });
+
+    files.push({ path: `data/${ns}/function/lobby/join.mcfunction`, content:
+`# ═══ ${lName}に参加 ═══
+# 使い方: 参加したいプレイヤーとして実行
+execute if score #lobby lobby_count matches ${maxP}.. run tellraw @s {"text":"ロビーが満員です！","color":"red"}
+execute if score #lobby lobby_count matches ${maxP}.. run return 0
+
+tag @s add lobby_player
+scoreboard players set @s lobby_ready 0
+gamemode adventure @s
+tellraw @a[tag=lobby_player] [{"selector":"@s","color":"green"},{"text":" がロビーに参加！","color":"yellow"}]
+playsound minecraft:entity.experience_orb.pickup master @a[tag=lobby_player]
+tellraw @s {"text":"準備ができたら /trigger ready_trigger set 1","color":"aqua"}` });
+
+    files.push({ path: `data/${ns}/function/lobby/leave.mcfunction`, content:
+`# ═══ ${lName}から退出 ═══
+tag @s remove lobby_player
+scoreboard players set @s lobby_ready 0
+tellraw @a[tag=lobby_player] [{"selector":"@s","color":"red"},{"text":" がロビーから退出","color":"gray"}]` });
+
+    files.push({ path: `data/${ns}/function/lobby/toggle_ready.mcfunction`, content:
+`# ═══ 準備完了/解除 ═══
+execute if score @s lobby_ready matches 0 run scoreboard players set @s lobby_ready 1
+execute if score @s lobby_ready matches 0 run tellraw @a[tag=lobby_player] [{"selector":"@s","color":"green"},{"text":" が準備完了！","color":"yellow"}]
+execute if score @s lobby_ready matches 1 run scoreboard players set @s lobby_ready 0
+execute if score @s lobby_ready matches 1 run tellraw @a[tag=lobby_player] [{"selector":"@s","color":"red"},{"text":" が準備解除","color":"gray"}]` });
+
+    files.push({ path: `data/${ns}/function/lobby/countdown.mcfunction`, content:
+`# ═══ カウントダウン ═══
+scoreboard players add #lobby_tick lobby_cd 1
+execute if score #lobby_tick lobby_cd matches 20.. run scoreboard players set #lobby_tick lobby_cd 0
+execute if score #lobby_tick lobby_cd matches 0 run scoreboard players remove #lobby lobby_cd 1
+
+# カウント表示
+execute if score #lobby lobby_cd matches 10 run title @a[tag=lobby_player] title {"text":"10","bold":true,"color":"yellow"}
+execute if score #lobby lobby_cd matches 5 run title @a[tag=lobby_player] title {"text":"5","bold":true,"color":"gold"}
+execute if score #lobby lobby_cd matches 3 run title @a[tag=lobby_player] title {"text":"3","bold":true,"color":"red"}
+execute if score #lobby lobby_cd matches 2 run title @a[tag=lobby_player] title {"text":"2","bold":true,"color":"red"}
+execute if score #lobby lobby_cd matches 1 run title @a[tag=lobby_player] title {"text":"1","bold":true,"color":"dark_red"}
+
+# 人数不足で中断
+execute unless score #lobby lobby_count matches ${minP}.. run scoreboard players set #lobby lobby_state 0
+execute unless score #lobby lobby_count matches ${minP}.. run scoreboard players set #lobby lobby_cd ${cd}
+execute unless score #lobby lobby_count matches ${minP}.. run tellraw @a[tag=lobby_player] {"text":"人数不足でカウントダウン中断","color":"red"}
+
+# ゲーム開始
+execute if score #lobby lobby_cd matches 0 run function ${ns}:lobby/start_game` });
+
+    files.push({ path: `data/${ns}/function/lobby/start_game.mcfunction`, content:
+`# ═══ ゲーム開始！ ═══
+scoreboard players set #lobby lobby_state 2
+title @a[tag=lobby_player] title {"text":"ゲーム開始！","bold":true,"color":"green"}
+playsound minecraft:ui.toast.challenge_complete master @a[tag=lobby_player]
+tellraw @a[tag=lobby_player] {"text":"═══ ゲームがスタートしました！ ═══","color":"gold","bold":true}
+
+# ここにゲーム開始のロジックを追加
+# 例: function ${ns}:game/start` });
+
+    files.push({ path: `data/${ns}/function/lobby/reset.mcfunction`, content:
+`# ═══ ロビーリセット ═══
+scoreboard players set #lobby lobby_state 0
+scoreboard players set #lobby lobby_cd ${cd}
+scoreboard players set @a lobby_ready 0
+tag @a remove lobby_player
+tellraw @a {"text":"ロビーがリセットされました","color":"gray"}` });
   }
 
   return files;
@@ -3355,6 +5453,439 @@ function CodeEditor({ file, onChange, targetVersion }) {
 }
 
 // ════════════════════════════════════════════════════════════
+// MCFUNCTION VISUAL EDITOR
+// ════════════════════════════════════════════════════════════
+
+const QUICK_COMMANDS = [
+  { label: 'say', icon: '💬', tpl: 'say メッセージ', desc: 'チャットメッセージ' },
+  { label: 'give', icon: '🎒', tpl: 'give @a[tag=player] minecraft:diamond 1', desc: 'アイテム付与' },
+  { label: 'tp', icon: '🌀', tpl: 'tp @a[tag=player] ~ ~ ~', desc: 'テレポート' },
+  { label: 'effect', icon: '✨', tpl: 'effect give @a[tag=player] speed 10 0', desc: 'エフェクト' },
+  { label: 'title', icon: '📺', tpl: 'title @a[tag=player] title {"text":"タイトル","color":"gold","bold":true}', desc: 'タイトル表示' },
+  { label: 'playsound', icon: '🔊', tpl: 'playsound minecraft:entity.experience_orb.pickup master @a[tag=player]', desc: 'サウンド' },
+  { label: 'scoreboard', icon: '📊', tpl: 'scoreboard players add @s score 1', desc: 'スコア操作' },
+  { label: 'summon', icon: '👾', tpl: 'summon minecraft:zombie ~ ~ ~', desc: 'エンティティ召喚' },
+  { label: 'kill', icon: '💀', tpl: 'kill @e[type=!player,distance=..30]', desc: 'エンティティ削除' },
+  { label: 'tag', icon: '🏷️', tpl: 'tag @s add mytag', desc: 'タグ操作' },
+  { label: 'execute', icon: '⚡', tpl: 'execute as @a[tag=player] at @s run ', desc: '条件実行' },
+  { label: 'function', icon: '📂', tpl: 'function namespace:path/name', desc: '関数呼出し' },
+  { label: '#コメント', icon: '📝', tpl: '# ===== コメント =====', desc: 'コメント行' },
+  { label: 'gamemode', icon: '🎮', tpl: 'gamemode adventure @a[tag=player]', desc: 'ゲームモード' },
+  { label: 'setblock', icon: '🧱', tpl: 'setblock ~ ~ ~ minecraft:stone', desc: 'ブロック配置' },
+  { label: 'fill', icon: '📐', tpl: 'fill ~-5 ~ ~-5 ~5 ~3 ~5 minecraft:air', desc: 'ブロック充填' },
+];
+
+function parseMcfLine(line) {
+  const trimmed = line.trim();
+  if (!trimmed) return { type: 'empty', raw: line };
+  if (trimmed.startsWith('#')) return { type: 'comment', raw: line, text: trimmed.slice(1).trim() };
+  const cmd = trimmed.split(/\s+/)[0].replace(/^\//, '');
+  return { type: 'command', raw: line, cmd, args: trimmed.slice(cmd.length + (trimmed.startsWith('/') ? 1 : 0)).trim() };
+}
+
+const MCF_CMD_ICONS = {
+  say:'💬', tell:'💬', tellraw:'💬', msg:'💬',
+  give:'🎒', clear:'🗑️',
+  tp:'🌀', teleport:'🌀', spreadplayers:'🌀',
+  effect:'✨',
+  title:'📺',
+  playsound:'🔊', stopsound:'🔇',
+  scoreboard:'📊',
+  summon:'👾', kill:'💀',
+  tag:'🏷️',
+  execute:'⚡',
+  function:'📂',
+  gamemode:'🎮',
+  setblock:'🧱', fill:'📐',
+  particle:'🎆',
+  team:'👥',
+  bossbar:'🟩',
+  schedule:'⏱️',
+  forceload:'📍',
+  data:'💾', attribute:'📈',
+  advancement:'🏆', recipe:'📖',
+  enchant:'🔮', xp:'⭐', experience:'⭐',
+  weather:'🌤️', time:'🕐', difficulty:'⚙️',
+  spawnpoint:'🏠', setworldspawn:'🌍',
+  replaceitem:'🔄', item:'🔄', loot:'🎲',
+  default:'▶️',
+};
+
+const MCF_CMD_ITEMS = {
+  give:'minecraft:chest', clear:'minecraft:barrier', tp:'minecraft:ender_pearl',
+  effect:'minecraft:potion', summon:'minecraft:spawner', kill:'minecraft:diamond_sword',
+  title:'minecraft:name_tag', playsound:'minecraft:note_block', scoreboard:'minecraft:book',
+  tag:'minecraft:name_tag', execute:'minecraft:command_block', function:'minecraft:writable_book',
+  gamemode:'minecraft:grass_block', setblock:'minecraft:stone', fill:'minecraft:stone',
+  particle:'minecraft:firework_rocket', team:'minecraft:shield', bossbar:'minecraft:end_crystal',
+  enchant:'minecraft:enchanted_book', xp:'minecraft:experience_bottle',
+};
+
+function McfunctionVisualEditor({ file, onChange }) {
+  const content = file?.content ?? '';
+  const lines = content.split('\n');
+  const parsed = lines.map(parseMcfLine);
+  const [editingIdx, setEditingIdx] = useState(null);
+  const [editText, setEditText] = useState('');
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+
+  const updateLine = (idx, newText) => {
+    const newLines = [...lines];
+    newLines[idx] = newText;
+    onChange(newLines.join('\n'));
+  };
+
+  const deleteLine = (idx) => {
+    const newLines = lines.filter((_, i) => i !== idx);
+    onChange(newLines.join('\n'));
+  };
+
+  const insertLineAt = (idx, text) => {
+    const newLines = [...lines];
+    newLines.splice(idx + 1, 0, text);
+    onChange(newLines.join('\n'));
+    setShowQuickAdd(false);
+  };
+
+  const appendLine = (text) => {
+    const newContent = content + (content && !content.endsWith('\n') ? '\n' : '') + text;
+    onChange(newContent);
+    setShowQuickAdd(false);
+  };
+
+  const moveLine = (idx, dir) => {
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= lines.length) return;
+    const newLines = [...lines];
+    [newLines[idx], newLines[newIdx]] = [newLines[newIdx], newLines[idx]];
+    onChange(newLines.join('\n'));
+  };
+
+  const startEdit = (idx) => {
+    setEditingIdx(idx);
+    setEditText(lines[idx]);
+  };
+
+  const confirmEdit = () => {
+    if (editingIdx !== null) {
+      updateLine(editingIdx, editText);
+      setEditingIdx(null);
+    }
+  };
+
+  return (
+    <div className="flex-1 flex flex-col min-h-0">
+      {/* Toolbar */}
+      <div className="flex items-center gap-1 px-2 py-1.5 bg-mc-dark/50 border-b border-mc-border overflow-x-auto flex-shrink-0">
+        <span className="text-[10px] text-mc-muted mr-1 flex-shrink-0">挿入:</span>
+        {QUICK_COMMANDS.slice(0, 10).map(qc => (
+          <button key={qc.label} onClick={() => appendLine(qc.tpl)}
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-mc-dark border border-mc-border/50 hover:border-mc-info hover:bg-mc-info/10 transition-colors flex-shrink-0"
+            title={qc.desc}>
+            <span className="text-xs">{qc.icon}</span> {qc.label}
+          </button>
+        ))}
+        <button onClick={() => setShowQuickAdd(!showQuickAdd)}
+          className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-mc-info/20 text-mc-info border border-mc-info/30 hover:bg-mc-info/30 transition-colors flex-shrink-0">
+          <Plus size={10} /> 他
+        </button>
+      </div>
+
+      {/* Quick add expanded */}
+      {showQuickAdd && (
+        <div className="px-2 py-2 bg-mc-dark/80 border-b border-mc-border grid grid-cols-4 gap-1">
+          {QUICK_COMMANDS.map(qc => (
+            <button key={qc.label} onClick={() => appendLine(qc.tpl)}
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded text-[11px] bg-mc-sidebar border border-mc-border/50 hover:border-mc-info hover:bg-mc-info/10 transition-colors text-left">
+              <span>{qc.icon}</span>
+              <div>
+                <div className="font-medium text-mc-text">{qc.label}</div>
+                <div className="text-[9px] text-mc-muted">{qc.desc}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Visual command list */}
+      <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+        {parsed.map((p, idx) => {
+          if (editingIdx === idx) {
+            return (
+              <div key={idx} className="flex gap-1 items-start">
+                <textarea value={editText} onChange={e => setEditText(e.target.value)}
+                  className="flex-1 bg-mc-dark border border-mc-info rounded px-2 py-1.5 text-xs font-mono focus:outline-none resize-none"
+                  rows={1} autoFocus
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); confirmEdit(); } if (e.key === 'Escape') setEditingIdx(null); }} />
+                <button onClick={confirmEdit} className="p-1 text-mc-success hover:bg-mc-dark rounded"><Check size={14} /></button>
+                <button onClick={() => setEditingIdx(null)} className="p-1 text-mc-muted hover:bg-mc-dark rounded"><X size={14} /></button>
+              </div>
+            );
+          }
+
+          if (p.type === 'empty') {
+            return (
+              <div key={idx} className="h-3 group relative flex items-center">
+                <div className="flex-1 border-t border-mc-border/20" />
+                <div className="absolute right-0 opacity-0 group-hover:opacity-100 flex gap-0.5 transition-opacity">
+                  <button onClick={() => deleteLine(idx)} className="p-0.5 text-mc-muted hover:text-mc-accent"><Trash2 size={10} /></button>
+                </div>
+              </div>
+            );
+          }
+
+          if (p.type === 'comment') {
+            const isSectionHeader = p.text.includes('===') || p.text.includes('---') || p.text.includes('***');
+            return (
+              <div key={idx} className={`group flex items-center gap-2 px-2 py-1 rounded ${isSectionHeader ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-mc-dark/30'}`}>
+                <span className="text-[10px] text-mc-muted/40 w-5 text-right flex-shrink-0">{idx + 1}</span>
+                <span className="text-xs">📝</span>
+                <span className={`flex-1 text-xs ${isSectionHeader ? 'font-semibold text-emerald-400' : 'text-mc-muted italic'}`}>
+                  {p.text || '(空コメント)'}
+                </span>
+                <div className="opacity-0 group-hover:opacity-100 flex gap-0.5 transition-opacity">
+                  <button onClick={() => startEdit(idx)} className="p-0.5 text-mc-muted hover:text-mc-info"><Edit3 size={10} /></button>
+                  <button onClick={() => moveLine(idx, -1)} className="p-0.5 text-mc-muted hover:text-mc-info">↑</button>
+                  <button onClick={() => moveLine(idx, 1)} className="p-0.5 text-mc-muted hover:text-mc-info">↓</button>
+                  <button onClick={() => deleteLine(idx)} className="p-0.5 text-mc-muted hover:text-mc-accent"><Trash2 size={10} /></button>
+                </div>
+              </div>
+            );
+          }
+
+          // Command card
+          const cmdIcon = MCF_CMD_ICONS[p.cmd] || MCF_CMD_ICONS.default;
+          const cmdItem = MCF_CMD_ITEMS[p.cmd];
+          return (
+            <div key={idx} className="group flex items-center gap-1.5 px-2 py-1.5 rounded border border-mc-border/30 bg-mc-dark/20 hover:bg-mc-dark/40 hover:border-mc-border/60 transition-colors">
+              <span className="text-[10px] text-mc-muted/40 w-5 text-right flex-shrink-0">{idx + 1}</span>
+              {cmdItem ? <McIcon id={cmdItem} size={20} /> : <span className="text-sm w-5 text-center">{cmdIcon}</span>}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] font-semibold text-sky-400 font-mono">{p.cmd}</span>
+                  <span className="text-[10px] text-mc-text font-mono truncate">{p.args}</span>
+                </div>
+              </div>
+              <div className="opacity-0 group-hover:opacity-100 flex gap-0.5 transition-opacity flex-shrink-0">
+                <button onClick={() => startEdit(idx)} className="p-0.5 text-mc-muted hover:text-mc-info" title="編集"><Edit3 size={10} /></button>
+                <button onClick={() => insertLineAt(idx, '')} className="p-0.5 text-mc-muted hover:text-mc-info" title="下に行追加"><Plus size={10} /></button>
+                <button onClick={() => moveLine(idx, -1)} className="p-0.5 text-mc-muted hover:text-mc-info" title="上に移動">↑</button>
+                <button onClick={() => moveLine(idx, 1)} className="p-0.5 text-mc-muted hover:text-mc-info" title="下に移動">↓</button>
+                <button onClick={() => deleteLine(idx)} className="p-0.5 text-mc-muted hover:text-mc-accent" title="削除"><Trash2 size={10} /></button>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Add command area */}
+        <div className="mt-2 pt-2 border-t border-mc-border/30">
+          <div className="flex flex-wrap gap-1">
+            {QUICK_COMMANDS.slice(0, 8).map(qc => (
+              <button key={qc.label} onClick={() => appendLine(qc.tpl)}
+                className="flex items-center gap-1 px-2 py-1 rounded border border-dashed border-mc-border/40 text-[10px] text-mc-muted hover:border-mc-info hover:text-mc-info transition-colors">
+                <span>{qc.icon}</span> {qc.desc}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+// ADVANCEMENT VISUAL EDITOR
+// ════════════════════════════════════════════════════════════
+
+const ADV_TRIGGERS = [
+  { id: 'minecraft:impossible', n: '手動付与のみ' },
+  { id: 'minecraft:player_killed_entity', n: 'エンティティ撃破' },
+  { id: 'minecraft:inventory_changed', n: 'インベントリ変更' },
+  { id: 'minecraft:enter_block', n: 'ブロックに入る' },
+  { id: 'minecraft:location', n: '特定の場所' },
+  { id: 'minecraft:tick', n: '毎tick' },
+  { id: 'minecraft:recipe_unlocked', n: 'レシピ解除' },
+  { id: 'minecraft:consume_item', n: 'アイテム消費' },
+  { id: 'minecraft:bred_animals', n: '動物繁殖' },
+  { id: 'minecraft:placed_block', n: 'ブロック設置' },
+];
+
+const ADV_FRAME_TYPES = [
+  { id: 'task', n: '通常', icon: '🔲' },
+  { id: 'goal', n: 'ゴール', icon: '🔵' },
+  { id: 'challenge', n: 'チャレンジ', icon: '🔷' },
+];
+
+function AdvancementVisualEditor({ file, onChange, namespace }) {
+  const [adv, setAdv] = useState(() => {
+    try { return JSON.parse(file?.content || '{}'); } catch { return {}; }
+  });
+
+  const update = (key, val) => {
+    const newAdv = { ...adv, [key]: val };
+    setAdv(newAdv);
+    const json = JSON.stringify(newAdv, null, 2);
+    if (onChange && json !== file?.content) onChange(json);
+  };
+
+  const updateDisplay = (key, val) => {
+    const display = { ...(adv.display || {}), [key]: val };
+    update('display', display);
+  };
+
+  const updateCriteria = (name, trigger) => {
+    const criteria = { ...(adv.criteria || {}), [name]: { trigger } };
+    update('criteria', criteria);
+  };
+
+  const display = adv.display || {};
+  const criteria = adv.criteria || {};
+  const rewards = adv.rewards || {};
+
+  return (
+    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex items-center gap-2 mb-2">
+        <McIcon id="minecraft:knowledge_book" size={28} />
+        <span className="text-sm font-semibold">進捗ビジュアルエディター</span>
+        <span className="text-[10px] text-mc-muted bg-mc-dark px-2 py-0.5 rounded">{file?.name}</span>
+      </div>
+
+      {/* Display settings */}
+      <div className="border border-mc-border rounded-lg p-3 space-y-3">
+        <h4 className="text-xs font-semibold text-mc-text flex items-center gap-1.5">
+          <Eye size={12} /> 表示設定
+        </h4>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-[10px] font-medium text-mc-muted mb-1">タイトル</label>
+            <input className="w-full bg-mc-dark border border-mc-border rounded px-2 py-1.5 text-xs focus:border-mc-info focus:outline-none"
+              value={typeof display.title === 'string' ? display.title : display.title?.text || ''}
+              onChange={e => updateDisplay('title', e.target.value)}
+              placeholder="進捗タイトル" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-medium text-mc-muted mb-1">説明</label>
+            <input className="w-full bg-mc-dark border border-mc-border rounded px-2 py-1.5 text-xs focus:border-mc-info focus:outline-none"
+              value={typeof display.description === 'string' ? display.description : display.description?.text || ''}
+              onChange={e => updateDisplay('description', e.target.value)}
+              placeholder="進捗の説明文" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-[10px] font-medium text-mc-muted mb-1">アイコン</label>
+            <div className="flex items-center gap-2">
+              <McInvSlot id={display.icon?.id || display.icon?.item || 'minecraft:stone'} size={36} />
+              <select className="flex-1 bg-mc-dark border border-mc-border rounded px-2 py-1.5 text-xs focus:border-mc-info focus:outline-none"
+                value={display.icon?.id || display.icon?.item || 'minecraft:stone'}
+                onChange={e => updateDisplay('icon', { id: e.target.value })}>
+                {MC_ITEMS.map(i => <option key={i.id} value={i.id}>{i.n}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-[10px] font-medium text-mc-muted mb-1">フレーム</label>
+            <div className="flex gap-1.5">
+              {ADV_FRAME_TYPES.map(f => (
+                <button key={f.id} onClick={() => updateDisplay('frame', f.id)}
+                  className={`flex-1 px-2 py-1.5 rounded border text-[11px] flex items-center justify-center gap-1 transition-colors ${
+                    (display.frame || 'task') === f.id ? 'border-mc-info bg-mc-info/20 text-white' : 'border-mc-border bg-mc-dark text-mc-muted hover:border-mc-muted'}`}>
+                  <span>{f.icon}</span> {f.n}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-4">
+          <label className="flex items-center gap-2 text-xs cursor-pointer">
+            <input type="checkbox" checked={display.show_toast !== false} onChange={e => updateDisplay('show_toast', e.target.checked)} className="accent-mc-info" />
+            <span className="text-mc-text">トースト通知</span>
+          </label>
+          <label className="flex items-center gap-2 text-xs cursor-pointer">
+            <input type="checkbox" checked={display.announce_to_chat !== false} onChange={e => updateDisplay('announce_to_chat', e.target.checked)} className="accent-mc-info" />
+            <span className="text-mc-text">チャット通知</span>
+          </label>
+          <label className="flex items-center gap-2 text-xs cursor-pointer">
+            <input type="checkbox" checked={!!display.hidden} onChange={e => updateDisplay('hidden', e.target.checked)} className="accent-mc-info" />
+            <span className="text-mc-text">非表示</span>
+          </label>
+        </div>
+      </div>
+
+      {/* Criteria */}
+      <div className="border border-mc-border rounded-lg p-3 space-y-3">
+        <div className="flex items-center justify-between">
+          <h4 className="text-xs font-semibold text-mc-text flex items-center gap-1.5">
+            <Target size={12} /> 達成条件
+          </h4>
+          <button onClick={() => {
+            const name = `condition_${Object.keys(criteria).length + 1}`;
+            updateCriteria(name, 'minecraft:impossible');
+          }} className="text-[10px] text-mc-info hover:text-mc-info/80 flex items-center gap-1">
+            <Plus size={10} /> 条件追加
+          </button>
+        </div>
+        {Object.entries(criteria).map(([name, crit]) => (
+          <div key={name} className="flex items-center gap-2 bg-mc-dark/30 rounded p-2">
+            <input className="w-28 bg-mc-dark border border-mc-border rounded px-2 py-1 text-xs font-mono focus:border-mc-info focus:outline-none"
+              value={name} readOnly />
+            <select className="flex-1 bg-mc-dark border border-mc-border rounded px-2 py-1 text-xs focus:border-mc-info focus:outline-none"
+              value={crit.trigger || ''} onChange={e => updateCriteria(name, e.target.value)}>
+              {ADV_TRIGGERS.map(t => <option key={t.id} value={t.id}>{t.n} ({t.id})</option>)}
+            </select>
+            <button onClick={() => {
+              const newCrit = { ...criteria };
+              delete newCrit[name];
+              update('criteria', newCrit);
+            }} className="p-1 text-mc-muted hover:text-mc-accent"><Trash2 size={12} /></button>
+          </div>
+        ))}
+        {Object.keys(criteria).length === 0 && (
+          <p className="text-[10px] text-mc-muted text-center py-2">条件がありません。「条件追加」で追加してください。</p>
+        )}
+      </div>
+
+      {/* Rewards */}
+      <div className="border border-mc-border rounded-lg p-3 space-y-3">
+        <h4 className="text-xs font-semibold text-mc-text flex items-center gap-1.5">
+          <Gift size={12} /> 報酬
+        </h4>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-[10px] font-medium text-mc-muted mb-1">経験値</label>
+            <input type="number" min={0}
+              className="w-full bg-mc-dark border border-mc-border rounded px-2 py-1.5 text-xs focus:border-mc-info focus:outline-none"
+              value={rewards.experience || 0}
+              onChange={e => update('rewards', { ...rewards, experience: parseInt(e.target.value) || 0 })} />
+          </div>
+          <div>
+            <label className="block text-[10px] font-medium text-mc-muted mb-1">実行する関数</label>
+            <input className="w-full bg-mc-dark border border-mc-border rounded px-2 py-1.5 text-xs font-mono focus:border-mc-info focus:outline-none"
+              value={rewards.function || ''}
+              onChange={e => update('rewards', { ...rewards, function: e.target.value || undefined })}
+              placeholder={`${namespace}:reward_function`} />
+          </div>
+        </div>
+      </div>
+
+      {/* Parent */}
+      <div>
+        <label className="block text-[10px] font-medium text-mc-muted mb-1">親の進捗 (空=ルート)</label>
+        <input className="w-full max-w-md bg-mc-dark border border-mc-border rounded px-2 py-1.5 text-xs font-mono focus:border-mc-info focus:outline-none"
+          value={adv.parent || ''}
+          onChange={e => {
+            const newAdv = { ...adv };
+            if (e.target.value) newAdv.parent = e.target.value; else delete newAdv.parent;
+            setAdv(newAdv);
+            onChange(JSON.stringify(newAdv, null, 2));
+          }}
+          placeholder={`${namespace}:path/parent_advancement`} />
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
 // PREVIEW PANEL (pack.mcmeta + tree + validation)
 // ════════════════════════════════════════════════════════════
 
@@ -3609,11 +6140,11 @@ function MinigameWizard({ namespace, onComplete, onClose, targetVersion }) {
               {MINIGAME_TYPES.map(gt => (
                 <button key={gt.id}
                   onClick={() => { setSelectedType(gt.id); setSettings(s => ({ ...s, ...gt.defaults })); }}
-                  className={`w-full text-left p-3 rounded border transition-colors flex items-start gap-3 ${
-                    selectedType === gt.id ? 'border-mc-info bg-mc-info/10' : 'border-mc-border/50 hover:border-mc-border bg-mc-dark/20'
+                  className={`w-full text-left p-3 rounded-lg border transition-all flex items-start gap-3 ${
+                    selectedType === gt.id ? 'border-mc-info bg-mc-info/10 scale-[1.01]' : 'border-mc-border/50 hover:border-mc-border bg-mc-dark/20'
                   }`}
                 >
-                  <span className="text-2xl">{gt.icon}</span>
+                  <McInvSlot id={GALLERY_MINIGAME_ICONS[gt.id]} size={40} />
                   <div className="flex-1 min-w-0">
                     <div className={`text-sm font-semibold ${gt.color}`}>{gt.name}</div>
                     <div className="text-xs text-mc-muted mt-0.5 leading-relaxed">{gt.description}</div>
@@ -3627,7 +6158,7 @@ function MinigameWizard({ namespace, onComplete, onClose, targetVersion }) {
           {step === 1 && gameType && (
             <div className="space-y-4 anim-fade">
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-xl">{gameType.icon}</span>
+                <McIcon id={GALLERY_MINIGAME_ICONS[gameType.id]} size={24} />
                 <span className="text-sm font-semibold">{gameType.name} の設定</span>
               </div>
 
@@ -3704,6 +6235,120 @@ function MinigameWizard({ namespace, onComplete, onClose, targetVersion }) {
                   <p className="text-[10px] text-mc-muted mt-1">例: minecraft:diamond, minecraft:gold_ingot</p>
                 </div>
               )}
+
+              {(selectedType === 'king_of_hill' || selectedType === 'capture_flag') && (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-mc-muted mb-1">チームA名</label>
+                      <input className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                        value={settings.teamA} onChange={e => setSettings(s => ({ ...s, teamA: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-mc-muted mb-1">チームB名</label>
+                      <input className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                        value={settings.teamB} onChange={e => setSettings(s => ({ ...s, teamB: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-mc-muted mb-1">チームA色</label>
+                      <select className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                        value={settings.colorA} onChange={e => setSettings(s => ({ ...s, colorA: e.target.value }))}>
+                        {['red','blue','green','yellow','aqua','gold','light_purple','dark_red','dark_blue','dark_green','white'].map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-mc-muted mb-1">チームB色</label>
+                      <select className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                        value={settings.colorB} onChange={e => setSettings(s => ({ ...s, colorB: e.target.value }))}>
+                        {['red','blue','green','yellow','aqua','gold','light_purple','dark_red','dark_blue','dark_green','white'].map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {selectedType === 'king_of_hill' && (
+                <div>
+                  <label className="block text-xs font-medium text-mc-muted mb-1">目標占領ポイント</label>
+                  <input type="number" min={10} max={1000}
+                    className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                    value={settings.targetScore}
+                    onChange={e => setSettings(s => ({ ...s, targetScore: parseInt(e.target.value) || 100 }))} />
+                  <p className="text-[10px] text-mc-muted mt-1">毎秒、丘の上にいるプレイヤー1人につき1ポイント</p>
+                </div>
+              )}
+
+              {selectedType === 'capture_flag' && (
+                <div>
+                  <label className="block text-xs font-medium text-mc-muted mb-1">勝利に必要な奪取回数</label>
+                  <input type="number" min={1} max={10}
+                    className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                    value={settings.capturesNeeded}
+                    onChange={e => setSettings(s => ({ ...s, capturesNeeded: parseInt(e.target.value) || 3 }))} />
+                </div>
+              )}
+
+              {selectedType === 'zombie_survival' && (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-mc-muted mb-1">最大ウェーブ数</label>
+                      <input type="number" min={1} max={50}
+                        className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                        value={settings.maxWaves}
+                        onChange={e => setSettings(s => ({ ...s, maxWaves: parseInt(e.target.value) || 10 }))} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-mc-muted mb-1">基本ゾンビ数/Wave</label>
+                      <input type="number" min={1} max={50}
+                        className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                        value={settings.zombiesPerWave}
+                        onChange={e => setSettings(s => ({ ...s, zombiesPerWave: parseInt(e.target.value) || 5 }))} />
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-mc-muted">ウェーブが進むごとにゾンビが増加します</p>
+                </>
+              )}
+
+              {selectedType === 'build_battle' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-mc-muted mb-1">建築時間（秒）</label>
+                    <input type="number" min={30} max={600}
+                      className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                      value={settings.buildTime}
+                      onChange={e => setSettings(s => ({ ...s, buildTime: parseInt(e.target.value) || 180 }))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-mc-muted mb-1">投票時間（秒）</label>
+                    <input type="number" min={10} max={300}
+                      className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                      value={settings.voteTime}
+                      onChange={e => setSettings(s => ({ ...s, voteTime: parseInt(e.target.value) || 60 }))} />
+                  </div>
+                </div>
+              )}
+
+              {selectedType === 'tnt_run' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-mc-muted mb-1">落下判定Y座標</label>
+                    <input type="number"
+                      className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                      value={settings.fallY}
+                      onChange={e => setSettings(s => ({ ...s, fallY: parseInt(e.target.value) || 0 }))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-mc-muted mb-1">フロア層数</label>
+                    <input type="number" min={1} max={10}
+                      className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                      value={settings.layerCount}
+                      onChange={e => setSettings(s => ({ ...s, layerCount: parseInt(e.target.value) || 3 }))} />
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -3729,6 +6374,32 @@ function MinigameWizard({ namespace, onComplete, onClose, targetVersion }) {
                 {selectedType === 'pvp_arena' && <div className="flex justify-between"><span className="text-mc-muted">目標キル数</span><span>{settings.targetKills}キル</span></div>}
                 {selectedType === 'spleef' && <div className="flex justify-between"><span className="text-mc-muted">落下判定Y</span><span>Y={settings.fallY}</span></div>}
                 {selectedType === 'treasure_hunt' && <div className="flex justify-between"><span className="text-mc-muted">収集アイテム</span><span className="font-mono">{settings.targetItem}</span></div>}
+                {(selectedType === 'king_of_hill' || selectedType === 'capture_flag') && (
+                  <>
+                    <div className="flex justify-between"><span className="text-mc-muted">チームA</span><span style={{color: settings.colorA === 'gold' ? '#FFD700' : settings.colorA}}>{settings.teamA}</span></div>
+                    <div className="flex justify-between"><span className="text-mc-muted">チームB</span><span style={{color: settings.colorB === 'gold' ? '#FFD700' : settings.colorB}}>{settings.teamB}</span></div>
+                  </>
+                )}
+                {selectedType === 'king_of_hill' && <div className="flex justify-between"><span className="text-mc-muted">目標スコア</span><span>{settings.targetScore}pt</span></div>}
+                {selectedType === 'capture_flag' && <div className="flex justify-between"><span className="text-mc-muted">必要奪取数</span><span>{settings.capturesNeeded}回</span></div>}
+                {selectedType === 'zombie_survival' && (
+                  <>
+                    <div className="flex justify-between"><span className="text-mc-muted">最大ウェーブ</span><span>{settings.maxWaves}Wave</span></div>
+                    <div className="flex justify-between"><span className="text-mc-muted">基本ゾンビ数</span><span>{settings.zombiesPerWave}体/Wave</span></div>
+                  </>
+                )}
+                {selectedType === 'build_battle' && (
+                  <>
+                    <div className="flex justify-between"><span className="text-mc-muted">建築時間</span><span>{settings.buildTime}秒</span></div>
+                    <div className="flex justify-between"><span className="text-mc-muted">投票時間</span><span>{settings.voteTime}秒</span></div>
+                  </>
+                )}
+                {selectedType === 'tnt_run' && (
+                  <>
+                    <div className="flex justify-between"><span className="text-mc-muted">落下判定Y</span><span>Y={settings.fallY}</span></div>
+                    <div className="flex justify-between"><span className="text-mc-muted">フロア層数</span><span>{settings.layerCount}層</span></div>
+                  </>
+                )}
               </div>
 
               <div className="bg-mc-dark/50 rounded p-3 text-xs text-mc-muted">
@@ -3836,16 +6507,14 @@ function AISettingsInline({ selectedModel, setSelectedModel, apiKey, setApiKey }
         <div className="px-3 py-3 rounded bg-mc-dark border border-mc-border/50 text-center space-y-1.5">
           <p className="text-xs font-medium text-mc-muted">{model.label}</p>
           <span className="inline-block px-2 py-0.5 rounded-full bg-mc-warning/15 border border-mc-warning/30 text-[10px] text-mc-warning font-medium">
-            近日対応予定
+            デスクトップ版で対応予定
           </span>
           <p className="text-[10px] text-mc-muted/60">
-            API公開後にAPIキーを設定することで利用可能になります。
+            OpenAI APIはブラウザからの直接呼び出し（CORS）に対応していないため、
+            デスクトップアプリ版（Tauri/Electron）で対応予定です。
           </p>
           <p className="text-[10px] text-mc-muted/60">
-            <a href={provider.link} target="_blank" rel="noopener noreferrer" className="text-mc-info hover:underline inline-flex items-center gap-1">
-              {provider.linkLabel} <ExternalLink size={9} />
-            </a>
-            でAPIキーを事前取得できます。
+            代わりに <span className="text-mc-info font-medium">Claude Sonnet 4.5</span> または <span className="text-mc-info font-medium">Gemini 3</span> をお試しください。
           </p>
         </div>
       ) : apiKey ? (
@@ -4105,8 +6774,8 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
     const systemPrompt = AI_SYSTEM_PROMPT(project.namespace, project.targetVersion);
     const modelLabel = currentModel.label;
 
-    // エージェントモード: Gemini function calling
-    if (agentMode && currentModel.provider === 'gemini') {
+    // エージェントモード: Gemini / Anthropic function calling
+    if (agentMode && (currentModel.provider === 'gemini' || currentModel.provider === 'anthropic')) {
       const agentSystemPrompt = systemPrompt + `\n\n【エージェントモード】
 あなたはデータパックビルダーのAIエージェントです。以下のツールを使ってプロジェクトを直接操作できます:
 - create_files: ファイルを作成・更新（自動でプロジェクトに適用される）
@@ -4146,18 +6815,13 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
 
       setAgentSteps([{ tool: 'agent', status: 'running', detail: 'エージェント起動...' }]);
 
-      callGeminiAgent(
-        apiKey,
-        currentModel.apiModel,
-        apiMessages,
-        agentSystemPrompt,
-        AGENT_TOOL_DECLARATIONS,
-        (toolName, toolArgs) => {
+      const agentCallbacks = {
+        onStep: (toolName, toolArgs) => {
           setAgentSteps(prev => [...prev, { tool: toolName, status: 'running', detail: '実行中...' }]);
           return executeAgentTool(toolName, toolArgs);
         },
-        (text) => setStreamingText(prev => prev + text),
-        (result) => {
+        onChunk: (text) => setStreamingText(prev => prev + text),
+        onDone: (result) => {
           const finalText = result.text || streamingText || 'エージェントタスク完了。';
           setMessages(prev => [...prev, { role: 'assistant', content: finalText, modelLabel, agentSteps: agentSteps }]);
           setStreamingText('');
@@ -4168,16 +6832,28 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
           });
           abortRef.current = null;
         },
-        (errMsg) => {
+        onError: (errMsg) => {
           setError(errMsg);
           setStreaming(false);
           setStreamingText('');
           setAgentSteps(prev => [...prev, { tool: 'agent', status: 'error', detail: errMsg }]);
           abortRef.current = null;
         },
-        controller.signal,
-        currentModel.thinking,
-      );
+      };
+
+      if (currentModel.provider === 'anthropic') {
+        callAnthropicAgent(
+          apiKey, currentModel.apiModel, apiMessages, agentSystemPrompt, AGENT_TOOL_DECLARATIONS,
+          agentCallbacks.onStep, agentCallbacks.onChunk, agentCallbacks.onDone, agentCallbacks.onError,
+          controller.signal,
+        );
+      } else {
+        callGeminiAgent(
+          apiKey, currentModel.apiModel, apiMessages, agentSystemPrompt, AGENT_TOOL_DECLARATIONS,
+          agentCallbacks.onStep, agentCallbacks.onChunk, agentCallbacks.onDone, agentCallbacks.onError,
+          controller.signal, currentModel.thinking,
+        );
+      }
       return;
     }
 
@@ -4391,7 +7067,7 @@ function AIChatPanel({ project, files, setFiles, setExpanded }) {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-            placeholder={currentModel.comingSoon ? `${currentModel.label} は近日対応予定です` : apiKey ? (agentMode ? 'エージェントに指示... (例: PvPミニゲームを作って) ※自動でファイル操作' : 'AIに指示を入力... (例: 鬼ごっこミニゲームを作って)') : 'APIキーを設定してください（必須）'}
+            placeholder={currentModel.comingSoon ? `${currentModel.label} はデスクトップ版で対応予定です（CORS制限）` : apiKey ? (agentMode ? 'エージェントに指示... (例: PvPミニゲームを作って) ※自動でファイル操作' : 'AIに指示を入力... (例: 鬼ごっこミニゲームを作って)') : 'APIキーを設定してください（必須）'}
             disabled={!apiKey || streaming || currentModel.comingSoon}
             className="flex-1 bg-mc-input border border-mc-border rounded px-3 py-2 text-sm text-mc-text placeholder-mc-muted/60 focus:outline-none focus:border-mc-focus disabled:opacity-40 disabled:cursor-not-allowed"
           />
@@ -4507,6 +7183,659 @@ function CommandReference({ namespace, targetVersion }) {
 }
 
 // ════════════════════════════════════════════════════════════
+// VISUAL COMMAND BUILDER PANEL
+// ════════════════════════════════════════════════════════════
+
+function CommandBuilderPanel({ namespace, file, onInsert }) {
+  const [selectedCat, setSelectedCat] = useState(COMMAND_BUILDER_CATS[0]);
+  const [selectedCmd, setSelectedCmd] = useState(COMMAND_BUILDER_DEFS[0].id);
+  const [fields, setFields] = useState({});
+  const [copied, setCopied] = useState(false);
+  const [history, setHistory] = useState([]);
+
+  const cmd = COMMAND_BUILDER_DEFS.find(d => d.id === selectedCmd);
+  const catCmds = COMMAND_BUILDER_DEFS.filter(d => d.cat === selectedCat);
+
+  useEffect(() => {
+    if (cmd) {
+      const defaults = {};
+      cmd.fields.forEach(f => { defaults[f.key] = f.def; });
+      setFields(defaults);
+    }
+  }, [selectedCmd]);
+
+  const preview = cmd ? cmd.build(fields) : '';
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(preview);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  const handleInsert = () => {
+    if (onInsert && preview) {
+      onInsert(preview);
+      setHistory(h => [{ cmd: selectedCmd, preview, time: Date.now() }, ...h].slice(0, 20));
+    }
+  };
+
+  const [openPicker, setOpenPicker] = useState(null);
+  const [pickerFilter, setPickerFilter] = useState('');
+
+  const McPicker = ({ type, value, onChange, optional }) => {
+    const isOpen = openPicker === type;
+    const items = type === 'mc_item' ? MC_ITEMS : type === 'mc_entity' ? MC_ENTITIES : MC_EFFECTS;
+    const iconType = type === 'mc_entity' ? 'entity' : type === 'mc_effect' ? 'effect' : 'item';
+    const current = items.find(i => i.id === value);
+    const cats = [...new Set(items.map(i => i.c).filter(Boolean))];
+    const [filterCat, setFilterCat] = useState('');
+    const filtered = items.filter(i => {
+      if (filterCat && i.c !== filterCat) return false;
+      if (pickerFilter && !i.n.includes(pickerFilter) && !i.id.includes(pickerFilter)) return false;
+      return true;
+    });
+
+    return (
+      <div className="relative">
+        <button onClick={() => { setOpenPicker(isOpen ? null : type); setPickerFilter(''); setFilterCat(''); }}
+          className="w-full bg-mc-dark border border-mc-border rounded px-2 py-1.5 text-xs text-left flex items-center gap-2 hover:border-mc-info transition-colors focus:border-mc-info focus:outline-none">
+          {value ? <McIcon id={value} size={20} type={iconType} /> : <span className="w-5 h-5 bg-mc-border/30 rounded" />}
+          <span className="flex-1 truncate">{current ? `${current.n} (${current.id.replace('minecraft:','')})` : optional ? '（全て）' : '選択...'}</span>
+          <ChevronDown size={12} className={`text-mc-muted transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+        {isOpen && (
+          <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-mc-sidebar border border-mc-border rounded-lg shadow-xl max-h-72 flex flex-col overflow-hidden"
+            style={{ minWidth: 280 }}>
+            <div className="p-2 border-b border-mc-border/50 space-y-1.5">
+              <input autoFocus placeholder="検索..." value={pickerFilter} onChange={e => setPickerFilter(e.target.value)}
+                className="w-full bg-mc-dark border border-mc-border/50 rounded px-2 py-1 text-xs focus:border-mc-info focus:outline-none" />
+              {cats.length > 1 && (
+                <div className="flex flex-wrap gap-1">
+                  <button onClick={() => setFilterCat('')}
+                    className={`px-1.5 py-0.5 rounded text-[9px] font-medium transition-colors ${!filterCat ? 'bg-mc-info/30 text-white' : 'text-mc-muted hover:bg-mc-dark'}`}>全て</button>
+                  {cats.map(c => (
+                    <button key={c} onClick={() => setFilterCat(c === filterCat ? '' : c)}
+                      className={`px-1.5 py-0.5 rounded text-[9px] font-medium transition-colors ${filterCat === c ? 'bg-mc-info/30 text-white' : 'text-mc-muted hover:bg-mc-dark'}`}>{c}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="flex-1 overflow-y-auto p-1">
+              {optional && (
+                <button onClick={() => { onChange(''); setOpenPicker(null); }}
+                  className="w-full text-left px-2 py-1.5 rounded text-xs text-mc-muted hover:bg-mc-dark/50 flex items-center gap-2">
+                  <X size={14} /> （全て）
+                </button>
+              )}
+              {filtered.map(i => (
+                <button key={i.id} onClick={() => { onChange(i.id); setOpenPicker(null); }}
+                  className={`w-full text-left px-2 py-1 rounded text-[11px] flex items-center gap-2 transition-colors ${value === i.id ? 'bg-mc-info/20 text-white' : 'text-mc-text hover:bg-mc-dark/50'}`}>
+                  <McIcon id={i.id} size={20} type={iconType} />
+                  <span className="flex-1 truncate">{i.n}</span>
+                  <span className="text-[9px] text-mc-muted">{i.c}</span>
+                </button>
+              ))}
+              {filtered.length === 0 && <p className="text-center text-[10px] text-mc-muted py-4">一致するアイテムがありません</p>}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderField = (f) => {
+    const val = fields[f.key] ?? f.def;
+    const update = (v) => setFields(prev => ({ ...prev, [f.key]: v }));
+
+    if (f.type === 'select') {
+      return (
+        <select className="w-full bg-mc-dark border border-mc-border rounded px-2 py-1.5 text-xs focus:border-mc-info focus:outline-none"
+          value={val} onChange={e => update(e.target.value)}>
+          {f.options.map(o => <option key={o} value={o}>{o}</option>)}
+        </select>
+      );
+    }
+    if (f.type === 'mc_item' || f.type === 'mc_item_optional') {
+      return <McPicker type="mc_item" value={val} onChange={update} optional={f.type === 'mc_item_optional'} />;
+    }
+    if (f.type === 'mc_entity') {
+      return <McPicker type="mc_entity" value={val} onChange={update} />;
+    }
+    if (f.type === 'mc_effect' || f.type === 'mc_effect_optional') {
+      return <McPicker type="mc_effect" value={val} onChange={update} optional={f.type === 'mc_effect_optional'} />;
+    }
+    if (f.type === 'mc_particle') {
+      return (
+        <select className="w-full bg-mc-dark border border-mc-border rounded px-2 py-1.5 text-xs focus:border-mc-info focus:outline-none"
+          value={val} onChange={e => update(e.target.value)}>
+          {MC_PARTICLES.map(p => <option key={p} value={p}>{p}</option>)}
+        </select>
+      );
+    }
+    if (f.type === 'mc_sound') {
+      return (
+        <select className="w-full bg-mc-dark border border-mc-border rounded px-2 py-1.5 text-xs focus:border-mc-info focus:outline-none"
+          value={val} onChange={e => update(e.target.value)}>
+          {MC_SOUNDS.map(s => <option key={s.id} value={s.id}>{s.n}</option>)}
+        </select>
+      );
+    }
+    if (f.type === 'mc_color') {
+      const MC_COLOR_HEX = { red:'#FF5555', blue:'#5555FF', green:'#55FF55', yellow:'#FFFF55', aqua:'#55FFFF', gold:'#FFAA00',
+        light_purple:'#FF55FF', dark_red:'#AA0000', dark_blue:'#0000AA', dark_green:'#00AA00', dark_aqua:'#00AAAA',
+        dark_purple:'#AA00AA', gray:'#AAAAAA', dark_gray:'#555555', white:'#FFFFFF', black:'#000000' };
+      return (
+        <div className="flex flex-wrap gap-1">
+          {MC_COLORS.map(c => (
+            <button key={c} onClick={() => update(c)}
+              className={`w-6 h-6 rounded border-2 transition-all ${val === c ? 'border-white scale-110' : 'border-mc-border/50 hover:border-mc-muted'}`}
+              style={{ backgroundColor: MC_COLOR_HEX[c] }}
+              title={c} />
+          ))}
+        </div>
+      );
+    }
+    if (f.type === 'number') {
+      return (
+        <input type="number" min={f.min} max={f.max} step={f.step || 1}
+          className="w-full bg-mc-dark border border-mc-border rounded px-2 py-1.5 text-xs focus:border-mc-info focus:outline-none"
+          value={val} onChange={e => update(f.step ? parseFloat(e.target.value) : parseInt(e.target.value))} />
+      );
+    }
+    if (f.type === 'checkbox') {
+      return (
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" checked={!!val} onChange={e => update(e.target.checked)} className="accent-mc-info" />
+          <span className="text-xs">{val ? 'ON' : 'OFF'}</span>
+        </label>
+      );
+    }
+    return (
+      <input className="w-full bg-mc-dark border border-mc-border rounded px-2 py-1.5 text-xs font-mono focus:border-mc-info focus:outline-none"
+        value={val} onChange={e => update(e.target.value)} />
+    );
+  };
+
+  return (
+    <div className="flex-1 flex min-h-0 overflow-hidden">
+      {/* Left: Category & command selector */}
+      <div className="w-48 border-r border-mc-border flex flex-col overflow-hidden">
+        <div className="p-2 border-b border-mc-border/50">
+          <p className="text-[10px] text-mc-muted uppercase tracking-wider font-semibold">カテゴリ</p>
+        </div>
+        <div className="flex-1 overflow-y-auto p-1 space-y-0.5">
+          {COMMAND_BUILDER_CATS.map(cat => (
+            <div key={cat}>
+              <button onClick={() => { setSelectedCat(cat); const first = COMMAND_BUILDER_DEFS.find(d=>d.cat===cat); if(first) setSelectedCmd(first.id); }}
+                className={`w-full text-left px-2 py-1.5 rounded text-xs font-medium transition-colors ${selectedCat===cat ? 'bg-mc-info/20 text-white' : 'text-mc-muted hover:bg-mc-dark/50'}`}>
+                {cat}
+              </button>
+              {selectedCat === cat && (
+                <div className="ml-2 space-y-0.5 mt-0.5">
+                  {catCmds.map(c => (
+                    <button key={c.id} onClick={() => setSelectedCmd(c.id)}
+                      className={`w-full text-left px-2 py-1 rounded text-[11px] flex items-center gap-1.5 transition-colors ${selectedCmd===c.id ? 'bg-mc-info/30 text-white' : 'text-mc-muted hover:text-mc-text hover:bg-mc-dark/30'}`}>
+                      <span>{c.icon}</span> {c.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Right: Builder form */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {cmd ? (
+          <>
+            <div className="p-3 border-b border-mc-border/50">
+              <div className="flex items-center gap-3">
+                <span className="text-lg">{cmd.icon}</span>
+                <div>
+                  <span className="text-sm font-semibold">{cmd.name}</span>
+                  <span className="text-[10px] text-mc-muted ml-2 font-mono">/{cmd.id.replace('_',' ')}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-3 space-y-3">
+              {cmd.fields.map(f => (
+                <div key={f.key}>
+                  <label className="block text-[10px] font-medium text-mc-muted mb-1 uppercase tracking-wider">{f.label}</label>
+                  {renderField(f)}
+                </div>
+              ))}
+            </div>
+
+            {/* Preview with icon */}
+            <div className="border-t border-mc-border p-3 space-y-2">
+              <p className="text-[10px] text-mc-muted uppercase tracking-wider font-semibold">プレビュー</p>
+              <div className="flex items-start gap-2">
+                {fields.item && <McInvSlot id={fields.item} size={40} />}
+                {fields.entity && <McInvSlot id={fields.entity} size={40}><McIcon id={fields.entity} size={28} type="entity" /></McInvSlot>}
+                <pre className="flex-1 bg-mc-dark rounded p-2 text-xs font-mono text-mc-bright whitespace-pre-wrap break-all border border-mc-border/50 max-h-24 overflow-y-auto">{preview}</pre>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={handleCopy}
+                  className="flex-1 px-3 py-1.5 text-xs font-medium rounded border border-mc-border hover:bg-mc-dark transition-colors flex items-center justify-center gap-1.5">
+                  {copied ? <><CheckCircle size={12} className="text-mc-success" /> コピー済み</> : <><Clipboard size={12} /> コピー</>}
+                </button>
+                <button onClick={handleInsert}
+                  disabled={!file}
+                  className="flex-1 px-3 py-1.5 text-xs font-medium rounded bg-mc-info hover:bg-mc-info/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1.5">
+                  <ArrowRight size={12} /> ファイルに挿入
+                </button>
+              </div>
+            </div>
+
+            {/* History */}
+            {history.length > 0 && (
+              <div className="border-t border-mc-border/50 p-2 max-h-28 overflow-y-auto">
+                <p className="text-[10px] text-mc-muted mb-1">履歴 (クリックでコピー)</p>
+                {history.map((h, i) => (
+                  <button key={i} onClick={() => { navigator.clipboard.writeText(h.preview); }}
+                    className="w-full text-left text-[10px] font-mono text-mc-muted hover:text-mc-text px-1 py-0.5 rounded hover:bg-mc-dark/50 truncate block">
+                    {h.preview}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-mc-muted text-xs">
+            左からコマンドを選択してください
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+// RECIPE VISUAL EDITOR
+// ════════════════════════════════════════════════════════════
+
+function RecipeVisualEditor({ file, onChange, namespace }) {
+  const [recipe, setRecipe] = useState(() => {
+    try { return JSON.parse(file?.content || '{}'); } catch { return {}; }
+  });
+  const [recipeType, setRecipeType] = useState(recipe?.type || 'minecraft:crafting_shaped');
+  const [grid, setGrid] = useState(() => {
+    if (recipe?.pattern) {
+      const rows = recipe.pattern.map(r => r.split(''));
+      while (rows.length < 3) rows.push([' ',' ',' ']);
+      return rows.map(r => { while (r.length < 3) r.push(' '); return r; });
+    }
+    return [[' ',' ',' '],[' ',' ',' '],[' ',' ',' ']];
+  });
+  const [keys, setKeys] = useState(() => {
+    if (!recipe?.key) return {};
+    const k = {};
+    Object.entries(recipe.key).forEach(([letter, val]) => {
+      k[letter] = typeof val === 'string' ? val : val?.item || val?.id || '';
+    });
+    return k;
+  });
+  const [resultItem, setResultItem] = useState(
+    recipe?.result?.id || recipe?.result?.item || recipe?.result || 'minecraft:diamond'
+  );
+  const [resultCount, setResultCount] = useState(recipe?.result?.count || 1);
+  const [ingredients, setIngredients] = useState(() => {
+    if (!recipe?.ingredients) return ['minecraft:diamond'];
+    return recipe.ingredients.map(i => typeof i === 'string' ? i : i?.item || '');
+  });
+
+  const allLetters = useMemo(() => {
+    const set = new Set();
+    grid.forEach(row => row.forEach(c => { if (c.trim()) set.add(c); }));
+    return [...set].sort();
+  }, [grid]);
+
+  const updateOutput = useCallback(() => {
+    let obj = {};
+    if (recipeType === 'minecraft:crafting_shaped') {
+      const pattern = grid.map(row => row.join(''));
+      const keyObj = {};
+      allLetters.forEach(l => { if (keys[l]) keyObj[l] = keys[l]; });
+      obj = { type: recipeType, pattern, key: keyObj, result: { id: resultItem, count: resultCount } };
+    } else if (recipeType === 'minecraft:crafting_shapeless') {
+      obj = { type: recipeType, ingredients: ingredients.filter(Boolean), result: { id: resultItem, count: resultCount } };
+    } else if (recipeType === 'minecraft:smelting' || recipeType === 'minecraft:blasting' || recipeType === 'minecraft:smoking') {
+      obj = { type: recipeType, ingredient: ingredients[0] || 'minecraft:iron_ore', result: { id: resultItem }, experience: 0.7, cookingtime: 200 };
+    } else if (recipeType === 'minecraft:stonecutting') {
+      obj = { type: recipeType, ingredient: ingredients[0] || 'minecraft:stone', result: resultItem, count: resultCount };
+    }
+    const json = JSON.stringify(obj, null, 2);
+    if (onChange && json !== file?.content) onChange(json);
+  }, [recipeType, grid, keys, resultItem, resultCount, ingredients, allLetters]);
+
+  useEffect(() => { updateOutput(); }, [recipeType, grid, keys, resultItem, resultCount, ingredients]);
+
+  const setGridCell = (r, c, val) => {
+    const g = grid.map(row => [...row]);
+    g[r][c] = val || ' ';
+    setGrid(g);
+  };
+
+  const isShaped = recipeType === 'minecraft:crafting_shaped';
+  const isShapeless = recipeType === 'minecraft:crafting_shapeless';
+  const isFurnace = ['minecraft:smelting','minecraft:blasting','minecraft:smoking'].includes(recipeType);
+
+  return (
+    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex items-center gap-2 mb-2">
+        <McIcon id="minecraft:crafting_table" size={28} />
+        <span className="text-sm font-semibold">レシピビジュアルエディター</span>
+        <span className="text-[10px] text-mc-muted bg-mc-dark px-2 py-0.5 rounded">{file?.name}</span>
+      </div>
+
+      {/* Recipe Type */}
+      <div>
+        <label className="block text-[10px] font-medium text-mc-muted mb-1 uppercase tracking-wider">レシピタイプ</label>
+        <select className="w-full max-w-xs bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+          value={recipeType} onChange={e => setRecipeType(e.target.value)}>
+          <option value="minecraft:crafting_shaped">固定レシピ（shaped）</option>
+          <option value="minecraft:crafting_shapeless">不定形レシピ（shapeless）</option>
+          <option value="minecraft:smelting">精錬レシピ（smelting）</option>
+          <option value="minecraft:blasting">溶鉱炉（blasting）</option>
+          <option value="minecraft:smoking">燻製器（smoking）</option>
+          <option value="minecraft:stonecutting">石切台（stonecutting）</option>
+        </select>
+      </div>
+
+      {/* Shaped: Grid */}
+      {isShaped && (
+        <div className="space-y-4">
+          <div>
+            <label className="block text-[10px] font-medium text-mc-muted mb-2 uppercase tracking-wider">クラフトグリッド (3x3)</label>
+            <div className="flex items-center gap-4">
+              {/* 3x3 Grid with MC inventory slots */}
+              <div className="inline-grid grid-cols-3 gap-0.5 p-2 rounded" style={{ background: '#c6c6c6', border: '3px solid', borderColor: '#fff #555 #555 #fff' }}>
+                {grid.map((row, r) => row.map((cell, c) => {
+                  const itemId = cell.trim() && keys[cell.trim()] ? keys[cell.trim()] : null;
+                  return (
+                    <div key={`${r}-${c}`} className="relative group">
+                      <McInvSlot id={itemId} size={48}>
+                        {!itemId && (
+                          <input
+                            className="absolute inset-0 w-full h-full text-center bg-transparent text-white text-sm font-mono font-bold focus:outline-none uppercase z-10"
+                            maxLength={1} value={cell.trim()} placeholder=""
+                            onChange={e => setGridCell(r, c, e.target.value.toUpperCase() || ' ')} />
+                        )}
+                      </McInvSlot>
+                      {itemId && (
+                        <button onClick={() => setGridCell(r, c, ' ')}
+                          className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-[8px] leading-none flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20">x</button>
+                      )}
+                      {!itemId && cell.trim() && (
+                        <span className="absolute top-0.5 left-1 text-[10px] font-mono font-bold text-yellow-400 z-10" style={{ textShadow: '1px 1px 0 #000' }}>{cell.trim()}</span>
+                      )}
+                    </div>
+                  );
+                }))}
+              </div>
+              {/* Arrow */}
+              <div className="text-2xl text-mc-muted">→</div>
+              {/* Result slot */}
+              <div className="text-center">
+                <McInvSlot id={resultItem} size={56} count={resultCount} />
+                <p className="text-[9px] text-mc-muted mt-1">{MC_ITEMS.find(i => i.id === resultItem)?.n || resultItem}</p>
+              </div>
+            </div>
+            <p className="text-[10px] text-mc-muted mt-2">各マスに1文字のキー(A,B,Cなど)を入力。下のキーマッピングでアイテムを割り当て</p>
+          </div>
+          <div>
+            <label className="block text-[10px] font-medium text-mc-muted mb-2 uppercase tracking-wider">キー → アイテム対応</label>
+            <div className="space-y-2">
+              {allLetters.map(letter => {
+                const itemId = keys[letter] || '';
+                return (
+                  <div key={letter} className="flex items-center gap-2">
+                    <McInvSlot size={32}>
+                      <span className="text-xs font-mono font-bold text-yellow-300" style={{ textShadow: '1px 1px 0 #000' }}>{letter}</span>
+                    </McInvSlot>
+                    <span className="text-mc-muted">=</span>
+                    {itemId && <McIcon id={itemId} size={24} />}
+                    <select className="flex-1 bg-mc-dark border border-mc-border rounded px-2 py-1.5 text-xs focus:border-mc-info focus:outline-none"
+                      value={itemId} onChange={e => setKeys(k => ({...k, [letter]: e.target.value}))}>
+                      <option value="">（選択してください）</option>
+                      {MC_ITEMS.map(i => <option key={i.id} value={i.id}>{i.n} ({i.id.replace('minecraft:','')})</option>)}
+                    </select>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Shapeless: Ingredients list */}
+      {isShapeless && (
+        <div>
+          <label className="block text-[10px] font-medium text-mc-muted mb-2 uppercase tracking-wider">材料 (不定形)</label>
+          <div className="flex flex-wrap gap-1 mb-2">
+            {ingredients.map((ing, i) => (
+              <div key={i} className="relative group">
+                <McInvSlot id={ing} size={44} />
+                <button onClick={() => setIngredients(ingredients.filter((_,j)=>j!==i))}
+                  className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-[8px] leading-none flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">x</button>
+              </div>
+            ))}
+            <button onClick={() => setIngredients([...ingredients, 'minecraft:stone'])}
+              className="w-11 h-11 border-2 border-dashed border-mc-border rounded flex items-center justify-center text-mc-muted hover:border-mc-info hover:text-mc-info transition-colors">
+              <Plus size={16} />
+            </button>
+          </div>
+          <div className="space-y-1.5">
+            {ingredients.map((ing, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <McIcon id={ing} size={20} />
+                <select className="flex-1 bg-mc-dark border border-mc-border rounded px-2 py-1.5 text-xs focus:border-mc-info focus:outline-none"
+                  value={ing} onChange={e => { const a=[...ingredients]; a[i]=e.target.value; setIngredients(a); }}>
+                  {MC_ITEMS.map(item => <option key={item.id} value={item.id}>{item.n} ({item.id.replace('minecraft:','')})</option>)}
+                </select>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Furnace: Single ingredient */}
+      {isFurnace && (
+        <div>
+          <label className="block text-[10px] font-medium text-mc-muted mb-2 uppercase tracking-wider">入力アイテム</label>
+          <div className="flex items-center gap-3">
+            <McInvSlot id={ingredients[0]} size={48} />
+            <div className="text-xl text-mc-muted">→</div>
+            <McInvSlot id={resultItem} size={48} />
+          </div>
+          <select className="w-full max-w-xs bg-mc-dark border border-mc-border rounded px-2 py-1.5 text-xs focus:border-mc-info focus:outline-none mt-2"
+            value={ingredients[0] || ''} onChange={e => setIngredients([e.target.value])}>
+            {MC_ITEMS.map(i => <option key={i.id} value={i.id}>{i.n} ({i.id.replace('minecraft:','')})</option>)}
+          </select>
+        </div>
+      )}
+
+      {/* Stonecutting */}
+      {recipeType === 'minecraft:stonecutting' && (
+        <div>
+          <label className="block text-[10px] font-medium text-mc-muted mb-2 uppercase tracking-wider">入力アイテム</label>
+          <div className="flex items-center gap-3">
+            <McInvSlot id={ingredients[0]} size={48} />
+            <div className="text-xl text-mc-muted">→</div>
+            <McInvSlot id={resultItem} size={48} count={resultCount} />
+          </div>
+          <select className="w-full max-w-xs bg-mc-dark border border-mc-border rounded px-2 py-1.5 text-xs focus:border-mc-info focus:outline-none mt-2"
+            value={ingredients[0] || ''} onChange={e => setIngredients([e.target.value])}>
+            {MC_ITEMS.map(i => <option key={i.id} value={i.id}>{i.n} ({i.id.replace('minecraft:','')})</option>)}
+          </select>
+        </div>
+      )}
+
+      {/* Result */}
+      <div className="border-t border-mc-border pt-3">
+        <label className="block text-[10px] font-medium text-mc-muted mb-2 uppercase tracking-wider">完成アイテム</label>
+        <div className="flex items-center gap-3">
+          <McInvSlot id={resultItem} size={48} count={resultCount > 1 ? resultCount : undefined} />
+          <div className="flex-1">
+            <select className="w-full bg-mc-dark border border-mc-border rounded px-2 py-1.5 text-xs focus:border-mc-info focus:outline-none"
+              value={resultItem} onChange={e => setResultItem(e.target.value)}>
+              {MC_ITEMS.map(i => <option key={i.id} value={i.id}>{i.n} ({i.id.replace('minecraft:','')})</option>)}
+            </select>
+            {!isFurnace && (
+              <div className="flex items-center gap-1 mt-1">
+                <span className="text-[10px] text-mc-muted">個数:</span>
+                <input type="number" min={1} max={64}
+                  className="w-14 bg-mc-dark border border-mc-border rounded px-2 py-1 text-xs text-center focus:border-mc-info focus:outline-none"
+                  value={resultCount} onChange={e => setResultCount(parseInt(e.target.value) || 1)} />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+// LOOT TABLE VISUAL EDITOR
+// ════════════════════════════════════════════════════════════
+
+function LootTableVisualEditor({ file, onChange }) {
+  const [loot, setLoot] = useState(() => {
+    try { return JSON.parse(file?.content || '{"pools":[]}'); } catch { return { pools: [] }; }
+  });
+
+  const updateOutput = useCallback((newLoot) => {
+    const json = JSON.stringify(newLoot, null, 2);
+    if (onChange && json !== file?.content) onChange(json);
+  }, []);
+
+  const addPool = () => {
+    const newLoot = { ...loot, pools: [...(loot.pools||[]), { rolls: 1, entries: [{ type:'minecraft:item', name:'minecraft:diamond', weight:1 }] }] };
+    setLoot(newLoot);
+    updateOutput(newLoot);
+  };
+
+  const removePool = (idx) => {
+    const newLoot = { ...loot, pools: loot.pools.filter((_,i)=>i!==idx) };
+    setLoot(newLoot);
+    updateOutput(newLoot);
+  };
+
+  const addEntry = (poolIdx) => {
+    const newLoot = { ...loot, pools: loot.pools.map((p,i) => i===poolIdx ? {...p, entries:[...p.entries, {type:'minecraft:item',name:'minecraft:iron_ingot',weight:1}]} : p) };
+    setLoot(newLoot);
+    updateOutput(newLoot);
+  };
+
+  const removeEntry = (poolIdx, entryIdx) => {
+    const newLoot = { ...loot, pools: loot.pools.map((p,i) => i===poolIdx ? {...p, entries:p.entries.filter((_,j)=>j!==entryIdx)} : p) };
+    setLoot(newLoot);
+    updateOutput(newLoot);
+  };
+
+  const updatePoolRolls = (poolIdx, rolls) => {
+    const newLoot = { ...loot, pools: loot.pools.map((p,i) => i===poolIdx ? {...p, rolls} : p) };
+    setLoot(newLoot);
+    updateOutput(newLoot);
+  };
+
+  const updateEntry = (poolIdx, entryIdx, key, value) => {
+    const newLoot = { ...loot, pools: loot.pools.map((p,i) => i===poolIdx ? {...p, entries: p.entries.map((e,j) => j===entryIdx ? {...e, [key]:value} : e)} : p) };
+    setLoot(newLoot);
+    updateOutput(newLoot);
+  };
+
+  return (
+    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <McIcon id="minecraft:chest" size={28} />
+          <span className="text-sm font-semibold">ルートテーブルエディター</span>
+          <span className="text-[10px] text-mc-muted bg-mc-dark px-2 py-0.5 rounded">{file?.name}</span>
+        </div>
+        <button onClick={addPool} className="text-xs px-2 py-1 bg-mc-info/20 text-mc-info rounded hover:bg-mc-info/30 flex items-center gap-1">
+          <Plus size={12} /> プール追加
+        </button>
+      </div>
+
+      {(loot.pools||[]).map((pool, pi) => (
+        <div key={pi} className="border border-mc-border rounded p-3 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-mc-text">プール {pi+1}</span>
+            <div className="flex items-center gap-2">
+              <label className="text-[10px] text-mc-muted flex items-center gap-1">
+                ロール回数:
+                <input type="number" min={1} max={100}
+                  className="w-14 bg-mc-dark border border-mc-border rounded px-1 py-0.5 text-xs text-center focus:border-mc-info focus:outline-none"
+                  value={typeof pool.rolls === 'number' ? pool.rolls : 1} onChange={e => updatePoolRolls(pi, parseInt(e.target.value)||1)} />
+              </label>
+              <button onClick={() => removePool(pi)} className="text-mc-accent hover:text-red-400 p-0.5"><Trash2 size={12} /></button>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            {(pool.entries||[]).map((entry, ei) => (
+              <div key={ei} className="flex items-center gap-2 bg-mc-dark/50 rounded p-1.5">
+                <McInvSlot id={entry.name} size={32} />
+                <select className="flex-1 bg-mc-dark border border-mc-border rounded px-2 py-1 text-xs focus:border-mc-info focus:outline-none"
+                  value={entry.name||''} onChange={e => updateEntry(pi, ei, 'name', e.target.value)}>
+                  {MC_ITEMS.map(i => <option key={i.id} value={i.id}>{i.n} ({i.id.replace('minecraft:','')})</option>)}
+                </select>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] text-mc-muted">重み:</span>
+                  <input type="number" min={1} max={1000}
+                    className="w-14 bg-mc-dark border border-mc-border rounded px-1 py-1 text-xs text-center focus:border-mc-info focus:outline-none"
+                    value={entry.weight||1} onChange={e => updateEntry(pi, ei, 'weight', parseInt(e.target.value)||1)} />
+                </div>
+                <button onClick={() => removeEntry(pi, ei)} className="text-mc-accent hover:text-red-400 p-0.5"><Trash2 size={12} /></button>
+              </div>
+            ))}
+          </div>
+
+          <button onClick={() => addEntry(pi)} className="text-[11px] text-mc-info hover:text-mc-info/80 flex items-center gap-1">
+            <Plus size={11} /> エントリー追加
+          </button>
+
+          {/* Weight visualization */}
+          {pool.entries && pool.entries.length > 1 && (
+            <div className="space-y-0.5">
+              <p className="text-[10px] text-mc-muted">ドロップ確率:</p>
+              {(() => {
+                const totalW = pool.entries.reduce((s,e)=>s+(e.weight||1),0);
+                return pool.entries.map((e,i) => {
+                  const pct = ((e.weight||1)/totalW*100).toFixed(1);
+                  return (
+                    <div key={i} className="flex items-center gap-2 text-[10px]">
+                      <McIcon id={e.name} size={16} />
+                      <span className="w-20 truncate text-mc-muted">{(e.name||'').replace('minecraft:','')}</span>
+                      <div className="flex-1 bg-mc-dark rounded-full h-2.5 overflow-hidden">
+                        <div className="h-full bg-mc-info rounded-full transition-all" style={{width:`${pct}%`}} />
+                      </div>
+                      <span className="w-10 text-right text-mc-text font-medium">{pct}%</span>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          )}
+        </div>
+      ))}
+
+      {(!loot.pools || loot.pools.length === 0) && (
+        <div className="text-center py-8 text-mc-muted">
+          <Package size={24} className="mx-auto mb-2 opacity-30" />
+          <p className="text-xs">プールがありません</p>
+          <button onClick={addPool} className="text-xs text-mc-info hover:underline mt-1">プールを追加</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
 // PROJECT TABS
 // ════════════════════════════════════════════════════════════
 
@@ -4572,6 +7901,456 @@ function ProjectTabs({ projects, currentId, onSwitch, onCreate, onDelete, onRena
 }
 
 // ════════════════════════════════════════════════════════════
+// SYSTEM WIZARD
+// ════════════════════════════════════════════════════════════
+
+function SystemWizard({ namespace, onComplete, onClose }) {
+  const [step, setStep] = useState(0);
+  const [selectedType, setSelectedType] = useState('custom_weapon');
+  const [settings, setSettings] = useState({ ...SYSTEM_TYPES[0].defaults });
+
+  const sysType = SYSTEM_TYPES.find(t => t.id === selectedType);
+
+  const handleComplete = () => {
+    const mergedSettings = { ...sysType.defaults, ...settings };
+    onComplete(selectedType, mergedSettings);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="bg-mc-sidebar border border-mc-border rounded-lg w-full max-w-2xl mx-4 anim-scale overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-mc-border">
+          <h3 className="text-sm font-semibold flex items-center gap-2"><Settings size={16} /> システム作成ウィザード</h3>
+          <button onClick={onClose} className="text-mc-muted hover:text-mc-text"><X size={16} /></button>
+        </div>
+
+        {/* Steps indicator */}
+        <div className="flex border-b border-mc-border">
+          {['システム選択', '設定', '確認'].map((s, i) => (
+            <div key={i} className={`flex-1 px-4 py-2 text-center text-xs font-medium transition-colors ${
+              i === step ? 'bg-mc-info text-white' : i < step ? 'bg-mc-success/20 text-mc-success' : 'text-mc-muted'
+            }`}>
+              <div className="text-[10px] opacity-60">STEP {i + 1}</div>{s}
+            </div>
+          ))}
+        </div>
+
+        <div className="p-5 overflow-y-auto" style={{ minHeight: '340px', maxHeight: '60vh' }}>
+          {/* Step 0: System type selection */}
+          {step === 0 && (
+            <div className="space-y-2 anim-fade">
+              <p className="text-xs text-mc-muted mb-3">作りたいシステムのタイプを選んでください</p>
+              {SYSTEM_TYPES.map(st => (
+                <button key={st.id}
+                  onClick={() => { setSelectedType(st.id); setSettings(s => ({ ...s, ...st.defaults })); }}
+                  className={`w-full text-left p-3 rounded-lg border transition-all flex items-start gap-3 ${
+                    selectedType === st.id ? 'border-mc-info bg-mc-info/10 scale-[1.01]' : 'border-mc-border/50 hover:border-mc-border bg-mc-dark/20'
+                  }`}
+                >
+                  <McInvSlot id={GALLERY_SYSTEM_ICONS[st.id]} size={40} />
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-sm font-semibold ${st.color}`}>{st.name}</div>
+                    <div className="text-xs text-mc-muted mt-0.5 leading-relaxed">{st.description}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Step 1: Settings */}
+          {step === 1 && sysType && (
+            <div className="space-y-4 anim-fade">
+              <div className="flex items-center gap-2 mb-3">
+                <McIcon id={GALLERY_SYSTEM_ICONS[sysType.id]} size={24} />
+                <span className="text-sm font-semibold">{sysType.name} の設定</span>
+              </div>
+
+              {selectedType === 'custom_weapon' && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-mc-muted mb-1">武器名</label>
+                    <input className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                      value={settings.weaponName} onChange={e => setSettings(s => ({ ...s, weaponName: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-mc-muted mb-1">ベースアイテム</label>
+                    <input className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm font-mono focus:border-mc-info focus:outline-none"
+                      value={settings.weaponItem} onChange={e => setSettings(s => ({ ...s, weaponItem: e.target.value }))} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-mc-muted mb-1">ダメージ量</label>
+                      <input type="number" min={1} max={100}
+                        className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                        value={settings.damage} onChange={e => setSettings(s => ({ ...s, damage: parseInt(e.target.value) || 10 }))} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-mc-muted mb-1">クールダウン(tick)</label>
+                      <input type="number" min={0} max={6000}
+                        className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                        value={settings.cooldown} onChange={e => setSettings(s => ({ ...s, cooldown: parseInt(e.target.value) || 60 }))} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-mc-muted mb-1">パーティクル</label>
+                    <select className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                      value={settings.particleEffect} onChange={e => setSettings(s => ({ ...s, particleEffect: e.target.value }))}>
+                      {['flame','soul_fire_flame','end_rod','heart','crit','enchanted_hit','smoke','portal','dragon_breath','witch'].map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {selectedType === 'shop_npc' && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-mc-muted mb-1">ショップ名</label>
+                    <input className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                      value={settings.shopName} onChange={e => setSettings(s => ({ ...s, shopName: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-mc-muted mb-1">通貨スコア名</label>
+                    <input className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm font-mono focus:border-mc-info focus:outline-none"
+                      value={settings.currency} onChange={e => setSettings(s => ({ ...s, currency: e.target.value }))} />
+                    <p className="text-[10px] text-mc-muted mt-1">スコアボードの名前（例: coins, money）</p>
+                  </div>
+                </>
+              )}
+
+              {selectedType === 'teleport_system' && (
+                <div>
+                  <label className="block text-xs font-medium text-mc-muted mb-1">ワープポイント数</label>
+                  <input type="number" min={2} max={20}
+                    className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                    value={settings.pointCount} onChange={e => setSettings(s => ({ ...s, pointCount: parseInt(e.target.value) || 3 }))} />
+                  <p className="text-[10px] text-mc-muted mt-1">各ポイントごとにテレポートコマンドが生成されます</p>
+                </div>
+              )}
+
+              {selectedType === 'loot_box' && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-mc-muted mb-1">ルートボックス名</label>
+                    <input className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                      value={settings.boxName} onChange={e => setSettings(s => ({ ...s, boxName: e.target.value }))} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-mc-muted mb-1">開封コスト</label>
+                      <input type="number" min={0} max={1000}
+                        className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                        value={settings.cost} onChange={e => setSettings(s => ({ ...s, cost: parseInt(e.target.value) || 10 }))} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-mc-muted mb-1">通貨スコア名</label>
+                      <input className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm font-mono focus:border-mc-info focus:outline-none"
+                        value={settings.currency} onChange={e => setSettings(s => ({ ...s, currency: e.target.value }))} />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {selectedType === 'recipe_set' && (
+                <div>
+                  <label className="block text-xs font-medium text-mc-muted mb-1">レシピカテゴリ</label>
+                  <select className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                    value={settings.recipeType} onChange={e => setSettings(s => ({ ...s, recipeType: e.target.value }))}>
+                    <option value="weapon">武器レシピ</option>
+                    <option value="armor">防具レシピ</option>
+                    <option value="food">食料レシピ</option>
+                    <option value="utility">便利レシピ</option>
+                  </select>
+                  <p className="text-[10px] text-mc-muted mt-1">カテゴリごとに3つのサンプルレシピが生成されます</p>
+                </div>
+              )}
+
+              {selectedType === 'boss_fight' && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-mc-muted mb-1">ボス名</label>
+                    <input className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                      value={settings.bossName} onChange={e => setSettings(s => ({ ...s, bossName: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-mc-muted mb-1">ベースエンティティ</label>
+                    <select className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                      value={settings.bossEntity} onChange={e => setSettings(s => ({ ...s, bossEntity: e.target.value }))}>
+                      {['minecraft:wither_skeleton','minecraft:zombie','minecraft:skeleton','minecraft:vindicator','minecraft:pillager','minecraft:evoker','minecraft:blaze','minecraft:warden'].map(e => <option key={e} value={e}>{e.replace('minecraft:','')}</option>)}
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-mc-muted mb-1">ボスHP</label>
+                      <input type="number" min={20} max={1000}
+                        className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                        value={settings.bossHp} onChange={e => setSettings(s => ({ ...s, bossHp: parseInt(e.target.value) || 100 }))} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-mc-muted mb-1">フェーズ数</label>
+                      <input type="number" min={1} max={5}
+                        className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                        value={settings.phases} onChange={e => setSettings(s => ({ ...s, phases: parseInt(e.target.value) || 3 }))} />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {selectedType === 'lobby_system' && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-mc-muted mb-1">ロビー名</label>
+                    <input className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                      value={settings.lobbyName} onChange={e => setSettings(s => ({ ...s, lobbyName: e.target.value }))} />
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-mc-muted mb-1">最少人数</label>
+                      <input type="number" min={1} max={32}
+                        className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                        value={settings.minPlayers} onChange={e => setSettings(s => ({ ...s, minPlayers: parseInt(e.target.value) || 2 }))} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-mc-muted mb-1">最大人数</label>
+                      <input type="number" min={2} max={100}
+                        className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                        value={settings.maxPlayers} onChange={e => setSettings(s => ({ ...s, maxPlayers: parseInt(e.target.value) || 16 }))} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-mc-muted mb-1">CD秒数</label>
+                      <input type="number" min={5} max={120}
+                        className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm focus:border-mc-info focus:outline-none"
+                        value={settings.countdown} onChange={e => setSettings(s => ({ ...s, countdown: parseInt(e.target.value) || 30 }))} />
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Step 2: Confirm */}
+          {step === 2 && sysType && (
+            <div className="anim-fade">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-2xl">{sysType.icon}</span>
+                <div>
+                  <div className="text-sm font-semibold">{sysType.name}</div>
+                  <div className="text-xs text-mc-muted">名前空間: {namespace}</div>
+                </div>
+              </div>
+
+              <div className="bg-mc-dark rounded p-3 space-y-2 text-xs mb-4">
+                {selectedType === 'custom_weapon' && (
+                  <>
+                    <div className="flex justify-between"><span className="text-mc-muted">武器名</span><span>{settings.weaponName}</span></div>
+                    <div className="flex justify-between"><span className="text-mc-muted">ベースアイテム</span><span className="font-mono">{settings.weaponItem}</span></div>
+                    <div className="flex justify-between"><span className="text-mc-muted">ダメージ</span><span>{settings.damage}</span></div>
+                    <div className="flex justify-between"><span className="text-mc-muted">クールダウン</span><span>{settings.cooldown}tick ({(settings.cooldown/20).toFixed(1)}秒)</span></div>
+                  </>
+                )}
+                {selectedType === 'shop_npc' && (
+                  <>
+                    <div className="flex justify-between"><span className="text-mc-muted">ショップ名</span><span>{settings.shopName}</span></div>
+                    <div className="flex justify-between"><span className="text-mc-muted">通貨</span><span className="font-mono">{settings.currency}</span></div>
+                  </>
+                )}
+                {selectedType === 'teleport_system' && (
+                  <div className="flex justify-between"><span className="text-mc-muted">ポイント数</span><span>{settings.pointCount}箇所</span></div>
+                )}
+                {selectedType === 'loot_box' && (
+                  <>
+                    <div className="flex justify-between"><span className="text-mc-muted">名前</span><span>{settings.boxName}</span></div>
+                    <div className="flex justify-between"><span className="text-mc-muted">開封コスト</span><span>{settings.cost} {settings.currency}</span></div>
+                  </>
+                )}
+                {selectedType === 'recipe_set' && (
+                  <div className="flex justify-between"><span className="text-mc-muted">カテゴリ</span><span>{{weapon:'武器',armor:'防具',food:'食料',utility:'便利'}[settings.recipeType]}</span></div>
+                )}
+                {selectedType === 'boss_fight' && (
+                  <>
+                    <div className="flex justify-between"><span className="text-mc-muted">ボス名</span><span>{settings.bossName}</span></div>
+                    <div className="flex justify-between"><span className="text-mc-muted">エンティティ</span><span className="font-mono">{settings.bossEntity}</span></div>
+                    <div className="flex justify-between"><span className="text-mc-muted">HP</span><span>{settings.bossHp}</span></div>
+                    <div className="flex justify-between"><span className="text-mc-muted">フェーズ数</span><span>{settings.phases}</span></div>
+                  </>
+                )}
+                {selectedType === 'lobby_system' && (
+                  <>
+                    <div className="flex justify-between"><span className="text-mc-muted">ロビー名</span><span>{settings.lobbyName}</span></div>
+                    <div className="flex justify-between"><span className="text-mc-muted">人数</span><span>{settings.minPlayers}~{settings.maxPlayers}人</span></div>
+                    <div className="flex justify-between"><span className="text-mc-muted">カウントダウン</span><span>{settings.countdown}秒</span></div>
+                  </>
+                )}
+              </div>
+
+              <div className="mt-3 p-3 bg-mc-warning/10 border border-mc-warning/30 rounded text-xs text-mc-warning flex items-start gap-2">
+                <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+                <span>既存のファイルがある場合は上書きされます。新しいプロジェクトで使用することを推奨します。</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Navigation */}
+        <div className="flex justify-between items-center px-5 pb-5">
+          <button onClick={step === 0 ? onClose : () => setStep(s => s - 1)}
+            className="px-4 py-2 text-sm text-mc-muted hover:text-mc-text transition-colors">
+            {step === 0 ? 'キャンセル' : '戻る'}
+          </button>
+          <button onClick={() => { if (step < 2) setStep(s => s + 1); else handleComplete(); }}
+            className="px-6 py-2 text-sm font-medium rounded bg-mc-info hover:bg-mc-info/80 transition-colors flex items-center gap-2">
+            {step < 2 ? (<>次へ <ArrowRight size={14} /></>) : (<>システムを作成 <Settings size={14} /></>)}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+// GALLERY LANDING (when no file is selected)
+// ════════════════════════════════════════════════════════════
+
+const GALLERY_MINIGAME_ICONS = {
+  tag_game: 'minecraft:leather_boots', pvp_arena: 'minecraft:diamond_sword', spleef: 'minecraft:diamond_shovel',
+  race: 'minecraft:golden_boots', treasure_hunt: 'minecraft:chest', king_of_hill: 'minecraft:golden_helmet',
+  zombie_survival: 'minecraft:rotten_flesh', build_battle: 'minecraft:bricks', capture_flag: 'minecraft:red_banner',
+  tnt_run: 'minecraft:tnt',
+};
+const GALLERY_SYSTEM_ICONS = {
+  custom_weapon: 'minecraft:netherite_sword', shop_npc: 'minecraft:emerald', teleport_system: 'minecraft:ender_pearl',
+  loot_box: 'minecraft:chest', recipe_set: 'minecraft:crafting_table', boss_fight: 'minecraft:wither_skeleton_skull',
+  lobby_system: 'minecraft:compass',
+};
+
+function GalleryLanding({ onMinigame, onSystem, onBuilder }) {
+  return (
+    <div className="flex-1 overflow-y-auto p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Hero */}
+        <div className="text-center py-6">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <McIcon id="minecraft:diamond_pickaxe" size={40} />
+            <McIcon id="minecraft:crafting_table" size={40} />
+            <McIcon id="minecraft:command_block" size={40} />
+          </div>
+          <h2 className="text-xl font-bold text-mc-bright mb-1">Minecraft DataPack Builder</h2>
+          <p className="text-sm text-mc-muted max-w-md mx-auto">ボタンを選択するだけでMinecraftデータパックが完成。コーディング不要！</p>
+        </div>
+
+        {/* Quick Start */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <button onClick={onMinigame}
+            className="p-4 rounded-lg border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/15 transition-all text-left group hover:scale-[1.01]">
+            <div className="flex items-center gap-2 mb-2">
+              <McIcon id="minecraft:diamond_sword" size={24} />
+              <span className="text-sm font-bold text-emerald-400">ミニゲーム作成</span>
+            </div>
+            <div className="flex gap-1 mb-2">
+              {['minecraft:bow','minecraft:golden_apple','minecraft:leather_boots'].map(id => (
+                <McInvSlot key={id} id={id} size={28} />
+              ))}
+            </div>
+            <p className="text-[11px] text-mc-muted leading-relaxed">{MINIGAME_TYPES.length}種のミニゲームをウィザードで作成</p>
+          </button>
+          <button onClick={onSystem}
+            className="p-4 rounded-lg border border-violet-500/30 bg-violet-500/5 hover:bg-violet-500/15 transition-all text-left group hover:scale-[1.01]">
+            <div className="flex items-center gap-2 mb-2">
+              <McIcon id="minecraft:redstone" size={24} />
+              <span className="text-sm font-bold text-violet-400">システム部品</span>
+            </div>
+            <div className="flex gap-1 mb-2">
+              {['minecraft:emerald','minecraft:ender_pearl','minecraft:chest'].map(id => (
+                <McInvSlot key={id} id={id} size={28} />
+              ))}
+            </div>
+            <p className="text-[11px] text-mc-muted leading-relaxed">{SYSTEM_TYPES.length}種のシステムを一括生成</p>
+          </button>
+          <button onClick={onBuilder}
+            className="p-4 rounded-lg border border-sky-500/30 bg-sky-500/5 hover:bg-sky-500/15 transition-all text-left group hover:scale-[1.01]">
+            <div className="flex items-center gap-2 mb-2">
+              <McIcon id="minecraft:command_block" size={24} />
+              <span className="text-sm font-bold text-sky-400">コマンドビルダー</span>
+            </div>
+            <div className="flex gap-1 mb-2">
+              {['minecraft:experience_bottle','minecraft:name_tag','minecraft:firework_rocket'].map(id => (
+                <McInvSlot key={id} id={id} size={28} />
+              ))}
+            </div>
+            <p className="text-[11px] text-mc-muted leading-relaxed">{COMMAND_BUILDER_DEFS.length}種のコマンドをボタン選択だけで生成</p>
+          </button>
+        </div>
+
+        {/* Minigames Grid */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-mc-text flex items-center gap-2">
+              <McIcon id="minecraft:diamond_sword" size={18} /> ミニゲーム一覧
+            </h3>
+            <button onClick={onMinigame} className="text-[10px] text-mc-info hover:underline">ウィザードを開く →</button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+            {MINIGAME_TYPES.map(mg => (
+              <button key={mg.id} onClick={onMinigame}
+                className="p-3 rounded-lg border border-mc-border/50 hover:border-mc-info bg-mc-dark/30 hover:bg-mc-info/10 transition-all text-center group hover:scale-[1.03]"
+              >
+                <McInvSlot id={GALLERY_MINIGAME_ICONS[mg.id]} size={40} />
+                <span className={`text-[11px] font-medium ${mg.color} group-hover:text-white transition-colors block mt-1.5`}>{mg.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Systems Grid */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-mc-text flex items-center gap-2">
+              <McIcon id="minecraft:redstone" size={18} /> システム部品一覧
+            </h3>
+            <button onClick={onSystem} className="text-[10px] text-mc-info hover:underline">ウィザードを開く →</button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            {SYSTEM_TYPES.map(st => (
+              <button key={st.id} onClick={onSystem}
+                className="p-3 rounded-lg border border-mc-border/50 hover:border-mc-info bg-mc-dark/30 hover:bg-mc-info/10 transition-all text-center group hover:scale-[1.03]"
+              >
+                <McInvSlot id={GALLERY_SYSTEM_ICONS[st.id]} size={40} />
+                <span className={`text-[11px] font-medium ${st.color} group-hover:text-white transition-colors block mt-1.5`}>{st.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* How it works */}
+        <div className="bg-mc-dark/30 rounded-lg p-4 border border-mc-border/30">
+          <h3 className="text-sm font-semibold text-mc-text mb-3 flex items-center gap-2">
+            <McIcon id="minecraft:book" size={18} /> 使い方
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-center">
+            {[
+              { step:'1', itemId:'minecraft:compass', text:'ゲームまたはシステムを選択' },
+              { step:'2', itemId:'minecraft:redstone', text:'設定をカスタマイズ' },
+              { step:'3', itemId:'minecraft:writable_book', text:'ファイルが自動生成' },
+              { step:'4', itemId:'minecraft:chest', text:'ZIPでダウンロード' },
+            ].map(s => (
+              <div key={s.step} className="space-y-1.5">
+                <McInvSlot id={s.itemId} size={40} />
+                <div className="text-[10px] text-mc-info font-semibold">STEP {s.step}</div>
+                <div className="text-[11px] text-mc-muted">{s.text}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <p className="text-center text-[10px] text-mc-muted">
+          ファイルを選択するとエディター表示 | レシピ・ルートテーブルは自動でビジュアルエディターに切替
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
 // MAIN APP
 // ════════════════════════════════════════════════════════════
 
@@ -4595,8 +8374,10 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [showMinigameWizard, setShowMinigameWizard] = useState(false);
+  const [showSystemWizard, setShowSystemWizard] = useState(false);
   const [contextMenu, setContextMenu] = useState(null);
   const [activeTab, setActiveTab] = useState('editor');
+  const [editorViewMode, setEditorViewMode] = useState('visual'); // 'visual' | 'code'
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [initialized, setInitialized] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
@@ -4991,6 +8772,16 @@ export default function App() {
     setShowMinigameWizard(false);
   };
 
+  const handleSystemComplete = (systemType, settings) => {
+    const sysFiles = generateSystemFiles(project.namespace, systemType, settings);
+    const newFiles = addFilesFromPaths(files, sysFiles);
+    setFiles(newFiles);
+    const allFolderIds = new Set();
+    newFiles.filter(f => f.type === 'folder').forEach(f => allFolderIds.add(f.id));
+    setExpanded(allFolderIds);
+    setShowSystemWizard(false);
+  };
+
   const handleDownload = async () => {
     const errs = errors.filter(e => e.type === 'error');
     if (errs.length > 0) {
@@ -5056,6 +8847,12 @@ export default function App() {
             title="ミニゲーム作成"
           >
             <Gamepad2 size={13} /> <span className="hidden sm:inline">ミニゲーム</span>
+          </button>
+          <button onClick={() => setShowSystemWizard(true)}
+            className="text-xs px-2.5 py-1.5 text-violet-400 hover:text-violet-300 hover:bg-mc-dark rounded transition-colors flex items-center gap-1.5"
+            title="システム部品作成"
+          >
+            <Layers size={13} /> <span className="hidden sm:inline">システム</span>
           </button>
           <button onClick={() => setShowWizard(true)}
             className="text-xs px-2.5 py-1.5 text-mc-muted hover:text-mc-text hover:bg-mc-dark rounded transition-colors flex items-center gap-1.5"
@@ -5182,6 +8979,7 @@ export default function App() {
           <div className="flex items-center border-b border-mc-border bg-mc-dark/30 px-2">
             {[
               { key: 'editor', label: 'エディター', icon: Code },
+              { key: 'builder', label: 'ビルダー', icon: Zap },
               { key: 'preview', label: 'プレビュー', icon: Eye },
               { key: 'commands', label: 'コマンド', icon: BookOpen },
               { key: 'ai', label: 'AI', icon: Sparkles },
@@ -5211,9 +9009,73 @@ export default function App() {
           </div>
 
           {/* Tab content */}
-          <div className="flex-1 flex min-h-0">
+          <div className="flex-1 flex flex-col min-h-0">
             {activeTab === 'editor' ? (
-              <CodeEditor file={selectedFile} onChange={handleFileContentChange} targetVersion={project.targetVersion} />
+              selectedFile ? (() => {
+                /* Smart Editor: detect file type */
+                const isMcfunction = selectedFile.name?.endsWith('.mcfunction');
+                const isRecipeJson = selectedFile.name?.endsWith('.json') && selectedFile.content?.includes('"type"') && selectedFile.content?.includes('crafting');
+                const isLootTable = selectedFile.name?.endsWith('.json') && selectedFile.content?.includes('"pools"');
+                const isAdvancement = selectedFile.name?.endsWith('.json') && (
+                  selectedFile.path?.includes('/advancements/') || selectedFile.path?.includes('/advancement/') ||
+                  (selectedFile.content?.includes('"criteria"') && selectedFile.content?.includes('"display"'))
+                );
+                const hasVisualEditor = isMcfunction || isRecipeJson || isLootTable || isAdvancement;
+                const showVisual = hasVisualEditor && editorViewMode === 'visual';
+
+                return (
+                  <>
+                    {/* Visual/Code Toggle Bar */}
+                    {hasVisualEditor && (
+                      <div style={{display:'flex',alignItems:'center',gap:8,padding:'4px 12px',background:'#1a1a2e',borderBottom:'1px solid #2a2a4a',flexShrink:0}}>
+                        <span style={{fontSize:11,color:'#8888aa',marginRight:4}}>
+                          {isMcfunction ? '⚡ mcfunction' : isRecipeJson ? '📖 レシピ' : isLootTable ? '🎁 ルートテーブル' : '🏆 進捗'}
+                        </span>
+                        <button onClick={() => setEditorViewMode('visual')} style={{
+                          padding:'3px 10px',fontSize:11,borderRadius:4,border:'none',cursor:'pointer',
+                          background: editorViewMode === 'visual' ? '#4fc3f7' : '#2a2a4a',
+                          color: editorViewMode === 'visual' ? '#000' : '#aaa',fontWeight: editorViewMode === 'visual' ? 700 : 400,
+                        }}>🎨 ビジュアル</button>
+                        <button onClick={() => setEditorViewMode('code')} style={{
+                          padding:'3px 10px',fontSize:11,borderRadius:4,border:'none',cursor:'pointer',
+                          background: editorViewMode === 'code' ? '#4fc3f7' : '#2a2a4a',
+                          color: editorViewMode === 'code' ? '#000' : '#aaa',fontWeight: editorViewMode === 'code' ? 700 : 400,
+                        }}>📝 コード</button>
+                        <span style={{fontSize:10,color:'#666',marginLeft:'auto'}}>
+                          {showVisual ? 'ビジュアルエディタで編集中' : 'コードを直接編集中'}
+                        </span>
+                      </div>
+                    )}
+                    {/* Editor Content */}
+                    <div className="flex-1 min-h-0" style={{overflow:'auto'}}>
+                      {showVisual && isMcfunction ? (
+                        <McfunctionVisualEditor file={selectedFile} onChange={handleFileContentChange} />
+                      ) : showVisual && isRecipeJson ? (
+                        <RecipeVisualEditor file={selectedFile} onChange={handleFileContentChange} namespace={project.namespace} />
+                      ) : showVisual && isLootTable ? (
+                        <LootTableVisualEditor file={selectedFile} onChange={handleFileContentChange} />
+                      ) : showVisual && isAdvancement ? (
+                        <AdvancementVisualEditor file={selectedFile} onChange={handleFileContentChange} namespace={project.namespace} />
+                      ) : (
+                        <CodeEditor file={selectedFile} onChange={handleFileContentChange} targetVersion={project.targetVersion} />
+                      )}
+                    </div>
+                  </>
+                );
+              })() : (
+                <GalleryLanding onMinigame={() => setShowMinigameWizard(true)} onSystem={() => setShowSystemWizard(true)} onBuilder={() => setActiveTab('builder')} />
+              )
+            ) : activeTab === 'builder' ? (
+              <CommandBuilderPanel
+                namespace={project.namespace}
+                file={selectedFile}
+                onInsert={(cmd) => {
+                  if (selectedFile && selectedFile.name?.endsWith('.mcfunction')) {
+                    const newContent = (selectedFile.content || '') + (selectedFile.content ? '\n' : '') + cmd;
+                    handleFileContentChange(newContent);
+                  }
+                }}
+              />
             ) : activeTab === 'commands' ? (
               <CommandReference namespace={project.namespace} targetVersion={project.targetVersion} />
             ) : activeTab === 'ai' ? (
@@ -5280,6 +9142,13 @@ export default function App() {
           onComplete={handleMinigameComplete}
           onClose={() => setShowMinigameWizard(false)}
           targetVersion={project.targetVersion}
+        />
+      )}
+      {showSystemWizard && (
+        <SystemWizard
+          namespace={project.namespace}
+          onComplete={handleSystemComplete}
+          onClose={() => setShowSystemWizard(false)}
         />
       )}
       {contextMenu && (
