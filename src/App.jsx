@@ -9119,6 +9119,196 @@ const GUIDE_PAGES = [
       ]},
     ],
   },
+  // --- ここからデータパック導入の詳細ガイド ---
+  {
+    id: 'what_is_datapack',
+    title: 'データパックとは？',
+    subtitle: 'MODなしでMinecraftを拡張する公式の仕組み',
+    icon: 'minecraft:knowledge_book',
+    color: '#66bb6a',
+    content: [
+      { type:'hero', items:['minecraft:command_block','minecraft:writable_book','minecraft:crafting_table','minecraft:enchanting_table','minecraft:chest'] },
+      { type:'text', text:'データパックは、Minecraft Java Edition公式のカスタマイズ機能です。MODとは違い、追加ソフトなしで使えます。' },
+      { type:'features', items:[
+        { icon:'minecraft:command_block', title:'コマンド関数', desc:'複数コマンドをまとめた.mcfunctionファイル', color:'#4fc3f7' },
+        { icon:'minecraft:crafting_table', title:'カスタムレシピ', desc:'新しいクラフトレシピを追加・変更', color:'#ff9800' },
+        { icon:'minecraft:chest', title:'ルートテーブル', desc:'チェスト・モブのドロップ品を変更', color:'#ab47bc' },
+        { icon:'minecraft:golden_apple', title:'進捗（実績）', desc:'オリジナルの実績を作成', color:'#fdd835' },
+      ]},
+      { type:'text', text:'このツールで作ったデータパックは、ZIPファイルとしてダウンロードされます。それをMinecraftのワールドに入れるだけで動きます！' },
+      { type:'tip', text:'データパックはワールドごとに管理されます。別のワールドで使いたい場合は、そのワールドにも配置が必要です。' },
+    ],
+  },
+  {
+    id: 'install_singleplay',
+    title: '導入方法（シングルプレイ）',
+    subtitle: 'WindowsでのZIPファイルの配置手順を解説',
+    icon: 'minecraft:grass_block',
+    color: '#4caf50',
+    content: [
+      { type:'text', text:'ダウンロードしたZIPファイルを、ワールドのdatapacksフォルダに入れるだけでOK！解凍は不要です。' },
+      { type:'steps', items:[
+        { num:'1', icon:'minecraft:chest', title:'ZIPをダウンロード', desc:'このツールの「ZIPダウンロード」ボタンでファイルを保存' },
+        { num:'2', icon:'minecraft:oak_door', title:'Minecraftフォルダを開く', desc:'Windowsキー+R →「%AppData%\\.minecraft」と入力してEnter' },
+        { num:'3', icon:'minecraft:grass_block', title:'saves → ワールド名を選択', desc:'savesフォルダの中から、データパックを入れたいワールドを選ぶ' },
+        { num:'4', icon:'minecraft:barrel', title:'datapacks フォルダへ配置', desc:'ワールドフォルダ内の datapacks フォルダにZIPをコピー' },
+        { num:'5', icon:'minecraft:command_block', title:'ゲーム内で /reload', desc:'ワールドに入って /reload コマンドを実行' },
+      ]},
+      { type:'folderTree', title:'配置先のフォルダ構造', items:[
+        { depth:0, name:'.minecraft', icon:'📁' },
+        { depth:1, name:'saves', icon:'📁' },
+        { depth:2, name:'あなたのワールド名', icon:'🌍' },
+        { depth:3, name:'datapacks', icon:'📁', highlight:true },
+        { depth:4, name:'my-datapack.zip ← ここに配置！', icon:'📦', highlight:true },
+      ]},
+      { type:'warning', text:'チートがOFFだと /reload コマンドが使えません！ワールド設定で「チートの許可」をONにしてください。(LANに公開 → チートON でも可)' },
+      { type:'tip', text:'datapacksフォルダが無い場合は、一度そのワールドに入ってから確認してください。自動で生成されます。' },
+    ],
+  },
+  {
+    id: 'install_server',
+    title: '導入方法（マルチプレイ）',
+    subtitle: 'サーバーでのデータパック導入手順',
+    icon: 'minecraft:ender_pearl',
+    color: '#7c4dff',
+    content: [
+      { type:'text', text:'マルチプレイサーバーでも同じ仕組みです。サーバーのワールドフォルダに配置します。' },
+      { type:'steps', items:[
+        { num:'1', icon:'minecraft:redstone', title:'サーバーを停止（推奨）', desc:'安全のため、サーバーを一度止めてから作業しましょう' },
+        { num:'2', icon:'minecraft:compass', title:'ワールドフォルダを特定', desc:'server.properties の level-name を確認（デフォルトは「world」）' },
+        { num:'3', icon:'minecraft:barrel', title:'datapacks に配置', desc:'world/datapacks/ にZIPファイルを置く' },
+        { num:'4', icon:'minecraft:lever', title:'サーバー起動 or /reload', desc:'サーバーを起動するか、コンソールで reload コマンドを実行' },
+        { num:'5', icon:'minecraft:spyglass', title:'動作確認', desc:'/datapack list enabled で有効になっているか確認' },
+      ]},
+      { type:'folderTree', title:'サーバーのフォルダ構造', items:[
+        { depth:0, name:'server/', icon:'📁' },
+        { depth:1, name:'server.properties', icon:'⚙️' },
+        { depth:1, name:'server.jar', icon:'☕' },
+        { depth:1, name:'world/ (level-nameで指定)', icon:'🌍' },
+        { depth:2, name:'datapacks', icon:'📁', highlight:true },
+        { depth:3, name:'my-datapack.zip ← ここに配置！', icon:'📦', highlight:true },
+      ]},
+      { type:'tip', text:'Realmsの場合: ワールドをダウンロード → データパック配置 → 再アップロード が必要です。' },
+    ],
+  },
+  {
+    id: 'commands_guide',
+    title: 'データパック管理コマンド',
+    subtitle: 'ゲーム内で使えるコマンド一覧',
+    icon: 'minecraft:command_block',
+    color: '#4fc3f7',
+    content: [
+      { type:'text', text:'データパックの読み込み・確認・実行に使うコマンドを覚えましょう。' },
+      { type:'commandList', items:[
+        { cmd:'/reload', desc:'全データパックを再読み込み。ファイルを変更した後はこれを実行！', color:'#4caf50' },
+        { cmd:'/datapack list', desc:'有効・無効なデータパック一覧を表示', color:'#4fc3f7' },
+        { cmd:'/datapack list enabled', desc:'現在有効なデータパックだけ表示', color:'#4fc3f7' },
+        { cmd:'/datapack enable "file/パック名.zip"', desc:'データパックを有効化', color:'#66bb6a' },
+        { cmd:'/datapack disable "file/パック名.zip"', desc:'データパックを無効化', color:'#f44336' },
+        { cmd:'/function 名前空間:パス', desc:'指定した関数を手動実行（例: /function mygame:start）', color:'#ff9800' },
+      ]},
+      { type:'tip', text:'/function で実行するとき、.mcfunction の拡張子は書きません。data/mygame/function/utils/reset.mcfunction なら /function mygame:utils/reset です。' },
+      { type:'warning', text:'コマンドを使うにはOP権限が必要です。シングルプレイではチートをONにしてください。' },
+    ],
+  },
+  {
+    id: 'folder_structure',
+    title: 'データパックの構造',
+    subtitle: 'フォルダとファイルの役割を理解しよう',
+    icon: 'minecraft:bookshelf',
+    color: '#ff9800',
+    content: [
+      { type:'text', text:'データパックには決まったフォルダ構造があります。このツールが自動で正しい構造を作ってくれるので安心！' },
+      { type:'folderTree', title:'基本構造（1.21）', items:[
+        { depth:0, name:'my-datapack.zip', icon:'📦' },
+        { depth:1, name:'pack.mcmeta (必須！パックの情報)', icon:'📄' },
+        { depth:1, name:'pack.png (任意 - パックのアイコン)', icon:'🖼️' },
+        { depth:1, name:'data/', icon:'📁' },
+        { depth:2, name:'名前空間/', icon:'📁' },
+        { depth:3, name:'function/ (コマンド関数)', icon:'⚡' },
+        { depth:3, name:'recipe/ (レシピ)', icon:'🔨' },
+        { depth:3, name:'loot_table/ (ルートテーブル)', icon:'🎲' },
+        { depth:3, name:'advancement/ (進捗)', icon:'⭐' },
+        { depth:3, name:'predicate/ (条件判定)', icon:'❓' },
+        { depth:3, name:'item_modifier/ (アイテム変更)', icon:'🔧' },
+        { depth:3, name:'tags/ (タグ定義)', icon:'🏷️' },
+        { depth:4, name:'function/ (関数タグ)', icon:'📋' },
+      ]},
+      { type:'warning', text:'1.21以降、フォルダ名は functions ではなく function（単数形）です！tags/functions も tags/function です。間違えると動きません。' },
+      { type:'text', text:'tick.json と load.json は特別なタグです：' },
+      { type:'features', items:[
+        { icon:'minecraft:clock', title:'tick.json', desc:'毎ティック（1/20秒）自動実行される関数を登録', color:'#4fc3f7' },
+        { icon:'minecraft:command_block', title:'load.json', desc:'/reload 時に一度だけ実行される関数を登録', color:'#66bb6a' },
+      ]},
+    ],
+  },
+  {
+    id: 'troubleshoot',
+    title: 'よくあるトラブル & 解決法',
+    subtitle: '困ったときはここをチェック！',
+    icon: 'minecraft:barrier',
+    color: '#f44336',
+    content: [
+      { type:'text', text:'データパックが動かない？よくある原因と解決方法をまとめました。' },
+      { type:'troubleList', items:[
+        {
+          problem:'データパックが認識されない',
+          icon:'❌',
+          causes:['ZIPの構造が間違っている（pack.mcmetaが最上位にない）','datapacks フォルダの場所が間違っている','pack_format の値がバージョンと合っていない'],
+          solution:'ZIPを開いて最上位に pack.mcmeta と data/ があるか確認。このツールで作成したZIPは正しい構造です。',
+        },
+        {
+          problem:'関数（function）が実行できない',
+          icon:'⚠️',
+          causes:['フォルダ名が functions になっている（正しくは function）','名前空間やパスが /function コマンドと一致しない','.mcfunction の拡張子を /function コマンドに含めてしまっている'],
+          solution:'/function 名前空間:パス でパスを確認。拡張子は不要です。',
+        },
+        {
+          problem:'コマンドが使えない / 権限エラー',
+          icon:'🔒',
+          causes:['シングルプレイでチートがOFFになっている','マルチプレイでOP権限がない'],
+          solution:'シングル: ESC → LANに公開 → チートON。マルチ: /op コマンドでOP権限を付与。',
+        },
+        {
+          problem:'/reload しても変更が反映されない',
+          icon:'🔄',
+          causes:['JSONファイルの構文エラー（カンマやカッコの不足）','ファイルのエンコードがUTF-8でない','キャッシュが残っている'],
+          solution:'F3+T で再読み込み、またはワールドに入り直してみてください。',
+        },
+        {
+          problem:'pack_format が合わないと表示される',
+          icon:'📋',
+          causes:['Minecraftのバージョンとpack_formatの値が一致しない'],
+          solution:'このツールではバージョン選択で自動設定されるので、正しいバージョンを選んでください。\n1.21=48, 1.21.2=57, 1.21.5=71',
+        },
+      ]},
+      { type:'tip', text:'このツールで作成したデータパックは、自動的に正しいフォルダ構造・pack_formatで生成されます。手動で構造を変えなければ基本的に問題は起きません。' },
+    ],
+  },
+  {
+    id: 'tips_advanced',
+    title: 'ヒント & 次のステップ',
+    subtitle: 'データパック作成をもっと楽しもう！',
+    icon: 'minecraft:nether_star',
+    color: '#fdd835',
+    content: [
+      { type:'hero', items:['minecraft:nether_star','minecraft:diamond','minecraft:emerald','minecraft:totem_of_undying','minecraft:enchanted_golden_apple'] },
+      { type:'text', text:'おめでとう！ここまでで基本はマスターしました。さらにスキルアップするためのヒントです。' },
+      { type:'features', items:[
+        { icon:'minecraft:redstone', title:'tick関数を活用', desc:'毎ティック実行でゲームループを作ろう（タイマー、スコア判定）', color:'#f44336' },
+        { icon:'minecraft:name_tag', title:'スコアボードを使う', desc:'プレイヤーのスコアを管理してゲーム進行を制御', color:'#4fc3f7' },
+        { icon:'minecraft:armor_stand', title:'マーカーエンティティ', desc:'Armor Standをマーカーにして座標管理に活用', color:'#ff9800' },
+        { icon:'minecraft:writable_book', title:'tellraw で演出', desc:'カラフルなチャットメッセージでプレイヤーに情報を伝える', color:'#66bb6a' },
+      ]},
+      { type:'steps', items:[
+        { num:'✓', icon:'minecraft:crafting_table', title:'まずはテンプレートから始める', desc:'ミニゲームウィザードで自動生成 → 中身を読んで学ぶ' },
+        { num:'✓', icon:'minecraft:anvil', title:'少しずつカスタマイズ', desc:'生成されたコマンドを変更して、動きの違いを確認' },
+        { num:'✓', icon:'minecraft:enchanting_table', title:'オリジナル機能を追加', desc:'コマンドビルダーで新しいコマンドを組み立てて追加' },
+        { num:'✓', icon:'minecraft:nether_star', title:'完全オリジナルを作成', desc:'空のプロジェクトから自分だけのゲームを作ろう！' },
+      ]},
+      { type:'tip', text:'このガイドはいつでも「ガイド」ボタンから開けます。困ったら何度でも見返してください！' },
+    ],
+  },
 ];
 
 function VisualGuide({ onClose }) {
@@ -9239,6 +9429,58 @@ function VisualGuide({ onClose }) {
                 </div>
               ))}
             </div>
+          </div>
+        );
+      case 'warning':
+        return (
+          <div key={idx} style={{display:'flex',alignItems:'flex-start',gap:8,padding:'10px 12px',borderRadius:8,background:'#3a1a1a',border:'1px solid #f4474740',margin:'8px 0'}}>
+            <span style={{fontSize:16,flexShrink:0}}>⚠️</span>
+            <p style={{fontSize:11,color:'#ef9a9a',lineHeight:1.6,margin:0}}>{block.text}</p>
+          </div>
+        );
+      case 'folderTree':
+        return (
+          <div key={idx} style={{margin:'12px 0',padding:12,borderRadius:8,background:'#0a0a1a',border:'1px solid #2a2a4a'}}>
+            {block.title && <div style={{fontSize:11,fontWeight:700,color:'#aaa',marginBottom:8}}>{block.title}</div>}
+            {block.items.map((item,i) => (
+              <div key={i} style={{display:'flex',alignItems:'center',gap:6,paddingLeft: item.depth * 20,paddingTop:3,paddingBottom:3}}>
+                <span style={{fontSize:13,flexShrink:0}}>{item.icon}</span>
+                <span style={{fontSize:11,color: item.highlight ? '#4fc3f7' : '#bbb',fontWeight: item.highlight ? 700 : 400,fontFamily:'monospace'}}>{item.name}</span>
+              </div>
+            ))}
+          </div>
+        );
+      case 'commandList':
+        return (
+          <div key={idx} style={{display:'flex',flexDirection:'column',gap:6,margin:'12px 0'}}>
+            {block.items.map((c,i) => (
+              <div key={i} style={{padding:'8px 12px',borderRadius:8,background:'#0a0a1a',border:`1px solid ${c.color}30`}}>
+                <code style={{fontSize:12,fontWeight:700,color:c.color,fontFamily:'monospace',display:'block',marginBottom:4}}>{c.cmd}</code>
+                <div style={{fontSize:10,color:'#999'}}>{c.desc}</div>
+              </div>
+            ))}
+          </div>
+        );
+      case 'troubleList':
+        return (
+          <div key={idx} style={{display:'flex',flexDirection:'column',gap:8,margin:'12px 0'}}>
+            {block.items.map((t,i) => (
+              <div key={i} style={{padding:12,borderRadius:8,background:'#12121e',border:'1px solid #3a3a5a'}}>
+                <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:6}}>
+                  <span style={{fontSize:16}}>{t.icon}</span>
+                  <span style={{fontSize:12,fontWeight:700,color:'#ff8a80'}}>{t.problem}</span>
+                </div>
+                <div style={{fontSize:10,color:'#999',marginBottom:6}}>
+                  <div style={{fontWeight:600,color:'#aaa',marginBottom:2}}>よくある原因:</div>
+                  <ul style={{margin:0,paddingLeft:16}}>
+                    {t.causes.map((c,j) => <li key={j} style={{marginBottom:2,lineHeight:1.4}}>{c}</li>)}
+                  </ul>
+                </div>
+                <div style={{fontSize:11,color:'#a5d6a7',padding:'6px 8px',borderRadius:4,background:'#1a3a1a',border:'1px solid #4caf5020'}}>
+                  💡 {t.solution}
+                </div>
+              </div>
+            ))}
           </div>
         );
       default: return null;
