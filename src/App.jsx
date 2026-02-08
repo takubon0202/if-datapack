@@ -5694,6 +5694,565 @@ function McfunctionVisualEditor({ file, onChange }) {
 }
 
 // ════════════════════════════════════════════════════════════
+// INTEGRATED MCFUNCTION EDITOR (VS Code + Command Builder Hybrid)
+// ════════════════════════════════════════════════════════════
+
+const SNIPPET_TEMPLATES = [
+  { id:'timer', name:'タイマーシステム', icon:'⏱️', desc:'ボスバーでカウントダウン', lines:[
+    '# ===== タイマーシステム =====','bossbar add namespace:timer "残り時間"','bossbar set namespace:timer max 300','bossbar set namespace:timer color yellow','bossbar set namespace:timer style notched_10','bossbar set namespace:timer players @a','bossbar set namespace:timer visible true','','# タイマー減算 (毎tick呼び出し)','scoreboard players remove #timer timer 1','execute store result bossbar namespace:timer value run scoreboard players get #timer timer','','# 時間切れチェック','execute if score #timer timer matches ..0 run function namespace:time_up',
+  ]},
+  { id:'pvp_setup', name:'PVP初期化', icon:'⚔️', desc:'チーム分け＋装備配布', lines:[
+    '# ===== PVP初期化 =====','team add red "赤チーム"','team modify red color red','team modify red friendlyFire false','team add blue "青チーム"','team modify blue color blue','team modify blue friendlyFire false','','# 装備配布','clear @a[tag=player]','gamemode adventure @a[tag=player]','give @a[tag=player] minecraft:iron_sword 1','give @a[tag=player] minecraft:bow 1','give @a[tag=player] minecraft:arrow 32','give @a[tag=player] minecraft:iron_chestplate 1','','# エフェクト','effect give @a[tag=player] saturation 999999 0 true',
+  ]},
+  { id:'lobby', name:'ロビー帰還', icon:'🏠', desc:'ゲーム終了→ロビー', lines:[
+    '# ===== ロビー帰還 =====','title @a title {"text":"ゲーム終了！","color":"gold","bold":true}','title @a subtitle {"text":"ロビーに戻ります...","color":"yellow"}','playsound minecraft:ui.toast.challenge_complete master @a','','# 3秒後にテレポート','schedule function namespace:lobby_tp 60t','','# ステート変更','scoreboard players set #game state 0',
+  ]},
+  { id:'kill_reward', name:'キル報酬', icon:'💀', desc:'敵撃破時の報酬', lines:[
+    '# ===== キル報酬 (advancement rewardで呼出) =====','# キルしたプレイヤーのスコア加算','scoreboard players add @s kills 1','','# 報酬付与','give @s minecraft:golden_apple 1','playsound minecraft:entity.experience_orb.pickup master @s','title @s actionbar {"text":"+1 キル！","color":"green","bold":true}','','# エフェクト','effect give @s speed 3 0 true','effect give @s regeneration 3 0 true',
+  ]},
+  { id:'countdown', name:'カウントダウン', icon:'🔢', desc:'3,2,1,Go!演出', lines:[
+    '# ===== カウントダウン開始 =====','scoreboard players set #countdown timer 4','schedule function namespace:countdown_tick 20t',
+    '','# --- countdown_tick.mcfunction ---','# scoreboard players remove #countdown timer 1','# execute if score #countdown timer matches 3 run title @a title {"text":"3","color":"red","bold":true}','# execute if score #countdown timer matches 2 run title @a title {"text":"2","color":"yellow","bold":true}','# execute if score #countdown timer matches 1 run title @a title {"text":"1","color":"green","bold":true}','# execute if score #countdown timer matches 0 run title @a title {"text":"GO!","color":"gold","bold":true}','# execute if score #countdown timer matches 0 run function namespace:game_start','# execute if score #countdown timer matches 1.. run schedule function namespace:countdown_tick 20t',
+  ]},
+];
+
+function IntegratedMcfEditor({ file, onChange, targetVersion, namespace }) {
+  const textareaRef = useRef(null);
+  const preRef = useRef(null);
+  const lineNumRef = useRef(null);
+
+  const [cmdSidebarOpen, setCmdSidebarOpen] = useState(true);
+  const [sidebarTab, setSidebarTab] = useState('quick'); // 'quick' | 'builder' | 'snippets'
+  const [showPalette, setShowPalette] = useState(false);
+  const [paletteSearch, setPaletteSearch] = useState('');
+  const [cursorInfo, setCursorInfo] = useState({ line: 1, col: 1 });
+
+  // Builder state
+  const [builderCmd, setBuilderCmd] = useState(null);
+  const [builderFields, setBuilderFields] = useState({});
+  const [builderCat, setBuilderCat] = useState(null);
+
+  // Autocomplete state
+  const [acItems, setAcItems] = useState([]);
+  const [acIndex, setAcIndex] = useState(0);
+  const [acPos, setAcPos] = useState({ top: 0, left: 0 });
+  const acRafRef = useRef(null);
+
+  const content = file?.content ?? '';
+  const lines = content.split('\n');
+  const lineCount = lines.length;
+
+  useEffect(() => { setAcItems([]); return () => { if (acRafRef.current) cancelAnimationFrame(acRafRef.current); }; }, [file?.id]);
+
+  const lineErrors = useMemo(() => {
+    if (!content) return {};
+    const errs = {};
+    content.split('\n').forEach((line, i) => {
+      const result = validateMcfunctionLine(line, i + 1, targetVersion);
+      if (result) errs[i + 1] = result;
+    });
+    return errs;
+  }, [content, targetVersion]);
+
+  const mcfErrorCount = useMemo(() => Object.values(lineErrors).filter(e => e.type === 'error').length, [lineErrors]);
+  const mcfWarnCount = useMemo(() => Object.values(lineErrors).filter(e => e.type === 'warning').length, [lineErrors]);
+  const cmdCount = useMemo(() => lines.filter(l => l.trim() && !l.trim().startsWith('#')).length, [lines]);
+
+  const highlighted = useMemo(() => highlightMcfunction(content), [content]);
+
+  // Cursor tracking
+  const updateCursorInfo = useCallback(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const val = ta.value.substring(0, ta.selectionStart);
+    const rowLines = val.split('\n');
+    setCursorInfo({ line: rowLines.length, col: rowLines[rowLines.length - 1].length + 1 });
+  }, []);
+
+  // Insert at cursor position
+  const insertAtCursor = useCallback((text) => {
+    const ta = textareaRef.current;
+    if (!ta) { onChange((content ? content + '\n' : '') + text); return; }
+    const pos = ta.selectionStart;
+    const val = ta.value;
+    const before = val.substring(0, pos);
+    const after = val.substring(ta.selectionEnd);
+    const needPrefixNL = before.length > 0 && !before.endsWith('\n');
+    const needSuffixNL = after.length > 0 && !after.startsWith('\n');
+    const insert = (needPrefixNL ? '\n' : '') + text + (needSuffixNL ? '\n' : '');
+    const newVal = before + insert + after;
+    onChange(newVal);
+    const newPos = before.length + insert.length - (needSuffixNL ? 1 : 0);
+    requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = newPos; ta.focus(); });
+  }, [content, onChange]);
+
+  const getCursorPixelPos = useCallback(() => {
+    const ta = textareaRef.current;
+    if (!ta) return { top: 0, left: 0 };
+    const val = ta.value.substring(0, ta.selectionStart);
+    const rowLines = val.split('\n');
+    const row = rowLines.length - 1;
+    const col = rowLines[rowLines.length - 1].length;
+    return { top: (row + 1) * 20.8 - ta.scrollTop, left: Math.min(col * 7.8 + 8 - ta.scrollLeft, ta.clientWidth - 200) };
+  }, []);
+
+  const triggerAutocomplete = useCallback(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const pos = ta.selectionStart;
+    const before = ta.value.substring(0, pos);
+    const lineStart = before.lastIndexOf('\n') + 1;
+    const lineText = before.substring(lineStart);
+    const col = pos - lineStart;
+    const suggestions = getAutocompleteSuggestions(lineText, col, targetVersion);
+    if (suggestions.length > 0) {
+      setAcItems(suggestions.slice(0, 10));
+      setAcIndex(0);
+      setAcPos(getCursorPixelPos());
+    } else { setAcItems([]); }
+  }, [getCursorPixelPos, targetVersion]);
+
+  const insertCompletion = useCallback((text) => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const pos = ta.selectionStart;
+    const val = ta.value;
+    const before = val.substring(0, pos);
+    const match = before.match(/[\w@._:-]*$/);
+    const wordStart = pos - (match ? match[0].length : 0);
+    const inBracket = before.lastIndexOf('[') > before.lastIndexOf(']');
+    const suffix = (text.endsWith('=') || inBracket) ? '' : ' ';
+    const newVal = val.substring(0, wordStart) + text + suffix + val.substring(pos);
+    onChange(newVal);
+    const newPos = wordStart + text.length + suffix.length;
+    requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = newPos; ta.focus(); });
+    setAcItems([]);
+  }, [onChange]);
+
+  const handleScroll = () => {
+    if (preRef.current && textareaRef.current) { preRef.current.scrollTop = textareaRef.current.scrollTop; preRef.current.scrollLeft = textareaRef.current.scrollLeft; }
+    if (lineNumRef.current && textareaRef.current) { lineNumRef.current.scrollTop = textareaRef.current.scrollTop; }
+    setAcItems(prev => prev.length > 0 ? [] : prev);
+  };
+
+  const handleKeyDown = (e) => {
+    if (acItems.length > 0) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); setAcIndex(i => (i + 1) % acItems.length); return; }
+      if (e.key === 'ArrowUp') { e.preventDefault(); setAcIndex(i => (i - 1 + acItems.length) % acItems.length); return; }
+      if (e.key === 'Tab' || e.key === 'Enter') { if (acItems[acIndex]) { e.preventDefault(); insertCompletion(acItems[acIndex].l); return; } }
+      if (e.key === 'Escape') { e.preventDefault(); setAcItems([]); return; }
+    }
+    // Command palette
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); setShowPalette(true); setPaletteSearch(''); return; }
+    // Tab indent
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const ta = e.target; const start = ta.selectionStart; const end = ta.selectionEnd;
+      const newVal = ta.value.substring(0, start) + '  ' + ta.value.substring(end);
+      onChange(newVal);
+      requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = start + 2; });
+    }
+  };
+
+  // Builder helpers
+  const selectBuilderCmd = (cmd) => {
+    setBuilderCmd(cmd);
+    const defaults = {};
+    cmd.fields.forEach(f => { defaults[f.key] = f.def ?? ''; });
+    setBuilderFields(defaults);
+  };
+  const builderPreview = builderCmd ? builderCmd.build(builderFields) : '';
+  const insertBuilderResult = () => { if (builderPreview) insertAtCursor(builderPreview); };
+
+  // Palette filtering
+  const paletteItems = useMemo(() => {
+    const all = [];
+    QUICK_COMMANDS.forEach(q => all.push({ type:'quick', label: q.label, desc: q.desc, icon: q.icon, tpl: q.tpl }));
+    COMMAND_BUILDER_DEFS.forEach(c => all.push({ type:'builder', label: c.name, desc: c.cat, icon: c.icon, cmd: c }));
+    SNIPPET_TEMPLATES.forEach(s => all.push({ type:'snippet', label: s.name, desc: s.desc, icon: s.icon, lines: s.lines }));
+    if (!paletteSearch) return all;
+    const q = paletteSearch.toLowerCase();
+    return all.filter(a => a.label.toLowerCase().includes(q) || a.desc.toLowerCase().includes(q));
+  }, [paletteSearch]);
+
+  return (
+    <div className="flex-1 flex flex-col min-h-0">
+      {/* Top toolbar */}
+      <div style={{display:'flex',alignItems:'center',gap:4,padding:'3px 8px',background:'#12121e',borderBottom:'1px solid #2a2a4a',flexShrink:0,overflow:'hidden'}}>
+        <span style={{fontSize:11,color:'#4fc3f7',fontWeight:700,marginRight:4}}>⚡ {file?.name || 'mcfunction'}</span>
+        <div style={{display:'flex',gap:2,overflow:'auto',flex:1}}>
+          {QUICK_COMMANDS.slice(0, 12).map(qc => (
+            <button key={qc.label} onClick={() => insertAtCursor(qc.tpl)} title={qc.desc}
+              style={{display:'flex',alignItems:'center',gap:3,padding:'2px 6px',fontSize:10,borderRadius:3,border:'1px solid #333',background:'#1a1a2e',color:'#aaa',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
+              <span style={{fontSize:12}}>{qc.icon}</span>{qc.label}
+            </button>
+          ))}
+        </div>
+        <button onClick={() => { setShowPalette(true); setPaletteSearch(''); }} title="コマンドパレット (Ctrl+K)"
+          style={{padding:'2px 8px',fontSize:10,borderRadius:3,border:'1px solid #4fc3f7',background:'#4fc3f720',color:'#4fc3f7',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
+          ⌘K パレット
+        </button>
+        <button onClick={() => setCmdSidebarOpen(p => !p)} title={cmdSidebarOpen ? 'サイドバーを閉じる' : 'コマンドツール'}
+          style={{padding:'2px 8px',fontSize:10,borderRadius:3,border:'1px solid #555',background: cmdSidebarOpen ? '#4fc3f730' : '#1a1a2e',color: cmdSidebarOpen ? '#4fc3f7' : '#888',cursor:'pointer',whiteSpace:'nowrap',flexShrink:0}}>
+          {cmdSidebarOpen ? '◀ ツール' : '▶ ツール'}
+        </button>
+      </div>
+
+      {/* Main content: editor + sidebar */}
+      <div className="flex flex-1 min-h-0">
+        {/* Code Editor Area */}
+        <div className="flex-1 flex flex-col min-h-0 min-w-0">
+          {/* Editor header */}
+          <div className="flex items-center justify-between px-3 py-1 bg-mc-dark/50 border-b border-mc-border text-xs" style={{flexShrink:0}}>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-mc-muted" style={{fontSize:10}}>{file?.path || file?.name}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {mcfErrorCount > 0 && <span className="flex items-center gap-1 text-mc-accent"><AlertTriangle size={10} /> {mcfErrorCount}</span>}
+              {mcfWarnCount > 0 && <span className="flex items-center gap-1 text-mc-warning"><Info size={10} /> {mcfWarnCount}</span>}
+              {mcfErrorCount === 0 && mcfWarnCount === 0 && content.trim() && <span className="flex items-center gap-1 text-mc-success"><CheckCircle size={10} /> OK</span>}
+            </div>
+          </div>
+
+          {/* Editor body with line numbers */}
+          <div className="flex flex-1 min-h-0 overflow-hidden">
+            <div ref={lineNumRef} className="bg-mc-darker/50 py-2 pr-2 pl-3 text-right select-none overflow-hidden border-r border-mc-border/50 flex-shrink-0"
+              style={{ width: `${Math.max(3, String(lineCount).length) * 10 + 24}px` }}>
+              {Array.from({ length: lineCount }, (_, i) => {
+                const err = lineErrors[i + 1];
+                return (
+                  <div key={i} className={`line-num ${err ? (err.type === 'error' ? 'text-mc-accent' : 'text-mc-warning') : 'text-mc-muted/40'}`}
+                    title={err ? err.msg : undefined} style={{fontSize:13,lineHeight:'20.8px'}}>
+                    {err ? (err.type === 'error' ? '●' : '▲') : (i + 1)}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="relative flex-1 min-w-0">
+              <pre ref={preRef} className="absolute inset-0 overflow-auto py-2 px-3 editor-area whitespace-pre pointer-events-none"
+                aria-hidden="true" dangerouslySetInnerHTML={{ __html: highlighted + '\n' }} />
+              <textarea ref={textareaRef}
+                className="absolute inset-0 bg-transparent text-transparent caret-gray-300 py-2 px-3 editor-area whitespace-pre resize-none outline-none w-full h-full overflow-auto"
+                value={content} onChange={e => { onChange(e.target.value); if (acRafRef.current) cancelAnimationFrame(acRafRef.current); acRafRef.current = requestAnimationFrame(triggerAutocomplete); }}
+                onScroll={handleScroll} onKeyDown={handleKeyDown}
+                onClick={() => { setAcItems([]); updateCursorInfo(); }}
+                onKeyUp={updateCursorInfo} onSelect={updateCursorInfo}
+                spellCheck={false} autoComplete="off" autoCorrect="off" autoCapitalize="off" />
+              {/* Autocomplete popup */}
+              {acItems.length > 0 && (
+                <div className="absolute z-50 bg-mc-panel border border-mc-border rounded shadow-xl max-h-52 overflow-y-auto anim-scale"
+                  style={{ top: acPos.top, left: Math.max(0, acPos.left) }}>
+                  {acItems.map((item, i) => (
+                    <div key={item.l} className={`px-3 py-1.5 text-xs cursor-pointer flex items-center gap-3 min-w-[200px] ${i === acIndex ? 'bg-mc-info/30 text-white' : 'text-mc-text hover:bg-mc-dark'}`}
+                      onMouseDown={(e) => { e.preventDefault(); insertCompletion(item.l); }}>
+                      <span className="font-mono text-sky-300 font-medium">{item.l}</span>
+                      {item.v && <span className="text-[9px] px-1 py-0.5 rounded bg-mc-info/20 text-mc-info flex-shrink-0">{item.v}+</span>}
+                      <span className="text-mc-muted text-[10px] truncate">{item.d}</span>
+                    </div>
+                  ))}
+                  <div className="px-3 py-1 text-[9px] text-mc-muted/50 border-t border-mc-border/30">↑↓選択 Tab/Enter確定 Esc閉じる</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Status bar */}
+          <div style={{display:'flex',alignItems:'center',gap:12,padding:'2px 12px',background:'#0d0d1a',borderTop:'1px solid #2a2a4a',fontSize:10,color:'#666',flexShrink:0}}>
+            <span>行 {cursorInfo.line}, 列 {cursorInfo.col}</span>
+            <span>{cmdCount} コマンド / {lineCount} 行</span>
+            {mcfErrorCount > 0 && <span style={{color:'#f44'}}>エラー {mcfErrorCount}</span>}
+            {mcfWarnCount > 0 && <span style={{color:'#fa4'}}>警告 {mcfWarnCount}</span>}
+            <span style={{marginLeft:'auto'}}>mcfunction</span>
+            <span>UTF-8</span>
+            <span style={{color:'#4fc3f7'}}>補完: 入力中に候補</span>
+          </div>
+        </div>
+
+        {/* Command Sidebar */}
+        {cmdSidebarOpen && (
+          <div style={{width:280,borderLeft:'1px solid #2a2a4a',display:'flex',flexDirection:'column',background:'#111122',flexShrink:0}}>
+            {/* Sidebar tabs */}
+            <div style={{display:'flex',borderBottom:'1px solid #2a2a4a',flexShrink:0}}>
+              {[{id:'quick',label:'クイック',icon:'⚡'},{id:'builder',label:'ビルダー',icon:'🔧'},{id:'snippets',label:'テンプレ',icon:'📋'}].map(t => (
+                <button key={t.id} onClick={() => setSidebarTab(t.id)}
+                  style={{flex:1,padding:'6px 4px',fontSize:10,border:'none',cursor:'pointer',borderBottom: sidebarTab === t.id ? '2px solid #4fc3f7' : '2px solid transparent',
+                    background:'transparent',color: sidebarTab === t.id ? '#4fc3f7' : '#888'}}>
+                  {t.icon} {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Sidebar content */}
+            <div style={{flex:1,overflowY:'auto',padding:8}}>
+              {/* QUICK TAB */}
+              {sidebarTab === 'quick' && (
+                <div style={{display:'flex',flexDirection:'column',gap:3}}>
+                  <div style={{fontSize:10,color:'#888',padding:'2px 4px',marginBottom:2}}>クリックでカーソル位置に挿入</div>
+                  {QUICK_COMMANDS.map(qc => (
+                    <button key={qc.label} onClick={() => insertAtCursor(qc.tpl)}
+                      style={{display:'flex',alignItems:'center',gap:6,padding:'6px 8px',borderRadius:4,border:'1px solid #2a2a4a',background:'#1a1a2e',cursor:'pointer',textAlign:'left'}}>
+                      {MCF_CMD_ITEMS[qc.label] ? <McIcon id={MCF_CMD_ITEMS[qc.label]} size={20} /> : <span style={{fontSize:16,width:20,textAlign:'center'}}>{qc.icon}</span>}
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:11,color:'#ddd',fontWeight:600}}>{qc.label}</div>
+                        <div style={{fontSize:9,color:'#777',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{qc.desc}</div>
+                      </div>
+                      <Plus size={12} style={{color:'#4fc3f7',flexShrink:0}} />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* BUILDER TAB */}
+              {sidebarTab === 'builder' && (
+                <div style={{display:'flex',flexDirection:'column',gap:4}}>
+                  {!builderCmd ? (
+                    <>
+                      {/* Category filter */}
+                      <div style={{display:'flex',flexWrap:'wrap',gap:2,marginBottom:4}}>
+                        <button onClick={() => setBuilderCat(null)} style={{padding:'2px 6px',fontSize:9,borderRadius:3,border:'1px solid #333',
+                          background: !builderCat ? '#4fc3f730' : '#1a1a2e',color: !builderCat ? '#4fc3f7' : '#888',cursor:'pointer'}}>全て</button>
+                        {COMMAND_BUILDER_CATS.map(cat => (
+                          <button key={cat} onClick={() => setBuilderCat(cat)} style={{padding:'2px 6px',fontSize:9,borderRadius:3,border:'1px solid #333',
+                            background: builderCat === cat ? '#4fc3f730' : '#1a1a2e',color: builderCat === cat ? '#4fc3f7' : '#888',cursor:'pointer'}}>{cat}</button>
+                        ))}
+                      </div>
+                      {/* Command list */}
+                      {COMMAND_BUILDER_DEFS.filter(c => !builderCat || c.cat === builderCat).map(cmd => (
+                        <button key={cmd.id} onClick={() => selectBuilderCmd(cmd)}
+                          style={{display:'flex',alignItems:'center',gap:6,padding:'5px 8px',borderRadius:4,border:'1px solid #2a2a4a',background:'#1a1a2e',cursor:'pointer',textAlign:'left'}}>
+                          <span style={{fontSize:14}}>{cmd.icon}</span>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:11,color:'#ddd'}}>{cmd.name}</div>
+                            <div style={{fontSize:9,color:'#666'}}>{cmd.cat}</div>
+                          </div>
+                          <ChevronRight size={12} style={{color:'#555'}} />
+                        </button>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      {/* Builder form */}
+                      <button onClick={() => setBuilderCmd(null)} style={{display:'flex',alignItems:'center',gap:4,padding:'4px 6px',fontSize:10,color:'#4fc3f7',background:'none',border:'none',cursor:'pointer'}}>
+                        <ChevronLeft size={12} /> 戻る
+                      </button>
+                      <div style={{display:'flex',alignItems:'center',gap:6,padding:'6px 8px',borderRadius:4,background:'#1e1e3a',border:'1px solid #3a3a5a'}}>
+                        <span style={{fontSize:18}}>{builderCmd.icon}</span>
+                        <div><div style={{fontSize:12,color:'#fff',fontWeight:700}}>{builderCmd.name}</div><div style={{fontSize:9,color:'#888'}}>{builderCmd.cat}</div></div>
+                      </div>
+                      <div style={{display:'flex',flexDirection:'column',gap:6,marginTop:4}}>
+                        {builderCmd.fields.map(field => (
+                          <div key={field.key}>
+                            <label style={{fontSize:10,color:'#aaa',display:'block',marginBottom:2}}>{field.label}</label>
+                            {field.type === 'select' ? (
+                              <select value={builderFields[field.key] || ''} onChange={e => setBuilderFields(p => ({...p, [field.key]: e.target.value}))}
+                                style={{width:'100%',padding:'4px 6px',fontSize:11,borderRadius:3,border:'1px solid #333',background:'#1a1a2e',color:'#ddd'}}>
+                                {field.options.map(o => <option key={o} value={o}>{o}</option>)}
+                              </select>
+                            ) : field.type === 'checkbox' ? (
+                              <label style={{display:'flex',alignItems:'center',gap:4,fontSize:11,color:'#ccc',cursor:'pointer'}}>
+                                <input type="checkbox" checked={!!builderFields[field.key]} onChange={e => setBuilderFields(p => ({...p, [field.key]: e.target.checked}))} />
+                                {field.label}
+                              </label>
+                            ) : field.type === 'number' ? (
+                              <input type="number" value={builderFields[field.key] ?? ''} min={field.min} max={field.max} step={field.step || 1}
+                                onChange={e => setBuilderFields(p => ({...p, [field.key]: Number(e.target.value)}))}
+                                style={{width:'100%',padding:'4px 6px',fontSize:11,borderRadius:3,border:'1px solid #333',background:'#1a1a2e',color:'#ddd'}} />
+                            ) : field.type === 'mc_item' || field.type === 'mc_item_optional' ? (
+                              <div style={{display:'flex',alignItems:'center',gap:4}}>
+                                <McIcon id={builderFields[field.key] || 'minecraft:stone'} size={20} />
+                                <select value={builderFields[field.key] || ''} onChange={e => setBuilderFields(p => ({...p, [field.key]: e.target.value}))}
+                                  style={{flex:1,padding:'4px 4px',fontSize:10,borderRadius:3,border:'1px solid #333',background:'#1a1a2e',color:'#ddd'}}>
+                                  {field.type === 'mc_item_optional' && <option value="">なし</option>}
+                                  {MC_ITEMS.map(it => <option key={it} value={`minecraft:${it}`}>minecraft:{it}</option>)}
+                                </select>
+                              </div>
+                            ) : field.type === 'mc_entity' ? (
+                              <select value={builderFields[field.key] || ''} onChange={e => setBuilderFields(p => ({...p, [field.key]: e.target.value}))}
+                                style={{width:'100%',padding:'4px 6px',fontSize:10,borderRadius:3,border:'1px solid #333',background:'#1a1a2e',color:'#ddd'}}>
+                                {MC_ENTITIES.map(en => <option key={en} value={`minecraft:${en}`}>minecraft:{en}</option>)}
+                              </select>
+                            ) : field.type === 'mc_effect' || field.type === 'mc_effect_optional' ? (
+                              <select value={builderFields[field.key] || ''} onChange={e => setBuilderFields(p => ({...p, [field.key]: e.target.value}))}
+                                style={{width:'100%',padding:'4px 6px',fontSize:10,borderRadius:3,border:'1px solid #333',background:'#1a1a2e',color:'#ddd'}}>
+                                {field.type === 'mc_effect_optional' && <option value="">なし</option>}
+                                {MC_EFFECTS.map(ef => <option key={ef} value={ef}>{ef}</option>)}
+                              </select>
+                            ) : field.type === 'mc_sound' ? (
+                              <select value={builderFields[field.key] || ''} onChange={e => setBuilderFields(p => ({...p, [field.key]: e.target.value}))}
+                                style={{width:'100%',padding:'4px 6px',fontSize:10,borderRadius:3,border:'1px solid #333',background:'#1a1a2e',color:'#ddd'}}>
+                                {MC_SOUNDS.map(s => <option key={s} value={`minecraft:${s}`}>minecraft:{s}</option>)}
+                              </select>
+                            ) : field.type === 'mc_particle' ? (
+                              <select value={builderFields[field.key] || ''} onChange={e => setBuilderFields(p => ({...p, [field.key]: e.target.value}))}
+                                style={{width:'100%',padding:'4px 6px',fontSize:10,borderRadius:3,border:'1px solid #333',background:'#1a1a2e',color:'#ddd'}}>
+                                {MC_PARTICLES.map(pt => <option key={pt} value={pt}>{pt}</option>)}
+                              </select>
+                            ) : field.type === 'mc_color' ? (
+                              <div style={{display:'flex',flexWrap:'wrap',gap:2}}>
+                                {MC_COLORS.map(c => (
+                                  <button key={c} onClick={() => setBuilderFields(p => ({...p, [field.key]: c}))}
+                                    style={{width:20,height:20,borderRadius:3,border: builderFields[field.key] === c ? '2px solid #fff' : '1px solid #333',
+                                      background: MC_COLOR_HEX[c] || '#888',cursor:'pointer',fontSize:0}} title={c}>{c}</button>
+                                ))}
+                              </div>
+                            ) : (
+                              <input type="text" value={builderFields[field.key] || ''} onChange={e => setBuilderFields(p => ({...p, [field.key]: e.target.value}))}
+                                style={{width:'100%',padding:'4px 6px',fontSize:11,borderRadius:3,border:'1px solid #333',background:'#1a1a2e',color:'#ddd'}} />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      {/* Preview */}
+                      {builderPreview && (
+                        <div style={{marginTop:8,padding:8,borderRadius:4,background:'#0a0a1a',border:'1px solid #2a2a4a'}}>
+                          <div style={{fontSize:9,color:'#888',marginBottom:4}}>プレビュー:</div>
+                          <pre style={{fontSize:10,color:'#4fc3f7',whiteSpace:'pre-wrap',wordBreak:'break-all',margin:0,fontFamily:'monospace'}}>{builderPreview}</pre>
+                        </div>
+                      )}
+                      <button onClick={insertBuilderResult} disabled={!builderPreview}
+                        style={{marginTop:6,padding:'6px 12px',fontSize:11,fontWeight:700,borderRadius:4,border:'none',
+                          background: builderPreview ? '#4fc3f7' : '#333',color: builderPreview ? '#000' : '#666',cursor: builderPreview ? 'pointer' : 'default'}}>
+                        ⚡ カーソル位置に挿入
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* SNIPPETS TAB */}
+              {sidebarTab === 'snippets' && (
+                <div style={{display:'flex',flexDirection:'column',gap:4}}>
+                  <div style={{fontSize:10,color:'#888',padding:'2px 4px',marginBottom:2}}>ミニゲーム用テンプレート</div>
+                  {SNIPPET_TEMPLATES.map(sn => (
+                    <div key={sn.id} style={{borderRadius:4,border:'1px solid #2a2a4a',background:'#1a1a2e',overflow:'hidden'}}>
+                      <div style={{display:'flex',alignItems:'center',gap:6,padding:'6px 8px'}}>
+                        <span style={{fontSize:16}}>{sn.icon}</span>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:11,color:'#ddd',fontWeight:600}}>{sn.name}</div>
+                          <div style={{fontSize:9,color:'#777'}}>{sn.desc} ({sn.lines.length}行)</div>
+                        </div>
+                        <button onClick={() => insertAtCursor(sn.lines.join('\n'))}
+                          style={{padding:'3px 8px',fontSize:10,borderRadius:3,border:'1px solid #4fc3f7',background:'#4fc3f720',color:'#4fc3f7',cursor:'pointer'}}>
+                          挿入
+                        </button>
+                      </div>
+                      <pre style={{margin:0,padding:'4px 8px',fontSize:9,color:'#666',background:'#0a0a16',maxHeight:60,overflow:'hidden',whiteSpace:'pre',borderTop:'1px solid #222'}}>
+                        {sn.lines.slice(0, 5).join('\n')}{sn.lines.length > 5 ? '\n...' : ''}
+                      </pre>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Command Palette Modal */}
+      {showPalette && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:9999,display:'flex',alignItems:'flex-start',justifyContent:'center',paddingTop:80}}
+          onClick={() => setShowPalette(false)}>
+          <div style={{width:480,maxHeight:'60vh',background:'#1a1a2e',border:'1px solid #4fc3f7',borderRadius:8,boxShadow:'0 20px 60px rgba(0,0,0,0.8)',display:'flex',flexDirection:'column'}}
+            onClick={e => e.stopPropagation()}>
+            <div style={{padding:'8px 12px',borderBottom:'1px solid #2a2a4a',display:'flex',alignItems:'center',gap:8}}>
+              <Search size={14} style={{color:'#4fc3f7'}} />
+              <input value={paletteSearch} onChange={e => setPaletteSearch(e.target.value)} autoFocus placeholder="コマンドを検索... (例: give, タイマー, PVP)"
+                style={{flex:1,background:'transparent',border:'none',outline:'none',color:'#fff',fontSize:13}}
+                onKeyDown={e => { if (e.key === 'Escape') setShowPalette(false); }} />
+              <span style={{fontSize:9,color:'#666'}}>Esc で閉じる</span>
+            </div>
+            <div style={{flex:1,overflowY:'auto',maxHeight:'50vh'}}>
+              {paletteItems.slice(0, 20).map((item, idx) => (
+                <button key={`${item.type}-${item.label}-${idx}`}
+                  onClick={() => {
+                    if (item.type === 'quick') insertAtCursor(item.tpl);
+                    else if (item.type === 'snippet') insertAtCursor(item.lines.join('\n'));
+                    else if (item.type === 'builder') { setSidebarTab('builder'); selectBuilderCmd(item.cmd); setCmdSidebarOpen(true); }
+                    setShowPalette(false);
+                  }}
+                  style={{width:'100%',display:'flex',alignItems:'center',gap:8,padding:'8px 12px',border:'none',borderBottom:'1px solid #1a1a30',background:'transparent',cursor:'pointer',textAlign:'left',color:'#ddd'}}
+                  onMouseEnter={e => e.currentTarget.style.background='#2a2a4a'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                  <span style={{fontSize:16,width:24,textAlign:'center'}}>{item.icon}</span>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:12,fontWeight:600}}>{item.label}</div>
+                    <div style={{fontSize:10,color:'#777'}}>{item.desc}</div>
+                  </div>
+                  <span style={{fontSize:9,padding:'1px 6px',borderRadius:3,background: item.type === 'quick' ? '#4fc3f720' : item.type === 'builder' ? '#4caf5020' : '#ff980020',
+                    color: item.type === 'quick' ? '#4fc3f7' : item.type === 'builder' ? '#4caf50' : '#ff9800'}}>
+                    {item.type === 'quick' ? '即挿入' : item.type === 'builder' ? 'ビルダー' : 'テンプレ'}
+                  </span>
+                </button>
+              ))}
+              {paletteItems.length === 0 && (
+                <div style={{padding:20,textAlign:'center',color:'#666',fontSize:12}}>該当なし</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error display */}
+      {(mcfErrorCount > 0 || mcfWarnCount > 0) && (
+        <div className="px-3 py-1 bg-mc-dark/50 border-t border-mc-border/30 text-[10px] text-mc-muted max-h-20 overflow-y-auto" style={{flexShrink:0}}>
+          {Object.entries(lineErrors).slice(0, 8).map(([ln, e]) => (
+            <div key={ln} className={`flex items-center gap-2 py-0.5 ${e.type === 'error' ? 'text-mc-accent' : 'text-mc-warning'}`}>
+              <span className="font-mono w-8 text-right">{ln}行</span>
+              <span className="truncate">{e.msg}</span>
+            </div>
+          ))}
+          {Object.keys(lineErrors).length > 8 && <div className="text-mc-muted/50 py-0.5">...他 {Object.keys(lineErrors).length - 8}件</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+// SPLIT JSON EDITOR (Visual + Code side by side)
+// ════════════════════════════════════════════════════════════
+
+function SplitJsonEditor({ file, onChange, namespace, targetVersion, VisualComponent, visualProps }) {
+  const [splitMode, setSplitMode] = useState('visual'); // 'visual' | 'split' | 'code'
+  const jsonError = useMemo(() => {
+    if (!file?.content?.trim()) return null;
+    const r = tryParseJSON(file.content);
+    return r.valid ? null : r.error;
+  }, [file?.content]);
+
+  return (
+    <div className="flex-1 flex flex-col min-h-0">
+      {/* Mode toggle bar */}
+      <div style={{display:'flex',alignItems:'center',gap:6,padding:'3px 10px',background:'#12121e',borderBottom:'1px solid #2a2a4a',flexShrink:0}}>
+        {[{id:'visual',label:'🎨 ビジュアル'},{id:'split',label:'⬛ 分割'},{id:'code',label:'📝 コード'}].map(m => (
+          <button key={m.id} onClick={() => setSplitMode(m.id)}
+            style={{padding:'3px 10px',fontSize:11,borderRadius:4,border:'none',cursor:'pointer',
+              background: splitMode === m.id ? '#4fc3f7' : '#2a2a4a',
+              color: splitMode === m.id ? '#000' : '#aaa', fontWeight: splitMode === m.id ? 700 : 400}}>
+            {m.label}
+          </button>
+        ))}
+        <span style={{marginLeft:'auto',fontSize:10,color:'#555'}}>
+          {jsonError ? <span style={{color:'#f44'}}>JSON エラー</span> : <span style={{color:'#4caf50'}}>JSON OK</span>}
+        </span>
+      </div>
+      {/* Content */}
+      <div className="flex flex-1 min-h-0">
+        {(splitMode === 'visual' || splitMode === 'split') && (
+          <div className="flex-1 min-h-0" style={{overflow:'auto', borderRight: splitMode === 'split' ? '1px solid #2a2a4a' : 'none'}}>
+            <VisualComponent file={file} onChange={onChange} namespace={namespace} {...visualProps} />
+          </div>
+        )}
+        {(splitMode === 'code' || splitMode === 'split') && (
+          <div className={splitMode === 'split' ? 'flex-1 min-h-0' : 'flex-1 min-h-0'}>
+            <CodeEditor file={file} onChange={onChange} targetVersion={targetVersion} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
 // ADVANCEMENT VISUAL EDITOR
 // ════════════════════════════════════════════════════════════
 
@@ -8377,7 +8936,6 @@ export default function App() {
   const [showSystemWizard, setShowSystemWizard] = useState(false);
   const [contextMenu, setContextMenu] = useState(null);
   const [activeTab, setActiveTab] = useState('editor');
-  const [editorViewMode, setEditorViewMode] = useState('visual'); // 'visual' | 'code'
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [initialized, setInitialized] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
@@ -9012,7 +9570,7 @@ export default function App() {
           <div className="flex-1 flex flex-col min-h-0">
             {activeTab === 'editor' ? (
               selectedFile ? (() => {
-                /* Smart Editor: detect file type */
+                /* Smart Editor: detect file type and route to appropriate editor */
                 const isMcfunction = selectedFile.name?.endsWith('.mcfunction');
                 const isRecipeJson = selectedFile.name?.endsWith('.json') && selectedFile.content?.includes('"type"') && selectedFile.content?.includes('crafting');
                 const isLootTable = selectedFile.name?.endsWith('.json') && selectedFile.content?.includes('"pools"');
@@ -9020,48 +9578,32 @@ export default function App() {
                   selectedFile.path?.includes('/advancements/') || selectedFile.path?.includes('/advancement/') ||
                   (selectedFile.content?.includes('"criteria"') && selectedFile.content?.includes('"display"'))
                 );
-                const hasVisualEditor = isMcfunction || isRecipeJson || isLootTable || isAdvancement;
-                const showVisual = hasVisualEditor && editorViewMode === 'visual';
 
-                return (
-                  <>
-                    {/* Visual/Code Toggle Bar */}
-                    {hasVisualEditor && (
-                      <div style={{display:'flex',alignItems:'center',gap:8,padding:'4px 12px',background:'#1a1a2e',borderBottom:'1px solid #2a2a4a',flexShrink:0}}>
-                        <span style={{fontSize:11,color:'#8888aa',marginRight:4}}>
-                          {isMcfunction ? '⚡ mcfunction' : isRecipeJson ? '📖 レシピ' : isLootTable ? '🎁 ルートテーブル' : '🏆 進捗'}
-                        </span>
-                        <button onClick={() => setEditorViewMode('visual')} style={{
-                          padding:'3px 10px',fontSize:11,borderRadius:4,border:'none',cursor:'pointer',
-                          background: editorViewMode === 'visual' ? '#4fc3f7' : '#2a2a4a',
-                          color: editorViewMode === 'visual' ? '#000' : '#aaa',fontWeight: editorViewMode === 'visual' ? 700 : 400,
-                        }}>🎨 ビジュアル</button>
-                        <button onClick={() => setEditorViewMode('code')} style={{
-                          padding:'3px 10px',fontSize:11,borderRadius:4,border:'none',cursor:'pointer',
-                          background: editorViewMode === 'code' ? '#4fc3f7' : '#2a2a4a',
-                          color: editorViewMode === 'code' ? '#000' : '#aaa',fontWeight: editorViewMode === 'code' ? 700 : 400,
-                        }}>📝 コード</button>
-                        <span style={{fontSize:10,color:'#666',marginLeft:'auto'}}>
-                          {showVisual ? 'ビジュアルエディタで編集中' : 'コードを直接編集中'}
-                        </span>
-                      </div>
-                    )}
-                    {/* Editor Content */}
-                    <div className="flex-1 min-h-0" style={{overflow:'auto'}}>
-                      {showVisual && isMcfunction ? (
-                        <McfunctionVisualEditor file={selectedFile} onChange={handleFileContentChange} />
-                      ) : showVisual && isRecipeJson ? (
-                        <RecipeVisualEditor file={selectedFile} onChange={handleFileContentChange} namespace={project.namespace} />
-                      ) : showVisual && isLootTable ? (
-                        <LootTableVisualEditor file={selectedFile} onChange={handleFileContentChange} />
-                      ) : showVisual && isAdvancement ? (
-                        <AdvancementVisualEditor file={selectedFile} onChange={handleFileContentChange} namespace={project.namespace} />
-                      ) : (
-                        <CodeEditor file={selectedFile} onChange={handleFileContentChange} targetVersion={project.targetVersion} />
-                      )}
-                    </div>
-                  </>
-                );
+                // mcfunction → IntegratedMcfEditor (VS Code + command builder hybrid, always)
+                if (isMcfunction) {
+                  return <IntegratedMcfEditor file={selectedFile} onChange={handleFileContentChange} targetVersion={project.targetVersion} namespace={project.namespace} />;
+                }
+
+                // Recipe JSON → SplitJsonEditor with RecipeVisualEditor
+                if (isRecipeJson) {
+                  return <SplitJsonEditor file={selectedFile} onChange={handleFileContentChange} namespace={project.namespace}
+                    targetVersion={project.targetVersion} VisualComponent={RecipeVisualEditor} visualProps={{}} />;
+                }
+
+                // Loot table → SplitJsonEditor with LootTableVisualEditor
+                if (isLootTable) {
+                  return <SplitJsonEditor file={selectedFile} onChange={handleFileContentChange} namespace={project.namespace}
+                    targetVersion={project.targetVersion} VisualComponent={LootTableVisualEditor} visualProps={{}} />;
+                }
+
+                // Advancement → SplitJsonEditor with AdvancementVisualEditor
+                if (isAdvancement) {
+                  return <SplitJsonEditor file={selectedFile} onChange={handleFileContentChange} namespace={project.namespace}
+                    targetVersion={project.targetVersion} VisualComponent={AdvancementVisualEditor} visualProps={{}} />;
+                }
+
+                // Other files → standard CodeEditor
+                return <CodeEditor file={selectedFile} onChange={handleFileContentChange} targetVersion={project.targetVersion} />;
               })() : (
                 <GalleryLanding onMinigame={() => setShowMinigameWizard(true)} onSystem={() => setShowSystemWizard(true)} onBuilder={() => setActiveTab('builder')} />
               )
