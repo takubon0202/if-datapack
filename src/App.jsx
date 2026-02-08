@@ -1320,6 +1320,105 @@ const MC_AUTO = {
     { l: '@s', d: '実行者にダメージ' }, { l: '@e', d: 'エンティティにダメージ' },
     { l: '@p', d: '最寄りプレイヤーにダメージ' }, { l: '@a', d: '全プレイヤーにダメージ' },
   ],
+  tick: [
+    { l: 'rate', d: 'ティックレート設定', v: '1.20.3' }, { l: 'step', d: '1ティック進める', v: '1.20.3' },
+    { l: 'freeze', d: 'ティック停止', v: '1.20.3' }, { l: 'unfreeze', d: 'ティック再開', v: '1.20.3' },
+    { l: 'sprint', d: '高速実行', v: '1.20.3' }, { l: 'query', d: '現在のレート取得', v: '1.20.3' },
+  ],
+  random: [
+    { l: 'value', d: '乱数値を取得', v: '1.20.2' }, { l: 'roll', d: '乱数をチャットに表示', v: '1.20.2' },
+    { l: 'reset', d: '乱数シードリセット', v: '1.20.2' },
+  ],
+  attribute: [
+    { l: '@s', d: '実行者' }, { l: '@p', d: '最寄りプレイヤー' },
+    { l: '@e', d: 'エンティティ' }, { l: '@a', d: '全プレイヤー' },
+  ],
+  'attribute.action': [
+    { l: 'get', d: '属性値取得' }, { l: 'base', d: '基本値操作' },
+    { l: 'modifier', d: '修飾子操作' },
+  ],
+  experience: [
+    { l: 'add', d: '経験値加算' }, { l: 'set', d: '経験値設定' }, { l: 'query', d: '経験値取得' },
+  ],
+  xp: [
+    { l: 'add', d: '経験値加算' }, { l: 'set', d: '経験値設定' }, { l: 'query', d: '経験値取得' },
+  ],
+  worldborder: [
+    { l: 'set', d: 'サイズ設定' }, { l: 'add', d: 'サイズ増減' },
+    { l: 'center', d: '中心設定' }, { l: 'damage', d: 'ダメージ設定' },
+    { l: 'get', d: '現在値取得' }, { l: 'warning', d: '警告設定' },
+  ],
+  'worldborder.damage': [
+    { l: 'amount', d: 'ダメージ量' }, { l: 'buffer', d: 'バッファ距離' },
+  ],
+  'worldborder.warning': [
+    { l: 'distance', d: '警告距離' }, { l: 'time', d: '警告時間' },
+  ],
+  forceload: [
+    { l: 'add', d: 'チャンク追加' }, { l: 'remove', d: 'チャンク解除' },
+    { l: 'query', d: '読込状況確認' },
+  ],
+  loot: [
+    { l: 'give', d: 'プレイヤーに付与', v: '1.14' }, { l: 'insert', d: 'コンテナに挿入', v: '1.14' },
+    { l: 'spawn', d: 'ワールドにスポーン', v: '1.14' }, { l: 'replace', d: 'スロット置換', v: '1.14' },
+  ],
+  recipe: [
+    { l: 'give', d: 'レシピ解放' }, { l: 'take', d: 'レシピ剥奪' },
+  ],
+  stopsound: [
+    { l: '@s', d: '実行者' }, { l: '@a', d: '全プレイヤー' }, { l: '@p', d: '最寄りプレイヤー' },
+  ],
+  fillbiome: [
+    { l: '~', d: '相対座標', v: '1.19.3' }, { l: '^', d: 'ローカル座標', v: '1.19.3' },
+  ],
+  'return': [
+    { l: 'run', d: '関数の戻り値をrun', v: '1.20.2' }, { l: 'fail', d: '失敗を返す', v: '1.20.2' },
+  ],
+  defaultgamemode: [
+    { l: 'survival', d: 'サバイバル' }, { l: 'creative', d: 'クリエイティブ' },
+    { l: 'adventure', d: 'アドベンチャー' }, { l: 'spectator', d: 'スペクテイター' },
+  ],
+  clone: [
+    { l: '~', d: '相対座標' }, { l: '^', d: 'ローカル座標' },
+  ],
+  tag: [
+    { l: '@s', d: '実行者のタグ' }, { l: '@a', d: '全プレイヤーのタグ' },
+    { l: '@e', d: '全エンティティのタグ' }, { l: '@p', d: '最寄りプレイヤーのタグ' },
+  ],
+  'tag.action': [
+    { l: 'add', d: 'タグ追加' }, { l: 'remove', d: 'タグ削除' }, { l: 'list', d: 'タグ一覧' },
+  ],
+  trigger: [
+    { l: 'set', d: '値設定' }, { l: 'add', d: '値加算' },
+  ],
+  'scoreboard.objectives.setdisplay': [
+    { l: 'sidebar', d: 'サイドバー' }, { l: 'list', d: 'タブリスト' },
+    { l: 'belowName', d: '名前の下', rm: '1.20.2' },
+    { l: 'below_name', d: '名前の下', v: '1.20.2' },
+  ],
+  'team.modify.color': [
+    { l: 'red', d: '赤' }, { l: 'blue', d: '青' }, { l: 'green', d: '緑' },
+    { l: 'yellow', d: '黄' }, { l: 'aqua', d: '水色' }, { l: 'white', d: '白' },
+    { l: 'black', d: '黒' }, { l: 'dark_red', d: '暗い赤' }, { l: 'dark_blue', d: '暗い青' },
+    { l: 'dark_green', d: '暗い緑' }, { l: 'dark_aqua', d: '暗い水色' },
+    { l: 'dark_purple', d: '紫' }, { l: 'gold', d: '金' }, { l: 'gray', d: '灰' },
+    { l: 'dark_gray', d: '暗い灰' }, { l: 'light_purple', d: '薄紫' },
+    { l: 'reset', d: 'リセット' },
+  ],
+  'bossbar.set.color': [
+    { l: 'blue', d: '青' }, { l: 'green', d: '緑' }, { l: 'pink', d: 'ピンク' },
+    { l: 'purple', d: '紫' }, { l: 'red', d: '赤' }, { l: 'white', d: '白' },
+    { l: 'yellow', d: '黄' },
+  ],
+  'bossbar.set.style': [
+    { l: 'progress', d: 'プログレスバー' }, { l: 'notched_6', d: '6分割' },
+    { l: 'notched_10', d: '10分割' }, { l: 'notched_12', d: '12分割' },
+    { l: 'notched_20', d: '20分割' },
+  ],
+  'execute.if.score': [
+    { l: '@s', d: '実行者スコア' }, { l: '@p', d: '最寄りプレイヤー' },
+    { l: '#', d: 'フェイクプレイヤー (#名前)' },
+  ],
   _selectors: [
     { l: '@a', d: '全プレイヤー' }, { l: '@p', d: '最寄りプレイヤー' },
     { l: '@r', d: 'ランダムプレイヤー' }, { l: '@s', d: '実行者' },
@@ -2152,22 +2251,98 @@ function stringsToAcItems(arr, prefix, category) {
   return arr.filter(s => s.startsWith(lc)).slice(0, 15).map(s => ({ l: s, d: category || '' }));
 }
 
-// Detect which argument position expects an item/entity/effect/etc
+// Command argument type definitions for contextual completion
+// null = selector/coords/other (no special completion), string = type key
 const CMD_ARG_TYPES = {
   give: [null, 'item', 'number'],
-  clear: [null, 'item'],
+  clear: [null, 'item', 'number'],
   item: [null, null, null, 'item'],
-  summon: ['entity'],
+  summon: ['entity', 'coordinate', 'coordinate', 'coordinate'],
   kill: [null],
-  tp: [null],
+  tp: [null, null, null, null],  // tp <target> <x> <y> <z> or <target> <target>
+  teleport: [null, null, null, null],
   effect: [null, null, 'effect'],
-  'effect.give': [null, 'effect'],
+  'effect.give': [null, 'effect', 'number', 'number'],
   'effect.clear': [null, 'effect'],
-  enchant: [null, 'enchantment'],
-  playsound: ['sound'],
-  particle: ['particle'],
+  enchant: [null, 'enchantment', 'number'],
+  playsound: ['sound', null, null],
+  particle: ['particle', null, null, null],
+  setblock: [null, null, null, 'block'],
+  fill: [null, null, null, null, null, null, 'block'],
+  gamemode: ['gamemode', null],
+  difficulty: ['difficulty'],
+  weather: ['weather'],
+  'time.set': ['time_value'],
+  'time.add': ['time_value'],
+  title: [null, 'title_position'],
   ride: [null],
-  damage: [null, 'number', null],
+  damage: [null, 'number', 'damage_type'],
+  attribute: [null, null, 'attribute_action'],
+  'data.get': [null, null],
+  'data.merge': [null, null],
+  'scoreboard.objectives.add': [null, 'criteria'],
+  'scoreboard.objectives.setdisplay': ['display_slot'],
+  'scoreboard.players.set': [null, null, 'number'],
+  'scoreboard.players.add': [null, null, 'number'],
+  'scoreboard.players.remove': [null, null, 'number'],
+  'scoreboard.players.operation': [null, null, 'score_operation'],
+  spawnpoint: [null, null, null, null],
+  setworldspawn: [null, null, null],
+  spreadplayers: [null, null, null, null, null],
+  'bossbar.set': [null, 'bossbar_property'],
+  'bossbar.set.color': ['bossbar_color'],
+  'bossbar.set.style': ['bossbar_style'],
+  clone: [null, null, null, null, null, null, null, null, null, 'clone_mode'],
+  'team.modify': [null, 'team_option'],
+  'team.modify.color': ['mc_color'],
+  stopsound: [null, 'sound_source', 'sound'],
+  fillbiome: [null, null, null, null, null, null, 'biome'],
+  defaultgamemode: ['gamemode'],
+  'experience.add': [null, 'number'],
+  'xp.add': [null, 'number'],
+  'worldborder.set': ['number'],
+  'worldborder.add': ['number'],
+  'tick.rate': ['number'],
+  'random.value': ['number'],
+};
+
+// Additional completion data for special types
+const SPECIAL_TYPE_COMPLETIONS = {
+  gamemode: ['survival','creative','adventure','spectator'],
+  difficulty: ['peaceful','easy','normal','hard'],
+  weather: ['clear','rain','thunder'],
+  time_value: ['day','noon','night','midnight','0','1000','6000','12000','18000'],
+  title_position: ['title','subtitle','actionbar','clear','reset','times'],
+  criteria: ['dummy','deathCount','playerKillCount','totalKillCount','health','food','air','armor','level','xp','trigger',
+    'minecraft.mined','minecraft.broken','minecraft.crafted','minecraft.used','minecraft.picked_up','minecraft.dropped','minecraft.killed','minecraft.killed_by',
+    'minecraft.custom'],
+  bossbar_property: ['value','max','color','name','style','visible','players'],
+  bossbar_color: ['blue','green','pink','purple','red','white','yellow'],
+  bossbar_style: ['progress','notched_6','notched_10','notched_12','notched_20'],
+  block: null, // uses _items (blocks are a subset)
+  attribute_action: ['get','base','modifier'],
+  display_slot: ['sidebar','list','below_name','sidebar.team.red','sidebar.team.blue','sidebar.team.green','sidebar.team.yellow',
+    'sidebar.team.aqua','sidebar.team.white','sidebar.team.black','sidebar.team.dark_red','sidebar.team.dark_blue',
+    'sidebar.team.dark_green','sidebar.team.dark_aqua','sidebar.team.dark_purple','sidebar.team.gold','sidebar.team.gray','sidebar.team.dark_gray'],
+  score_operation: ['+=','-=','*=','/=','%=','<','>','><','='],
+  clone_mode: ['replace','masked','filtered','force','move','normal'],
+  mc_color: ['red','blue','green','yellow','aqua','white','black','dark_red','dark_blue','dark_green','dark_aqua',
+    'dark_purple','gold','gray','dark_gray','light_purple','reset'],
+  team_option: ['color','friendlyFire','seeFriendlyInvisibles','nametagVisibility','deathMessageVisibility','collisionRule','prefix','suffix'],
+  sound_source: ['master','music','record','weather','block','hostile','neutral','player','ambient','voice'],
+  damage_type: ['minecraft:generic','minecraft:player_attack','minecraft:mob_attack','minecraft:arrow','minecraft:falling_block',
+    'minecraft:fall','minecraft:drown','minecraft:on_fire','minecraft:lava','minecraft:lightning_bolt','minecraft:explosion',
+    'minecraft:wither','minecraft:magic','minecraft:starve','minecraft:freeze','minecraft:sonic_boom'],
+  biome: ['plains','desert','forest','taiga','swamp','river','frozen_river','snowy_plains','mushroom_fields',
+    'beach','jungle','sparse_jungle','deep_ocean','stony_shore','old_growth_birch_forest','dark_forest','snowy_beach',
+    'windswept_hills','windswept_forest','windswept_gravelly_hills','ocean','warm_ocean','lukewarm_ocean','cold_ocean','frozen_ocean',
+    'deep_lukewarm_ocean','deep_cold_ocean','deep_frozen_ocean','sunflower_plains','flower_forest','ice_spikes',
+    'old_growth_pine_taiga','old_growth_spruce_taiga','badlands','eroded_badlands','wooded_badlands',
+    'meadow','grove','snowy_slopes','frozen_peaks','jagged_peaks','stony_peaks',
+    'cherry_grove','savanna','savanna_plateau','windswept_savanna','bamboo_jungle','mangrove_swamp',
+    'the_nether','nether_wastes','soul_sand_valley','crimson_forest','warped_forest','basalt_deltas',
+    'the_end','end_highlands','end_midlands','small_end_islands','end_barrens',
+    'deep_dark','dripstone_caves','lush_caves','the_void','pale_garden'],
 };
 
 function getAutocompleteSuggestions(lineText, cursorCol, targetVersion) {
@@ -2212,39 +2387,50 @@ function getAutocompleteSuggestions(lineText, cursorCol, targetVersion) {
 
   const cmd = completed[0].toLowerCase();
 
-  // Execute chain: improved argument skipping
+  // Execute chain: find 'run' and delegate to the run command's completion
   if (cmd === 'execute') {
+    // Find the last 'run' token to extract the actual command after it
+    let runIndex = -1;
+    for (let i = completed.length - 1; i >= 1; i--) {
+      if (completed[i].toLowerCase() === 'run') { runIndex = i; break; }
+    }
+
+    if (runIndex >= 0) {
+      // There's a 'run' in the completed tokens - delegate to normal command completion
+      const afterRun = completed.slice(runIndex + 1);
+      if (afterRun.length === 0) {
+        // Cursor is right after 'run ' - show root commands
+        if (!currentWord) return filterByVersion(MC_AUTO._root, targetVersion).slice(0, 15);
+        return filterByVersion(MC_AUTO._root, targetVersion).filter(s => s.l.startsWith(cw));
+      }
+      // Rebuild a fake line as if the command after 'run' is the top-level command
+      // e.g., "execute as @a run give @s " -> treat as "give @s " for completion
+      const fakeTokens = [...afterRun, currentWord];
+      const fakeLine = fakeTokens.join(' ');
+      return getAutocompleteSuggestions(fakeLine, fakeLine.length, targetVersion);
+    }
+
+    // No 'run' yet - provide execute subcommand suggestions
     let ctx = 'execute';
-    let expectArg = false; // true when next token is argument to skip (selector, coords, etc.)
+    let expectArg = false;
     for (let i = 1; i < completed.length; i++) {
       const tok = completed[i].toLowerCase();
       if (expectArg) { expectArg = false; continue; }
-      if (tok === 'run') { ctx = '_root'; expectArg = false; continue; }
       if (tok === 'if' || tok === 'unless') { ctx = 'execute.if'; expectArg = false; continue; }
       if (tok === 'store') { ctx = 'execute.store'; expectArg = false; continue; }
       if (tok === 'result' || tok === 'success') { ctx = 'execute.store.result'; expectArg = false; continue; }
-      if (['as', 'at', 'on'].includes(tok)) {
-        expectArg = true; ctx = 'execute'; continue; // skip next token (selector)
-      }
+      if (['as', 'at', 'on'].includes(tok)) { expectArg = true; ctx = 'execute'; continue; }
       if (['positioned', 'rotated'].includes(tok)) {
-        // positioned/rotated can take 'as <selector>' or coordinates
         const next = completed[i + 1]?.toLowerCase();
-        if (next === 'as') { i += 2; } else { i += 2; } // skip 3 coord tokens or 'as' + selector
+        if (next === 'as') { i += 2; } else { i += 2; }
         ctx = 'execute'; continue;
       }
-      if (tok === 'facing') { i += 2; ctx = 'execute'; continue; } // skip coords
-      if (tok === 'in') { expectArg = true; ctx = 'execute'; continue; } // skip dimension
+      if (tok === 'facing') { i += 2; ctx = 'execute'; continue; }
+      if (tok === 'in') { expectArg = true; ctx = 'execute'; continue; }
       if (tok === 'anchored') { expectArg = true; ctx = 'execute'; continue; }
       if (tok === 'align') { expectArg = true; ctx = 'execute'; continue; }
       if (tok === 'summon') { expectArg = true; ctx = 'execute'; continue; }
-      // After run, delegate to the run command context
-      if (ctx === '_root') {
-        // We're past 'run <cmd>', try to provide context for the run command
-        break;
-      }
     }
-    // After 'run', provide contextual suggestions for the actual command
-    if (ctx === '_root' && !currentWord) return filterByVersion(MC_AUTO._root, targetVersion).slice(0, 15);
     const items = filterByVersion(MC_AUTO[ctx] || [], targetVersion);
     if (!currentWord) return items.slice(0, 15);
     return items.filter(s => s.l.toLowerCase().startsWith(cw));
@@ -2258,12 +2444,17 @@ function getAutocompleteSuggestions(lineText, cursorCol, targetVersion) {
     const expectedType = argTypes[argIdx];
     if (!expectedType) return null;
     const cleanWord = cw.replace(/^minecraft:/, '');
-    if (expectedType === 'item') return stringsToAcItems(MC_AUTO._items, cleanWord, 'アイテムID');
+    if (expectedType === 'item' || expectedType === 'block') return stringsToAcItems(MC_AUTO._items, cleanWord, expectedType === 'block' ? 'ブロック' : 'アイテムID');
     if (expectedType === 'entity') return stringsToAcItems(MC_AUTO._entities, cleanWord, 'エンティティ');
     if (expectedType === 'effect') return stringsToAcItems(MC_AUTO._effects, cleanWord, 'エフェクト');
     if (expectedType === 'enchantment') return stringsToAcItems(MC_AUTO._enchantments, cleanWord, 'エンチャント');
     if (expectedType === 'sound') return stringsToAcItems(MC_AUTO._sounds_common, cleanWord, 'サウンド');
     if (expectedType === 'particle') return stringsToAcItems(MC_AUTO._particles, cleanWord, 'パーティクル');
+    // Check special types
+    const specialList = SPECIAL_TYPE_COMPLETIONS[expectedType];
+    if (specialList && Array.isArray(specialList)) {
+      return specialList.filter(s => s.startsWith(cw)).map(s => ({ l: s, d: expectedType }));
+    }
     return null;
   };
 
@@ -2315,6 +2506,85 @@ function getAutocompleteSuggestions(lineText, cursorCol, targetVersion) {
     }
   }
 
+  // Commands where arg[1] is a selector and arg[2] is a subcommand (tag @s add, attribute @s ...)
+  const SELECTOR_THEN_SUB = ['tag', 'attribute'];
+  if (SELECTOR_THEN_SUB.includes(cmd) && completed.length >= 2) {
+    if (completed[1]?.startsWith('@') || completed[1]?.match(/^[A-Za-z0-9_]+$/)) {
+      // Selector/player name at pos 1, show action subcommands at pos 2
+      const actionKey = `${cmd}.action`;
+      if (completed.length === 2) {
+        const actionItems = filterByVersion(MC_AUTO[actionKey] || [], targetVersion);
+        if (actionItems.length > 0) {
+          if (!currentWord) return actionItems;
+          return actionItems.filter(s => s.l.toLowerCase().startsWith(cw));
+        }
+      }
+    }
+  }
+
+  // team modify <team> <option> [value]: option at pos 3, value at pos 4
+  if (cmd === 'team' && completed.length >= 2 && completed[1]?.toLowerCase() === 'modify') {
+    if (completed.length === 3) {
+      // After 'team modify <team> ' -> show options
+      const optItems = filterByVersion(MC_AUTO['team.modify'] || [], targetVersion);
+      if (!currentWord) return optItems;
+      return optItems.filter(s => s.l.toLowerCase().startsWith(cw));
+    }
+    if (completed.length === 4) {
+      // After 'team modify <team> color ' -> show values
+      const opt = completed[3]?.toLowerCase();
+      const valueKey = `team.modify.${opt}`;
+      const valueItems = filterByVersion(MC_AUTO[valueKey] || [], targetVersion);
+      if (valueItems.length > 0) {
+        if (!currentWord) return valueItems;
+        return valueItems.filter(s => s.l.toLowerCase().startsWith(cw));
+      }
+    }
+  }
+
+  // scoreboard objectives setdisplay <slot>: skip objective name
+  if (cmd === 'scoreboard' && completed.length >= 3) {
+    const sub1 = completed[1]?.toLowerCase();
+    const sub2 = completed[2]?.toLowerCase();
+    if (sub1 === 'objectives' && sub2 === 'setdisplay' && completed.length === 3) {
+      const slots = SPECIAL_TYPE_COMPLETIONS.display_slot || [];
+      return slots.filter(s => s.startsWith(cw)).map(s => ({ l: s, d: '表示スロット' }));
+    }
+    if (sub1 === 'players' && sub2 === 'operation' && completed.length === 5) {
+      const ops = SPECIAL_TYPE_COMPLETIONS.score_operation || [];
+      return ops.filter(s => s.startsWith(cw)).map(s => ({ l: s, d: 'スコア演算' }));
+    }
+  }
+
+  // bossbar set <id> <property> [value]: property at pos 3, value at pos 4
+  if (cmd === 'bossbar' && completed.length >= 2 && completed[1]?.toLowerCase() === 'set') {
+    if (completed.length === 3) {
+      // After 'bossbar set <id> ' -> show properties
+      const propItems = filterByVersion(MC_AUTO['bossbar.set'] || [], targetVersion);
+      if (!currentWord) return propItems;
+      return propItems.filter(s => s.l.toLowerCase().startsWith(cw));
+    }
+    if (completed.length === 4) {
+      // After 'bossbar set <id> color ' -> show color values etc.
+      const prop = completed[3]?.toLowerCase();
+      const valueKey = `bossbar.set.${prop}`;
+      const valueItems = filterByVersion(MC_AUTO[valueKey] || [], targetVersion);
+      if (valueItems.length > 0) {
+        if (!currentWord) return valueItems;
+        return valueItems.filter(s => s.l.toLowerCase().startsWith(cw));
+      }
+    }
+  }
+
+  // stopsound: skip selector, then offer sound_source, then sound
+  if (cmd === 'stopsound' && completed.length === 2 && completed[1]?.startsWith('@')) {
+    const sources = SPECIAL_TYPE_COMPLETIONS.sound_source || [];
+    return sources.filter(s => s.startsWith(cw)).map(s => ({ l: s, d: 'サウンドソース' }));
+  }
+  if (cmd === 'stopsound' && completed.length === 3 && completed[1]?.startsWith('@')) {
+    return stringsToAcItems(MC_AUTO._sounds_common, cw, 'サウンド');
+  }
+
   // General: build context key from completed tokens
   let contextKey = cmd;
   if (completed.length >= 2) {
@@ -2323,6 +2593,10 @@ function getAutocompleteSuggestions(lineText, cursorCol, targetVersion) {
   }
   if (completed.length >= 3 && MC_AUTO[`${contextKey}.${completed[2]?.toLowerCase()}`]) {
     contextKey = `${contextKey}.${completed[2].toLowerCase()}`;
+  }
+  // 4th level context (e.g. team.modify.color -> team.modify.color)
+  if (completed.length >= 4 && MC_AUTO[`${contextKey}.${completed[3]?.toLowerCase()}`]) {
+    contextKey = `${contextKey}.${completed[3].toLowerCase()}`;
   }
 
   const items = filterByVersion(MC_AUTO[contextKey] || [], targetVersion);
@@ -2364,7 +2638,19 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
 
   // Check if command exists at all
   if (!MC_ALL_COMMANDS.has(cmd)) {
-    return { line: lineNum, msg: `不明なコマンド: "${cmd}" — コマンドのスペルを確認してください`, type: 'error' };
+    // Try to suggest the closest known command
+    const similar = MC_AUTO._root.find(c => {
+      const d = cmd.length > 3 ? 2 : 1;
+      let diff = 0;
+      const a = c.l, b = cmd;
+      if (Math.abs(a.length - b.length) > d) return false;
+      for (let i = 0; i < Math.max(a.length, b.length); i++) {
+        if (a[i] !== b[i]) diff++;
+      }
+      return diff <= d;
+    });
+    const hint = similar ? ` — もしかして: ${similar.l}` : ' — コマンドのスペルを確認してください';
+    return { line: lineNum, msg: `不明なコマンド: "${cmd}"${hint}`, type: 'error' };
   }
 
   // Check version-specific command availability
@@ -2438,13 +2724,32 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
     }
   }
 
-  // Check execute has run subcommand
-  if (cmd === 'execute' && tokens.length > 1 && !trimmed.includes(' run ')) {
-    return { line: lineNum, msg: 'execute コマンドに "run" がありません — execute ... run <コマンド> の形式で書いてください', type: 'warning' };
+  // Check execute: must end with 'run <command>' (only warn if > 3 tokens and no 'run')
+  if (cmd === 'execute' && tokens.length >= 4 && !trimmed.includes(' run ') && !trimmed.endsWith(' run')) {
+    // Only warn, not error — user might still be typing
+    return { line: lineNum, msg: 'execute に "run" がありません — execute ... run <コマンド> の形式で書いてください', type: 'warning' };
   }
   // Check execute run with nothing after
   if (cmd === 'execute' && /\brun\s*$/.test(trimmed)) {
     return { line: lineNum, msg: '"run" の後に実行するコマンドがありません', type: 'error' };
+  }
+  // Check that the command after 'run' is valid
+  if (cmd === 'execute') {
+    const runMatch = trimmed.match(/\brun\s+(\S+)/);
+    if (runMatch) {
+      const runCmd = runMatch[1].toLowerCase();
+      if (!MC_ALL_COMMANDS.has(runCmd)) {
+        const similar = MC_AUTO._root.find(c => {
+          let diff = 0;
+          const a = c.l, b = runCmd;
+          if (Math.abs(a.length - b.length) > 2) return false;
+          for (let i = 0; i < Math.max(a.length, b.length); i++) { if (a[i] !== b[i]) diff++; }
+          return diff <= 2;
+        });
+        const hint = similar ? ` — もしかして: ${similar.l}` : '';
+        return { line: lineNum, msg: `"run" 後の不明なコマンド: "${runCmd}"${hint}`, type: 'error' };
+      }
+    }
   }
 
   // Check for mixed coordinate types (^ and ~ mixed)
@@ -2457,15 +2762,20 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
     }
   }
 
-  // Check for common typos
-  if (cmd === 'exectue' || cmd === 'excute' || cmd === 'exeucte') {
-    return { line: lineNum, msg: `"${cmd}" → "execute" のスペルミスです`, type: 'error' };
+  // Validate scoreboard subcommand structure
+  if (cmd === 'scoreboard' && tokens.length >= 2) {
+    const sub = tokens[1]?.toLowerCase();
+    if (sub !== 'objectives' && sub !== 'players') {
+      return { line: lineNum, msg: `scoreboard のサブコマンドは "objectives" か "players" です（"${sub}" は不正）`, type: 'warning' };
+    }
   }
-  if (cmd === 'scoreborad' || cmd === 'scroeboard') {
-    return { line: lineNum, msg: `"${cmd}" → "scoreboard" のスペルミスです`, type: 'error' };
-  }
-  if (cmd === 'telaport' || cmd === 'telelport') {
-    return { line: lineNum, msg: `"${cmd}" → "teleport" か "tp" を使ってください`, type: 'error' };
+
+  // Validate effect subcommand
+  if (cmd === 'effect' && tokens.length >= 2) {
+    const sub = tokens[1]?.toLowerCase();
+    if (sub !== 'give' && sub !== 'clear' && !sub.startsWith('@')) {
+      return { line: lineNum, msg: `effect のサブコマンドは "give" か "clear" です（"${sub}" は不正）`, type: 'warning' };
+    }
   }
 
   return null;
