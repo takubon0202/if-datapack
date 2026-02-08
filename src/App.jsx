@@ -7006,6 +7006,8 @@ function PreviewPanel({ project, files, errors }) {
   const mcmeta = useMemo(() => generatePackMcmeta(project), [project]);
   const mcmetaStr = JSON.stringify(mcmeta, null, 2);
 
+  const hasMcf = useMemo(() => files.some(f => f.name?.endsWith('.mcfunction')), [files]);
+
   const buildTreeText = (parentId, prefix) => {
     const children = getChildren(files, parentId);
     return children.map((child, i) => {
@@ -7040,6 +7042,7 @@ function PreviewPanel({ project, files, errors }) {
     { key: 'mcmeta', label: 'pack.mcmeta' },
     { key: 'tree', label: '構造プレビュー' },
     { key: 'validation', label: `検証 ${errCount > 0 ? `(${errCount})` : ''}` },
+    ...(hasMcf ? [{ key: 'simulator', label: '🧪 シミュレーション' }] : []),
   ];
 
   return (
@@ -7106,7 +7109,676 @@ function PreviewPanel({ project, files, errors }) {
             )}
           </div>
         )}
+
+        {tab === 'simulator' && (
+          <div className="anim-fade" style={{margin:'-12px',flex:1,display:'flex',flexDirection:'column',minHeight:0}}>
+            <SimulatorPanel project={project} files={files} />
+          </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+// DATAPACK SIMULATOR - 仮実行テスト
+// ════════════════════════════════════════════════════════════
+
+class MCSimState {
+  constructor() { this.reset(); }
+  reset() {
+    this.objectives = {};   // { name: { criteria, display } }
+    this.scores = {};       // { "player:objective": value }
+    this.tags = {};         // { player: Set<tag> }
+    this.teams = {};        // { name: { color, display, members:Set } }
+    this.bossbars = {};     // { id: { name, max, value, color, style, visible } }
+    this.gamerules = {};    // { rule: value }
+    this.chatLog = [];      // [{ type, text, color, time }]
+    this.titleDisplay = null; // { title, subtitle, actionbar }
+    this.effects = {};      // { "player:effect": { dur, amp } }
+    this.tickCount = 0;
+    this.executedFunctions = []; // tracking
+    this.warnings = [];
+    this.errors = [];
+  }
+
+  log(type, text, color) {
+    this.chatLog.push({ type, text, color: color || '#ccc', time: this.tickCount });
+  }
+  warn(msg) { this.warnings.push({ tick: this.tickCount, msg }); }
+  error(msg) { this.errors.push({ tick: this.tickCount, msg }); }
+
+  getScore(player, obj) {
+    return this.scores[`${player}:${obj}`] ?? null;
+  }
+  setScore(player, obj, val) {
+    if (!this.objectives[obj]) { this.warn(`スコアボード "${obj}" が未作成です`); return; }
+    this.scores[`${player}:${obj}`] = val;
+  }
+}
+
+function simulateCommand(line, state, files, namespace, depth) {
+  const trimmed = line.trim();
+  if (!trimmed || trimmed.startsWith('#')) return;
+  if (depth > 50) { state.error('関数の再帰が深すぎます (50超)'); return; }
+
+  const tokens = trimmed.split(/\s+/);
+  const cmd = tokens[0].toLowerCase();
+
+  // Handle execute chains - extract the run command
+  if (cmd === 'execute') {
+    const runIdx = tokens.indexOf('run');
+    if (runIdx >= 0 && runIdx < tokens.length - 1) {
+      const runLine = tokens.slice(runIdx + 1).join(' ');
+      simulateCommand(runLine, state, files, namespace, depth);
+    } else {
+      state.warn(`execute に run が見つかりません: ${trimmed.substring(0, 60)}...`);
+    }
+    return;
+  }
+
+  // scoreboard objectives add <name> <criteria> [display]
+  if (cmd === 'scoreboard') {
+    const sub1 = tokens[1]?.toLowerCase();
+    const sub2 = tokens[2]?.toLowerCase();
+    if (sub1 === 'objectives') {
+      if (sub2 === 'add' && tokens[3]) {
+        state.objectives[tokens[3]] = { criteria: tokens[4] || 'dummy', display: tokens.slice(5).join(' ') || tokens[3] };
+        state.log('system', `スコアボード "${tokens[3]}" を作成 (${tokens[4] || 'dummy'})`, '#4fc3f7');
+      } else if (sub2 === 'remove' && tokens[3]) {
+        delete state.objectives[tokens[3]];
+        // Remove all scores for this objective
+        Object.keys(state.scores).forEach(k => { if (k.endsWith(':' + tokens[3])) delete state.scores[k]; });
+        state.log('system', `スコアボード "${tokens[3]}" を削除`, '#ff9800');
+      } else if (sub2 === 'setdisplay' && tokens[3]) {
+        state.log('system', `スコアボード表示: ${tokens[3]} = ${tokens[4] || '(なし)'}`, '#888');
+      }
+    } else if (sub1 === 'players') {
+      const target = tokens[3] || '@s';
+      const obj = tokens[4];
+      if (!obj) return;
+      const val = parseInt(tokens[5]) || 0;
+      const players = resolveSelector(target);
+      players.forEach(p => {
+        if (sub2 === 'set') { state.setScore(p, obj, val); state.log('score', `${p} の ${obj} = ${val}`, '#b5cea8'); }
+        else if (sub2 === 'add') { const cur = state.getScore(p, obj) || 0; state.setScore(p, obj, cur + val); state.log('score', `${p} の ${obj} += ${val} → ${cur + val}`, '#b5cea8'); }
+        else if (sub2 === 'remove') { const cur = state.getScore(p, obj) || 0; state.setScore(p, obj, cur - val); state.log('score', `${p} の ${obj} -= ${val} → ${cur - val}`, '#b5cea8'); }
+        else if (sub2 === 'reset') { delete state.scores[`${p}:${obj}`]; state.log('score', `${p} の ${obj} をリセット`, '#ff9800'); }
+        else if (sub2 === 'operation' && tokens[6] && tokens[7]) {
+          const op = tokens[5]; const srcPlayer = resolveSelector(tokens[6])[0]; const srcObj = tokens[7];
+          const a = state.getScore(p, obj) || 0; const b = state.getScore(srcPlayer, srcObj) || 0;
+          let result = a;
+          if (op === '+=') result = a + b;
+          else if (op === '-=') result = a - b;
+          else if (op === '*=') result = a * b;
+          else if (op === '/=') result = b !== 0 ? Math.trunc(a / b) : 0;
+          else if (op === '%=') result = b !== 0 ? a % b : 0;
+          else if (op === '=') result = b;
+          else if (op === '<') result = Math.min(a, b);
+          else if (op === '>') result = Math.max(a, b);
+          else if (op === '><') { state.setScore(p, obj, b); state.setScore(srcPlayer, srcObj, a); return; }
+          state.setScore(p, obj, result);
+          state.log('score', `${p}.${obj} ${op} ${srcPlayer}.${srcObj} → ${result}`, '#b5cea8');
+        }
+      });
+    }
+    return;
+  }
+
+  // tag <target> add/remove <tag>
+  if (cmd === 'tag') {
+    const target = tokens[1] || '@s';
+    const action = tokens[2]?.toLowerCase();
+    const tagName = tokens[3];
+    if (!tagName) return;
+    const players = resolveSelector(target);
+    players.forEach(p => {
+      if (!state.tags[p]) state.tags[p] = new Set();
+      if (action === 'add') { state.tags[p].add(tagName); state.log('tag', `${p} にタグ "${tagName}" を追加`, '#ce93d8'); }
+      else if (action === 'remove') { state.tags[p].delete(tagName); state.log('tag', `${p} からタグ "${tagName}" を削除`, '#ff9800'); }
+    });
+    return;
+  }
+
+  // team add/remove/join/modify
+  if (cmd === 'team') {
+    const sub = tokens[1]?.toLowerCase();
+    if (sub === 'add' && tokens[2]) {
+      state.teams[tokens[2]] = { color: 'white', display: tokens.slice(3).join(' ') || tokens[2], members: new Set() };
+      state.log('team', `チーム "${tokens[2]}" を作成`, '#4fc3f7');
+    } else if (sub === 'remove' && tokens[2]) {
+      delete state.teams[tokens[2]];
+      state.log('team', `チーム "${tokens[2]}" を削除`, '#ff9800');
+    } else if (sub === 'join' && tokens[2]) {
+      const team = tokens[2];
+      const members = tokens[3] ? resolveSelector(tokens[3]) : ['@s'];
+      if (state.teams[team]) { members.forEach(m => state.teams[team].members.add(m)); }
+      state.log('team', `${members.join(',')} がチーム "${team}" に参加`, '#66bb6a');
+    } else if (sub === 'modify' && tokens[2] && tokens[3]) {
+      if (state.teams[tokens[2]]) {
+        if (tokens[3] === 'color') state.teams[tokens[2]].color = tokens[4] || 'white';
+      }
+    }
+    return;
+  }
+
+  // bossbar
+  if (cmd === 'bossbar') {
+    const sub = tokens[1]?.toLowerCase();
+    if (sub === 'add' && tokens[2]) {
+      state.bossbars[tokens[2]] = { name: tokens.slice(3).join(' ') || tokens[2], max: 100, value: 0, color: 'white', visible: true };
+      state.log('bossbar', `ボスバー "${tokens[2]}" を作成`, '#e91e63');
+    } else if (sub === 'set' && tokens[2]) {
+      const id = tokens[2]; const prop = tokens[3]?.toLowerCase(); const val = tokens.slice(4).join(' ');
+      if (state.bossbars[id]) {
+        if (prop === 'value') state.bossbars[id].value = parseInt(val) || 0;
+        else if (prop === 'max') state.bossbars[id].max = parseInt(val) || 100;
+        else if (prop === 'color') state.bossbars[id].color = val;
+        else if (prop === 'name') state.bossbars[id].name = val;
+        else if (prop === 'visible') state.bossbars[id].visible = val === 'true';
+      }
+    } else if (sub === 'remove' && tokens[2]) {
+      delete state.bossbars[tokens[2]];
+    }
+    return;
+  }
+
+  // gamerule
+  if (cmd === 'gamerule' && tokens[1]) {
+    state.gamerules[tokens[1]] = tokens[2] || 'true';
+    state.log('gamerule', `ゲームルール ${tokens[1]} = ${tokens[2] || 'true'}`, '#888');
+    return;
+  }
+
+  // say
+  if (cmd === 'say') {
+    state.log('chat', `[Server] ${tokens.slice(1).join(' ')}`, '#ccc');
+    return;
+  }
+
+  // tellraw
+  if (cmd === 'tellraw') {
+    const jsonStr = tokens.slice(2).join(' ');
+    try {
+      const parsed = JSON.parse(jsonStr);
+      const extract = (obj) => {
+        if (typeof obj === 'string') return obj;
+        if (Array.isArray(obj)) return obj.map(extract).join('');
+        return (obj.text || '') + (obj.extra ? obj.extra.map(extract).join('') : '');
+      };
+      const text = extract(parsed);
+      const color = (typeof parsed === 'object' && parsed.color) ? (MC_COLOR_HEX[parsed.color] || '#ccc') : '#ccc';
+      state.log('tellraw', text, color);
+    } catch { state.log('tellraw', jsonStr, '#ccc'); }
+    return;
+  }
+
+  // title
+  if (cmd === 'title') {
+    const pos = tokens[2]?.toLowerCase(); // title, subtitle, actionbar
+    const jsonStr = tokens.slice(3).join(' ');
+    let text = jsonStr;
+    try { const p = JSON.parse(jsonStr); text = typeof p === 'string' ? p : (p.text || jsonStr); } catch {}
+    if (!state.titleDisplay) state.titleDisplay = {};
+    if (pos === 'title') { state.titleDisplay.title = text; state.log('title', `タイトル表示: ${text}`, '#fdd835'); }
+    else if (pos === 'subtitle') { state.titleDisplay.subtitle = text; state.log('title', `サブタイトル: ${text}`, '#ddd'); }
+    else if (pos === 'actionbar') { state.titleDisplay.actionbar = text; state.log('title', `アクションバー: ${text}`, '#aaa'); }
+    else if (pos === 'clear') state.titleDisplay = null;
+    return;
+  }
+
+  // effect give/clear
+  if (cmd === 'effect') {
+    const sub = tokens[1]?.toLowerCase();
+    if (sub === 'give' && tokens[2] && tokens[3]) {
+      const targets = resolveSelector(tokens[2]);
+      const effect = tokens[3].replace(/^minecraft:/, '');
+      const dur = parseInt(tokens[4]) || 30;
+      const amp = parseInt(tokens[5]) || 0;
+      targets.forEach(p => { state.effects[`${p}:${effect}`] = { dur, amp }; });
+      state.log('effect', `${targets.join(',')} に ${effect} Lv${amp + 1} (${dur}秒)`, '#ce93d8');
+    } else if (sub === 'clear' && tokens[2]) {
+      const targets = resolveSelector(tokens[2]);
+      targets.forEach(p => {
+        if (tokens[3]) { delete state.effects[`${p}:${tokens[3].replace(/^minecraft:/, '')}`]; }
+        else { Object.keys(state.effects).forEach(k => { if (k.startsWith(p + ':')) delete state.effects[k]; }); }
+      });
+      state.log('effect', `エフェクトクリア: ${targets.join(',')}`, '#ff9800');
+    }
+    return;
+  }
+
+  // function namespace:path
+  if (cmd === 'function') {
+    const funcPath = tokens[1];
+    if (!funcPath) return;
+    state.executedFunctions.push(funcPath);
+    // Find the file in the project
+    const [ns, ...pathParts] = funcPath.split(':');
+    const relPath = pathParts.join(':');
+    const fileName = relPath + '.mcfunction';
+    // Search for matching file
+    const targetFile = files.find(f => {
+      if (f.type === 'folder') return false;
+      const fullPath = getFilePath(f, files);
+      return fullPath === `data/${ns}/function/${fileName}`;
+    });
+    if (targetFile) {
+      state.log('function', `→ function ${funcPath}`, '#569cd6');
+      const lines = (targetFile.content || '').split('\n');
+      lines.forEach(l => simulateCommand(l, state, files, namespace, depth + 1));
+      state.log('function', `← function ${funcPath} 完了`, '#569cd6');
+    } else {
+      state.warn(`関数 "${funcPath}" のファイルが見つかりません`);
+      state.log('function', `? function ${funcPath} (見つかりません)`, '#f44336');
+    }
+    return;
+  }
+
+  // give, summon, tp, kill, setblock, fill - just log
+  if (cmd === 'give') { state.log('cmd', `アイテム付与: ${tokens.slice(1).join(' ')}`, '#4caf50'); return; }
+  if (cmd === 'summon') { state.log('cmd', `エンティティ召喚: ${tokens[1] || '?'} (${tokens[2] || '~'} ${tokens[3] || '~'} ${tokens[4] || '~'})`, '#ff9800'); return; }
+  if (cmd === 'tp' || cmd === 'teleport') { state.log('cmd', `テレポート: ${tokens.slice(1).join(' ')}`, '#4fc3f7'); return; }
+  if (cmd === 'kill') { state.log('cmd', `キル: ${tokens[1] || '@s'}`, '#f44336'); return; }
+  if (cmd === 'setblock') { state.log('cmd', `ブロック設置: ${tokens[4] || '?'} at ${tokens[1] || '~'} ${tokens[2] || '~'} ${tokens[3] || '~'}`, '#888'); return; }
+  if (cmd === 'fill') { state.log('cmd', `ブロック充填: ${tokens.slice(1,7).join(' ')} → ${tokens[7] || '?'}`, '#888'); return; }
+  if (cmd === 'playsound') { state.log('cmd', `サウンド: ${tokens[1] || '?'}`, '#ab47bc'); return; }
+  if (cmd === 'particle') { state.log('cmd', `パーティクル: ${tokens[1] || '?'}`, '#ab47bc'); return; }
+  if (cmd === 'gamemode') { state.log('cmd', `ゲームモード変更: ${tokens[2] || tokens[1] || '?'} → ${tokens[1] || '?'}`, '#888'); return; }
+  if (cmd === 'spawnpoint') { state.log('cmd', `スポーン設定: ${tokens.slice(1).join(' ')}`, '#888'); return; }
+  if (cmd === 'difficulty') { state.log('cmd', `難易度: ${tokens[1] || '?'}`, '#888'); return; }
+  if (cmd === 'weather') { state.log('cmd', `天候: ${tokens[1] || '?'}`, '#888'); return; }
+  if (cmd === 'time') { state.log('cmd', `時刻: ${tokens.slice(1).join(' ')}`, '#888'); return; }
+  if (cmd === 'experience' || cmd === 'xp') { state.log('cmd', `経験値: ${tokens.slice(1).join(' ')}`, '#b5cea8'); return; }
+  if (cmd === 'enchant') { state.log('cmd', `エンチャント: ${tokens.slice(1).join(' ')}`, '#ce93d8'); return; }
+  if (cmd === 'clear') { state.log('cmd', `アイテムクリア: ${tokens.slice(1).join(' ')}`, '#ff9800'); return; }
+  if (cmd === 'advancement') { state.log('cmd', `進捗操作: ${tokens.slice(1).join(' ')}`, '#fdd835'); return; }
+  if (cmd === 'schedule') { state.log('cmd', `スケジュール: ${tokens.slice(1).join(' ')}`, '#888'); return; }
+  if (cmd === 'reload') { state.log('system', '/reload が実行されます', '#888'); return; }
+  if (cmd === 'data') { state.log('cmd', `NBTデータ: ${tokens.slice(1).join(' ')}`, '#888'); return; }
+  if (cmd === 'worldborder') { state.log('cmd', `ワールドボーダー: ${tokens.slice(1).join(' ')}`, '#888'); return; }
+  if (cmd === 'forceload') { state.log('cmd', `チャンク: ${tokens.slice(1).join(' ')}`, '#888'); return; }
+  if (cmd === 'spreadplayers') { state.log('cmd', `散布: ${tokens.slice(1).join(' ')}`, '#888'); return; }
+
+  // Fallback
+  state.log('cmd', `${trimmed.substring(0, 80)}`, '#999');
+}
+
+function resolveSelector(sel) {
+  if (!sel.startsWith('@')) return [sel]; // literal player name
+  const base = sel.substring(0, 2);
+  if (base === '@s') return ['自分'];
+  if (base === '@p') return ['最寄りのプレイヤー'];
+  if (base === '@r') return ['ランダムプレイヤー'];
+  if (base === '@a') return ['Player1', 'Player2', 'Player3'];
+  if (base === '@e') return ['Entity1', 'Entity2'];
+  if (base === '@n') return ['最近のエンティティ'];
+  return [sel];
+}
+
+function getFilePath(file, files) {
+  const parts = [file.name];
+  let cur = file;
+  while (cur.parentId) {
+    const parent = files.find(f => f.id === cur.parentId);
+    if (!parent) break;
+    parts.unshift(parent.name);
+    cur = parent;
+  }
+  return parts.join('/');
+}
+
+function SimulatorPanel({ project, files }) {
+  const [simState, setSimState] = useState(null);
+  const [simRunning, setSimRunning] = useState(false);
+  const [selectedFunc, setSelectedFunc] = useState('__load__');
+  const [tickCount, setTickCount] = useState(0);
+  const [viewTab, setViewTab] = useState('log');
+  const logRef = useRef(null);
+
+  // Find all mcfunction files
+  const mcfFiles = useMemo(() => {
+    return files.filter(f => f.name?.endsWith('.mcfunction')).map(f => ({
+      file: f,
+      path: getFilePath(f, files),
+      funcId: (() => {
+        const fp = getFilePath(f, files);
+        // data/namespace/function/path.mcfunction -> namespace:path
+        const m = fp.match(/^data\/([^/]+)\/function\/(.+)\.mcfunction$/);
+        return m ? `${m[1]}:${m[2]}` : f.name;
+      })(),
+    }));
+  }, [files]);
+
+  // Find tick and load functions from tags
+  const { loadFuncs, tickFuncs } = useMemo(() => {
+    const load = []; const tick = [];
+    files.forEach(f => {
+      const fp = getFilePath(f, files);
+      if (fp.endsWith('tags/function/load.json') || fp.endsWith('tags/functions/load.json')) {
+        try { const parsed = JSON.parse(f.content || '{}'); (parsed.values || []).forEach(v => load.push(v)); } catch {}
+      }
+      if (fp.endsWith('tags/function/tick.json') || fp.endsWith('tags/functions/tick.json')) {
+        try { const parsed = JSON.parse(f.content || '{}'); (parsed.values || []).forEach(v => tick.push(v)); } catch {}
+      }
+    });
+    return { loadFuncs: load, tickFuncs: tick };
+  }, [files]);
+
+  const runSimulation = useCallback(() => {
+    const state = new MCSimState();
+    setSimRunning(true);
+
+    if (selectedFunc === '__load__') {
+      // Run load functions
+      state.log('system', '=== /reload 実行 (load関数) ===', '#4fc3f7');
+      if (loadFuncs.length === 0) {
+        state.warn('load.json が見つかりません。tags/function/load.json を作成してください。');
+      }
+      loadFuncs.forEach(funcId => {
+        simulateCommand(`function ${funcId}`, state, files, project.namespace, 0);
+      });
+    } else if (selectedFunc === '__tick__') {
+      // Run load first, then tick N times
+      state.log('system', '=== /reload + tick シミュレーション ===', '#4fc3f7');
+      loadFuncs.forEach(funcId => {
+        simulateCommand(`function ${funcId}`, state, files, project.namespace, 0);
+      });
+      const ticks = tickCount || 1;
+      for (let t = 0; t < ticks; t++) {
+        state.tickCount = t + 1;
+        state.log('system', `--- tick ${t + 1} ---`, '#555');
+        tickFuncs.forEach(funcId => {
+          simulateCommand(`function ${funcId}`, state, files, project.namespace, 0);
+        });
+      }
+    } else {
+      // Run specific function
+      state.log('system', `=== function ${selectedFunc} を実行 ===`, '#4fc3f7');
+      simulateCommand(`function ${selectedFunc}`, state, files, project.namespace, 0);
+    }
+
+    state.log('system', `=== 実行完了 (${state.chatLog.length}ステップ) ===`, '#4caf50');
+    setSimState(state);
+    setSimRunning(false);
+    requestAnimationFrame(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight; });
+  }, [selectedFunc, tickCount, files, project, loadFuncs, tickFuncs]);
+
+  const logTypeIcons = { system: '⚙️', chat: '💬', tellraw: '📝', title: '📺', score: '📊', tag: '🏷️', team: '👥', bossbar: '📏', gamerule: '🎮', effect: '✨', function: '📂', cmd: '▶️' };
+  const viewTabs = [
+    { key:'log', label:'実行ログ', icon:'📋' },
+    { key:'scores', label:'スコアボード', icon:'📊' },
+    { key:'tags', label:'タグ/チーム', icon:'🏷️' },
+    { key:'bossbars', label:'ボスバー', icon:'📏' },
+    { key:'summary', label:'サマリー', icon:'📝' },
+  ];
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',height:'100%',background:'#111122'}}>
+      {/* Control bar */}
+      <div style={{padding:'8px 12px',borderBottom:'1px solid #2a2a4a',display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
+        <span style={{fontSize:14}}>🧪</span>
+        <select value={selectedFunc} onChange={e => setSelectedFunc(e.target.value)}
+          style={{flex:1,padding:'4px 8px',fontSize:11,borderRadius:4,border:'1px solid #3a3a5a',background:'#1a1a2e',color:'#ddd',maxWidth:280}}>
+          <option value="__load__">📦 /reload (load関数を実行)</option>
+          <option value="__tick__">⏱️ /reload + tick ({tickCount || 1}回)</option>
+          <optgroup label="個別の関数">
+            {mcfFiles.map(f => (
+              <option key={f.funcId} value={f.funcId}>📄 {f.funcId}</option>
+            ))}
+          </optgroup>
+        </select>
+        {selectedFunc === '__tick__' && (
+          <input type="number" value={tickCount || 1} onChange={e => setTickCount(Math.max(1, Math.min(200, parseInt(e.target.value) || 1)))}
+            style={{width:50,padding:'4px 6px',fontSize:11,borderRadius:4,border:'1px solid #3a3a5a',background:'#1a1a2e',color:'#ddd',textAlign:'center'}}
+            title="tickの回数" min={1} max={200} />
+        )}
+        <button onClick={runSimulation} disabled={simRunning}
+          style={{padding:'5px 14px',fontSize:11,fontWeight:700,borderRadius:4,border:'none',
+            background: simRunning ? '#333' : '#4caf50',color: simRunning ? '#666' : '#fff',cursor: simRunning ? 'default' : 'pointer'}}>
+          ▶ 実行
+        </button>
+        {simState && (
+          <button onClick={() => setSimState(null)}
+            style={{padding:'5px 10px',fontSize:10,borderRadius:4,border:'1px solid #3a3a5a',background:'#1a1a2e',color:'#aaa',cursor:'pointer'}}>
+            クリア
+          </button>
+        )}
+      </div>
+
+      {!simState ? (
+        // Initial state - show instructions
+        <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',padding:24}}>
+          <div style={{textAlign:'center',maxWidth:400}}>
+            <div style={{fontSize:40,marginBottom:12}}>🧪</div>
+            <h3 style={{fontSize:14,fontWeight:700,color:'#ddd',marginBottom:8}}>データパック シミュレーター</h3>
+            <p style={{fontSize:11,color:'#999',lineHeight:1.6,marginBottom:16}}>
+              実際のサーバーに入れずに、コマンドの動作をテストできます。<br/>
+              スコアボード操作・タグ管理・チーム設定・ボスバーなどの<br/>
+              状態変化を追跡し、結果を表示します。
+            </p>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,textAlign:'left'}}>
+              <div style={{padding:8,borderRadius:6,background:'#1a1a2e',border:'1px solid #2a2a4a'}}>
+                <div style={{fontSize:11,fontWeight:600,color:'#4caf50',marginBottom:4}}>✅ シミュレート可能</div>
+                <div style={{fontSize:10,color:'#999',lineHeight:1.5}}>scoreboard操作、tag操作、team管理、bossbar、gamerule、say/tellraw/title、effect、function呼び出しチェーン</div>
+              </div>
+              <div style={{padding:8,borderRadius:6,background:'#1a1a2e',border:'1px solid #2a2a4a'}}>
+                <div style={{fontSize:11,fontWeight:600,color:'#ff9800',marginBottom:4}}>⚠️ ログのみ</div>
+                <div style={{fontSize:10,color:'#999',lineHeight:1.5}}>give/summon/tp/kill/setblock/fill 等（ワールドに影響するコマンドは実行結果をログ表示）</div>
+              </div>
+            </div>
+            <div style={{marginTop:16,padding:8,borderRadius:6,background:'#0a2a0a',border:'1px solid #4caf5040'}}>
+              <div style={{fontSize:10,color:'#a5d6a7'}}>💡 上部のプルダウンから関数を選んで「▶ 実行」をクリック</div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Result view tabs */}
+          <div style={{display:'flex',gap:0,borderBottom:'1px solid #2a2a4a',flexShrink:0}}>
+            {viewTabs.map(t => (
+              <button key={t.key} onClick={() => setViewTab(t.key)}
+                style={{padding:'6px 12px',fontSize:10,fontWeight:600,border:'none',borderBottom: viewTab === t.key ? '2px solid #4fc3f7' : '2px solid transparent',
+                  background:'transparent',color: viewTab === t.key ? '#fff' : '#888',cursor:'pointer'}}>
+                {t.icon} {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Content */}
+          <div ref={logRef} style={{flex:1,overflowY:'auto',padding:8}}>
+            {viewTab === 'log' && (
+              <div style={{fontFamily:'monospace',fontSize:11}}>
+                {simState.chatLog.map((entry, i) => (
+                  <div key={i} style={{display:'flex',alignItems:'flex-start',gap:6,padding:'2px 4px',borderRadius:3,
+                    background: i % 2 === 0 ? 'transparent' : '#ffffff05'}}>
+                    <span style={{fontSize:11,flexShrink:0,width:16,textAlign:'center'}}>{logTypeIcons[entry.type] || '▶️'}</span>
+                    {entry.time > 0 && <span style={{fontSize:9,color:'#555',flexShrink:0,width:24,textAlign:'right'}}>t{entry.time}</span>}
+                    <span style={{color: entry.color,wordBreak:'break-all'}}>{entry.text}</span>
+                  </div>
+                ))}
+                {simState.warnings.length > 0 && (
+                  <div style={{marginTop:8,padding:8,borderRadius:4,background:'#3a2a0a',border:'1px solid #ff980040'}}>
+                    <div style={{fontSize:10,fontWeight:600,color:'#ff9800',marginBottom:4}}>⚠️ 警告 ({simState.warnings.length}件)</div>
+                    {simState.warnings.map((w, i) => (
+                      <div key={i} style={{fontSize:10,color:'#ffcc80',marginBottom:2}}>• {w.msg}</div>
+                    ))}
+                  </div>
+                )}
+                {simState.errors.length > 0 && (
+                  <div style={{marginTop:8,padding:8,borderRadius:4,background:'#3a0a0a',border:'1px solid #f4474740'}}>
+                    <div style={{fontSize:10,fontWeight:600,color:'#f44747',marginBottom:4}}>❌ エラー ({simState.errors.length}件)</div>
+                    {simState.errors.map((e, i) => (
+                      <div key={i} style={{fontSize:10,color:'#ef9a9a',marginBottom:2}}>• {e.msg}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {viewTab === 'scores' && (
+              <div>
+                {Object.keys(simState.objectives).length === 0 ? (
+                  <div style={{textAlign:'center',padding:24,color:'#666',fontSize:11}}>スコアボードが作成されていません</div>
+                ) : (
+                  Object.entries(simState.objectives).map(([name, obj]) => (
+                    <div key={name} style={{marginBottom:12,borderRadius:6,border:'1px solid #2a2a4a',overflow:'hidden'}}>
+                      <div style={{padding:'6px 10px',background:'#1a1a2e',borderBottom:'1px solid #2a2a4a',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                        <span style={{fontSize:11,fontWeight:700,color:'#4fc3f7'}}>{obj.display || name}</span>
+                        <span style={{fontSize:9,color:'#666'}}>{obj.criteria}</span>
+                      </div>
+                      <div style={{padding:4}}>
+                        {Object.entries(simState.scores)
+                          .filter(([k]) => k.endsWith(':' + name))
+                          .map(([k, v]) => {
+                            const player = k.split(':')[0];
+                            return (
+                              <div key={k} style={{display:'flex',justifyContent:'space-between',padding:'3px 10px',fontSize:11}}>
+                                <span style={{color:'#ddd'}}>{player}</span>
+                                <span style={{color:'#b5cea8',fontWeight:700,fontFamily:'monospace'}}>{v}</span>
+                              </div>
+                            );
+                          })}
+                        {Object.entries(simState.scores).filter(([k]) => k.endsWith(':' + name)).length === 0 && (
+                          <div style={{padding:'4px 10px',fontSize:10,color:'#555'}}>スコアなし</div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {viewTab === 'tags' && (
+              <div>
+                <div style={{marginBottom:12}}>
+                  <div style={{fontSize:11,fontWeight:700,color:'#ce93d8',marginBottom:6}}>🏷️ タグ</div>
+                  {Object.keys(simState.tags).length === 0 ? (
+                    <div style={{fontSize:10,color:'#555'}}>タグなし</div>
+                  ) : (
+                    Object.entries(simState.tags).map(([player, tags]) => (
+                      <div key={player} style={{marginBottom:6,padding:6,borderRadius:4,background:'#1a1a2e',border:'1px solid #2a2a4a'}}>
+                        <div style={{fontSize:10,color:'#ddd',marginBottom:3}}>{player}</div>
+                        <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                          {[...tags].map(t => (
+                            <span key={t} style={{padding:'2px 8px',borderRadius:10,background:'#ce93d820',border:'1px solid #ce93d840',fontSize:9,color:'#ce93d8'}}>{t}</span>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div>
+                  <div style={{fontSize:11,fontWeight:700,color:'#4fc3f7',marginBottom:6}}>👥 チーム</div>
+                  {Object.keys(simState.teams).length === 0 ? (
+                    <div style={{fontSize:10,color:'#555'}}>チームなし</div>
+                  ) : (
+                    Object.entries(simState.teams).map(([name, team]) => (
+                      <div key={name} style={{marginBottom:6,padding:6,borderRadius:4,background:'#1a1a2e',border:'1px solid #2a2a4a'}}>
+                        <div style={{fontSize:10,fontWeight:600,color: MC_COLOR_HEX[team.color] || '#ddd'}}>{team.display || name}</div>
+                        <div style={{fontSize:9,color:'#888',marginTop:2}}>
+                          メンバー: {team.members.size > 0 ? [...team.members].join(', ') : 'なし'}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {viewTab === 'bossbars' && (
+              <div>
+                {Object.keys(simState.bossbars).length === 0 ? (
+                  <div style={{textAlign:'center',padding:24,color:'#666',fontSize:11}}>ボスバーがありません</div>
+                ) : (
+                  Object.entries(simState.bossbars).map(([id, bb]) => (
+                    <div key={id} style={{marginBottom:12,padding:10,borderRadius:6,background:'#1a1a2e',border:'1px solid #2a2a4a'}}>
+                      <div style={{fontSize:11,fontWeight:700,color:'#ddd',marginBottom:6,textAlign:'center'}}>{bb.name}</div>
+                      <div style={{height:16,borderRadius:3,background:'#0a0a0a',overflow:'hidden',position:'relative'}}>
+                        <div style={{height:'100%',width:`${bb.max > 0 ? (bb.value / bb.max * 100) : 0}%`,borderRadius:3,
+                          background: bb.color === 'red' ? '#e91e63' : bb.color === 'green' ? '#4caf50' : bb.color === 'blue' ? '#2196f3' :
+                            bb.color === 'yellow' ? '#fdd835' : bb.color === 'pink' ? '#ff80ab' : bb.color === 'purple' ? '#ce93d8' : '#4fc3f7',
+                          transition:'width 0.3s'}} />
+                        <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:700,color:'#fff',textShadow:'0 1px 2px #000'}}>
+                          {bb.value} / {bb.max}
+                        </div>
+                      </div>
+                      <div style={{fontSize:9,color:'#666',marginTop:4,display:'flex',justifyContent:'space-between'}}>
+                        <span>ID: {id}</span>
+                        <span>{bb.visible ? '表示中' : '非表示'}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {viewTab === 'summary' && (
+              <div style={{fontSize:11}}>
+                <div style={{padding:10,borderRadius:6,background:'#1a1a2e',border:'1px solid #2a2a4a',marginBottom:8}}>
+                  <div style={{fontSize:12,fontWeight:700,color:'#ddd',marginBottom:8}}>📝 実行サマリー</div>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+                    <div style={{padding:6,borderRadius:4,background:'#0a0a1a'}}>
+                      <div style={{fontSize:9,color:'#888'}}>実行コマンド数</div>
+                      <div style={{fontSize:16,fontWeight:700,color:'#4fc3f7'}}>{simState.chatLog.length}</div>
+                    </div>
+                    <div style={{padding:6,borderRadius:4,background:'#0a0a1a'}}>
+                      <div style={{fontSize:9,color:'#888'}}>関数呼び出し</div>
+                      <div style={{fontSize:16,fontWeight:700,color:'#569cd6'}}>{simState.executedFunctions.length}</div>
+                    </div>
+                    <div style={{padding:6,borderRadius:4,background:'#0a0a1a'}}>
+                      <div style={{fontSize:9,color:'#888'}}>スコアボード</div>
+                      <div style={{fontSize:16,fontWeight:700,color:'#b5cea8'}}>{Object.keys(simState.objectives).length}</div>
+                    </div>
+                    <div style={{padding:6,borderRadius:4,background:'#0a0a1a'}}>
+                      <div style={{fontSize:9,color:'#888'}}>警告/エラー</div>
+                      <div style={{fontSize:16,fontWeight:700,color: (simState.errors.length > 0) ? '#f44747' : '#ff9800'}}>{simState.warnings.length + simState.errors.length}</div>
+                    </div>
+                  </div>
+                </div>
+                {simState.executedFunctions.length > 0 && (
+                  <div style={{padding:10,borderRadius:6,background:'#1a1a2e',border:'1px solid #2a2a4a',marginBottom:8}}>
+                    <div style={{fontSize:10,fontWeight:600,color:'#569cd6',marginBottom:6}}>📂 呼び出された関数</div>
+                    {[...new Set(simState.executedFunctions)].map((f, i) => (
+                      <div key={i} style={{fontSize:10,color:'#ddd',padding:'2px 0',fontFamily:'monospace'}}>{f}</div>
+                    ))}
+                  </div>
+                )}
+                {Object.keys(simState.gamerules).length > 0 && (
+                  <div style={{padding:10,borderRadius:6,background:'#1a1a2e',border:'1px solid #2a2a4a',marginBottom:8}}>
+                    <div style={{fontSize:10,fontWeight:600,color:'#888',marginBottom:6}}>🎮 ゲームルール変更</div>
+                    {Object.entries(simState.gamerules).map(([k, v]) => (
+                      <div key={k} style={{display:'flex',justifyContent:'space-between',fontSize:10,padding:'2px 0'}}>
+                        <span style={{color:'#ddd'}}>{k}</span>
+                        <span style={{color:'#b5cea8',fontFamily:'monospace'}}>{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {Object.keys(simState.effects).length > 0 && (
+                  <div style={{padding:10,borderRadius:6,background:'#1a1a2e',border:'1px solid #2a2a4a'}}>
+                    <div style={{fontSize:10,fontWeight:600,color:'#ce93d8',marginBottom:6}}>✨ アクティブエフェクト</div>
+                    {Object.entries(simState.effects).map(([k, v]) => (
+                      <div key={k} style={{display:'flex',justifyContent:'space-between',fontSize:10,padding:'2px 0'}}>
+                        <span style={{color:'#ddd'}}>{k}</span>
+                        <span style={{color:'#ce93d8',fontFamily:'monospace'}}>Lv{v.amp + 1} ({v.dur}s)</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {simState.titleDisplay && (
+                  <div style={{padding:10,borderRadius:6,background:'#1a1a2e',border:'1px solid #fdd83540',marginTop:8,textAlign:'center'}}>
+                    <div style={{fontSize:10,color:'#888',marginBottom:6}}>📺 タイトル表示</div>
+                    {simState.titleDisplay.title && <div style={{fontSize:18,fontWeight:800,color:'#fdd835'}}>{simState.titleDisplay.title}</div>}
+                    {simState.titleDisplay.subtitle && <div style={{fontSize:12,color:'#ddd',marginTop:2}}>{simState.titleDisplay.subtitle}</div>}
+                    {simState.titleDisplay.actionbar && <div style={{fontSize:10,color:'#aaa',marginTop:4}}>{simState.titleDisplay.actionbar}</div>}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
