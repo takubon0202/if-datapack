@@ -8782,7 +8782,330 @@ const GALLERY_SYSTEM_ICONS = {
   lobby_system: 'minecraft:compass',
 };
 
-function GalleryLanding({ onMinigame, onSystem, onBuilder }) {
+// ════════════════════════════════════════════════════════════
+// VISUAL GUIDE (Interactive tutorial overlay)
+// ════════════════════════════════════════════════════════════
+
+const GUIDE_PAGES = [
+  {
+    id: 'welcome',
+    title: 'DataPack Builder へようこそ！',
+    subtitle: 'ノーコードでMinecraftデータパックが作れるツール',
+    icon: 'minecraft:crafting_table',
+    color: '#4fc3f7',
+    content: [
+      { type:'hero', items:['minecraft:diamond_pickaxe','minecraft:crafting_table','minecraft:command_block','minecraft:enchanted_book','minecraft:chest'] },
+      { type:'text', text:'このツールでは、プログラミング不要でMinecraft Java Edition 1.21対応のデータパックを作成できます。' },
+      { type:'features', items:[
+        { icon:'minecraft:diamond_sword', title:'ミニゲーム作成', desc:'10種のミニゲームをウィザードで自動生成', color:'#4caf50' },
+        { icon:'minecraft:redstone', title:'システム部品', desc:'7種のゲームシステムを一括生成', color:'#ab47bc' },
+        { icon:'minecraft:command_block', title:'コマンドビルダー', desc:'22種のコマンドをボタンで組み立て', color:'#4fc3f7' },
+        { icon:'minecraft:writable_book', title:'VS Code風エディタ', desc:'構文ハイライト＋オートコンプリート搭載', color:'#ff9800' },
+      ]},
+    ],
+  },
+  {
+    id: 'setup',
+    title: 'STEP 1: プロジェクト作成',
+    subtitle: '初期設定ウィザードでパックの基本情報を入力',
+    icon: 'minecraft:compass',
+    color: '#4caf50',
+    content: [
+      { type:'steps', items:[
+        { num:'1', icon:'minecraft:name_tag', title:'パック名を入力', desc:'データパックの名前を設定します（例: my-pvp-game）' },
+        { num:'2', icon:'minecraft:oak_sign', title:'名前空間を設定', desc:'一意の識別子です。英数字とアンダーバーが使えます（例: mygame）' },
+        { num:'3', icon:'minecraft:paper', title:'バージョン選択', desc:'対象のMinecraftバージョンを選びます（1.21〜1.21.11対応）' },
+        { num:'4', icon:'minecraft:chest', title:'テンプレート選択', desc:'tick/load関数やサンプルレシピなど初期ファイルを選べます' },
+      ]},
+      { type:'tip', text:'名前空間は他のデータパックと被らないユニークな名前にしましょう。チーム名やプロジェクト名がおすすめです。' },
+    ],
+  },
+  {
+    id: 'minigame',
+    title: 'STEP 2: ミニゲーム / システム作成',
+    subtitle: 'ウィザードでテンプレートを選んで自動生成',
+    icon: 'minecraft:diamond_sword',
+    color: '#f44336',
+    content: [
+      { type:'text', text:'「ミニゲーム作成」または「システム部品」ボタンからウィザードを開きます。3ステップで完成！' },
+      { type:'grid', columns:5, items:[
+        { icon:'minecraft:leather_boots', name:'鬼ごっこ', color:'#4caf50' },
+        { icon:'minecraft:diamond_sword', name:'PVP', color:'#f44336' },
+        { icon:'minecraft:diamond_shovel', name:'スプリーフ', color:'#4fc3f7' },
+        { icon:'minecraft:golden_boots', name:'レース', color:'#ff9800' },
+        { icon:'minecraft:chest', name:'宝探し', color:'#ab47bc' },
+        { icon:'minecraft:golden_helmet', name:'陣取り', color:'#fdd835' },
+        { icon:'minecraft:rotten_flesh', name:'ゾンビ', color:'#8bc34a' },
+        { icon:'minecraft:bricks', name:'建築', color:'#78909c' },
+        { icon:'minecraft:red_banner', name:'旗取り', color:'#e91e63' },
+        { icon:'minecraft:tnt', name:'TNTラン', color:'#ff5722' },
+      ]},
+      { type:'steps', items:[
+        { num:'1', icon:'minecraft:diamond_sword', title:'種類を選択', desc:'10種のミニゲームまたは7種のシステムから選択' },
+        { num:'2', icon:'minecraft:anvil', title:'設定カスタマイズ', desc:'チーム数、制限時間、範囲、報酬などを調整' },
+        { num:'3', icon:'minecraft:writable_book', title:'自動生成', desc:'必要なmcfunction/JSONファイルが全て生成されます' },
+      ]},
+    ],
+  },
+  {
+    id: 'editor',
+    title: 'STEP 3: 統合エディタで編集',
+    subtitle: 'VS Code風コードエディタ＋コマンドツールが一体化',
+    icon: 'minecraft:command_block',
+    color: '#4fc3f7',
+    content: [
+      { type:'text', text:'.mcfunction ファイルを選択すると、VS Code風エディタが開きます。右サイドバーにコマンドツールが統合されています。' },
+      { type:'editorLayout', sections:[
+        { area:'left', title:'コードエディタ', items:['シンタックスハイライト（コマンド: 青、セレクター: オレンジ）','行番号 + エラー/警告マーカー','オートコンプリート（入力中に自動表示）','ステータスバー（行/列、エラー数）'] },
+        { area:'right', title:'コマンドツール', items:['クイック: 16種ワンクリック挿入','ビルダー: フォームでコマンド組立','テンプレ: ミニゲーム用スニペット','Ctrl+K: コマンドパレット検索'] },
+      ]},
+      { type:'tip', text:'Ctrl+K でコマンドパレットを開くと、全コマンド・テンプレートを横断検索して即挿入できます！' },
+    ],
+  },
+  {
+    id: 'visual_editors',
+    title: 'STEP 4: ビジュアルエディタ',
+    subtitle: 'JSON ファイルはビジュアルで直感的に編集',
+    icon: 'minecraft:crafting_table',
+    color: '#ff9800',
+    content: [
+      { type:'text', text:'レシピ・ルートテーブル・進捗のJSONファイルは、自動的にビジュアルエディタに切り替わります。' },
+      { type:'editorTypes', items:[
+        { icon:'minecraft:crafting_table', name:'レシピエディタ', desc:'MC風3x3クラフトグリッドでレシピ編集。インベントリスロットにアイテムをドロップ＆設定', color:'#8bc34a' },
+        { icon:'minecraft:chest', name:'ルートテーブルエディタ', desc:'確率バーでドロップ率を視覚調整。各エントリにアイテムアイコン表示', color:'#ff9800' },
+        { icon:'minecraft:golden_apple', name:'進捗エディタ', desc:'表示名・アイコン・条件・報酬をフォームで設定。フレームタイプ選択可', color:'#4fc3f7' },
+      ]},
+      { type:'modes', items:[
+        { label:'ビジュアル', desc:'ビジュアルエディタのみ表示', icon:'🎨' },
+        { label:'分割', desc:'ビジュアル＋コードを並列表示', icon:'⬛' },
+        { label:'コード', desc:'JSONを直接編集', icon:'📝' },
+      ]},
+    ],
+  },
+  {
+    id: 'builder_tab',
+    title: 'コマンドビルダータブ',
+    subtitle: 'フルサイズのコマンド組み立てパネル',
+    icon: 'minecraft:experience_bottle',
+    color: '#ab47bc',
+    content: [
+      { type:'text', text:'「ビルダー」タブでは、さらに詳細にコマンドを組み立てられます。カテゴリから選んでフォームに入力するだけ！' },
+      { type:'grid', columns:4, items:[
+        { icon:'minecraft:chest', name:'アイテム', color:'#4caf50' },
+        { icon:'minecraft:potion', name:'エフェクト', color:'#e91e63' },
+        { icon:'minecraft:ender_pearl', name:'移動', color:'#4fc3f7' },
+        { icon:'minecraft:name_tag', name:'テキスト', color:'#ff9800' },
+        { icon:'minecraft:firework_rocket', name:'演出', color:'#ab47bc' },
+        { icon:'minecraft:book', name:'スコア', color:'#8bc34a' },
+        { icon:'minecraft:grass_block', name:'ゲーム管理', color:'#795548' },
+        { icon:'minecraft:shield', name:'チーム/BB', color:'#607d8b' },
+      ]},
+      { type:'tip', text:'ビルダーで生成したコマンドは「ファイルに挿入」ボタンで、選択中の.mcfunctionファイルに直接追加されます。' },
+    ],
+  },
+  {
+    id: 'download',
+    title: 'STEP 5: ダウンロード & 使い方',
+    subtitle: 'ZIPでエクスポートしてMinecraftに導入',
+    icon: 'minecraft:chest',
+    color: '#fdd835',
+    content: [
+      { type:'steps', items:[
+        { num:'1', icon:'minecraft:writable_book', title:'プレビュー確認', desc:'「プレビュー」タブでファイル構造とエラーを確認' },
+        { num:'2', icon:'minecraft:chest', title:'ZIPダウンロード', desc:'ヘッダーの「ZIPダウンロード」ボタンをクリック' },
+        { num:'3', icon:'minecraft:grass_block', title:'datapacks に配置', desc:'.minecraft/saves/(ワールド名)/datapacks/ にZIPを置く' },
+        { num:'4', icon:'minecraft:command_block', title:'/reload 実行', desc:'ゲーム内で /reload を実行してデータパックを読み込み' },
+      ]},
+      { type:'tip', text:'datapacks フォルダにZIPファイルをそのまま置くだけでOK！展開する必要はありません。' },
+      { type:'shortcuts', items:[
+        { key:'Ctrl+K', desc:'コマンドパレットを開く' },
+        { key:'Tab', desc:'オートコンプリート確定 / インデント' },
+        { key:'↑↓', desc:'補完候補の選択' },
+        { key:'Esc', desc:'補完/パレットを閉じる' },
+      ]},
+    ],
+  },
+];
+
+function VisualGuide({ onClose }) {
+  const [page, setPage] = useState(0);
+  const current = GUIDE_PAGES[page];
+  const isFirst = page === 0;
+  const isLast = page === GUIDE_PAGES.length - 1;
+
+  const renderContent = (block, idx) => {
+    switch (block.type) {
+      case 'hero':
+        return (
+          <div key={idx} style={{display:'flex',justifyContent:'center',gap:8,padding:'12px 0'}}>
+            {block.items.map(id => <McInvSlot key={id} id={id} size={48} />)}
+          </div>
+        );
+      case 'text':
+        return <p key={idx} style={{fontSize:13,color:'#ccc',lineHeight:1.7,margin:'8px 0'}}>{block.text}</p>;
+      case 'features':
+        return (
+          <div key={idx} style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8,margin:'12px 0'}}>
+            {block.items.map((f,i) => (
+              <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:8,background:'#1a1a2e',border:`1px solid ${f.color}30`}}>
+                <McInvSlot id={f.icon} size={36} />
+                <div>
+                  <div style={{fontSize:12,fontWeight:700,color:f.color}}>{f.title}</div>
+                  <div style={{fontSize:10,color:'#999'}}>{f.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      case 'steps':
+        return (
+          <div key={idx} style={{display:'flex',flexDirection:'column',gap:6,margin:'12px 0'}}>
+            {block.items.map((s,i) => (
+              <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 12px',borderRadius:8,background:'#12121e',border:'1px solid #2a2a4a'}}>
+                <div style={{width:28,height:28,borderRadius:'50%',background:'#4fc3f720',border:'2px solid #4fc3f7',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:800,color:'#4fc3f7',flexShrink:0}}>{s.num}</div>
+                <McIcon id={s.icon} size={24} />
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:12,fontWeight:700,color:'#eee'}}>{s.title}</div>
+                  <div style={{fontSize:10,color:'#999'}}>{s.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      case 'grid':
+        return (
+          <div key={idx} style={{display:'grid',gridTemplateColumns:`repeat(${block.columns},1fr)`,gap:6,margin:'12px 0'}}>
+            {block.items.map((g,i) => (
+              <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,padding:'8px 4px',borderRadius:6,background:'#12121e',border:'1px solid #2a2a4a'}}>
+                <McInvSlot id={g.icon} size={32} />
+                <span style={{fontSize:10,fontWeight:600,color:g.color,textAlign:'center'}}>{g.name}</span>
+              </div>
+            ))}
+          </div>
+        );
+      case 'tip':
+        return (
+          <div key={idx} style={{display:'flex',alignItems:'flex-start',gap:8,padding:'10px 12px',borderRadius:8,background:'#1a3a1a',border:'1px solid #4caf5040',margin:'8px 0'}}>
+            <span style={{fontSize:16,flexShrink:0}}>💡</span>
+            <p style={{fontSize:11,color:'#a5d6a7',lineHeight:1.6,margin:0}}>{block.text}</p>
+          </div>
+        );
+      case 'editorLayout':
+        return (
+          <div key={idx} style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,margin:'12px 0'}}>
+            {block.sections.map((sec,i) => (
+              <div key={i} style={{padding:12,borderRadius:8,background: sec.area === 'left' ? '#0d1a2a' : '#1a0d2a',border:`1px solid ${sec.area === 'left' ? '#4fc3f730' : '#ab47bc30'}`}}>
+                <div style={{fontSize:12,fontWeight:700,color: sec.area === 'left' ? '#4fc3f7' : '#ce93d8',marginBottom:8,display:'flex',alignItems:'center',gap:4}}>
+                  {sec.area === 'left' ? '📝' : '🔧'} {sec.title}
+                </div>
+                <ul style={{margin:0,paddingLeft:16,listStyleType:'disc'}}>
+                  {sec.items.map((item,j) => (
+                    <li key={j} style={{fontSize:10,color:'#bbb',marginBottom:3,lineHeight:1.5}}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        );
+      case 'editorTypes':
+        return (
+          <div key={idx} style={{display:'flex',flexDirection:'column',gap:8,margin:'12px 0'}}>
+            {block.items.map((ed,i) => (
+              <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:8,background:'#12121e',border:`1px solid ${ed.color}30`}}>
+                <McInvSlot id={ed.icon} size={40} />
+                <div style={{flex:1}}>
+                  <div style={{fontSize:12,fontWeight:700,color:ed.color}}>{ed.name}</div>
+                  <div style={{fontSize:10,color:'#999',lineHeight:1.5}}>{ed.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      case 'modes':
+        return (
+          <div key={idx} style={{display:'flex',gap:6,justifyContent:'center',margin:'12px 0'}}>
+            {block.items.map((m,i) => (
+              <div key={i} style={{padding:'8px 16px',borderRadius:6,background:'#1a1a2e',border:'1px solid #3a3a5a',textAlign:'center',flex:1}}>
+                <div style={{fontSize:20,marginBottom:4}}>{m.icon}</div>
+                <div style={{fontSize:11,fontWeight:700,color:'#ddd'}}>{m.label}</div>
+                <div style={{fontSize:9,color:'#888'}}>{m.desc}</div>
+              </div>
+            ))}
+          </div>
+        );
+      case 'shortcuts':
+        return (
+          <div key={idx} style={{margin:'12px 0'}}>
+            <div style={{fontSize:11,fontWeight:700,color:'#aaa',marginBottom:6}}>キーボードショートカット</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4}}>
+              {block.items.map((sc,i) => (
+                <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'4px 8px',borderRadius:4,background:'#12121e'}}>
+                  <kbd style={{padding:'2px 8px',borderRadius:3,background:'#2a2a4a',border:'1px solid #444',fontSize:10,fontFamily:'monospace',color:'#4fc3f7',whiteSpace:'nowrap'}}>{sc.key}</kbd>
+                  <span style={{fontSize:10,color:'#999'}}>{sc.desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      default: return null;
+    }
+  };
+
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',zIndex:10000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}
+      onClick={onClose}>
+      <div style={{width:640,maxHeight:'85vh',background:'#111122',border:'1px solid #3a3a5a',borderRadius:12,boxShadow:'0 24px 80px rgba(0,0,0,0.9)',display:'flex',flexDirection:'column',overflow:'hidden'}}
+        onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div style={{padding:'16px 20px',borderBottom:`2px solid ${current.color}40`,background:`linear-gradient(135deg, ${current.color}10, transparent)`,flexShrink:0}}>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <McInvSlot id={current.icon} size={40} />
+            <div style={{flex:1}}>
+              <h2 style={{margin:0,fontSize:18,fontWeight:800,color:'#fff'}}>{current.title}</h2>
+              <p style={{margin:0,fontSize:12,color:'#999'}}>{current.subtitle}</p>
+            </div>
+            <button onClick={onClose} style={{background:'none',border:'none',color:'#666',cursor:'pointer',fontSize:20,padding:4}}>✕</button>
+          </div>
+          {/* Page indicators */}
+          <div style={{display:'flex',gap:4,marginTop:10}}>
+            {GUIDE_PAGES.map((p,i) => (
+              <button key={p.id} onClick={() => setPage(i)}
+                style={{flex:1,height:4,borderRadius:2,border:'none',cursor:'pointer',background: i === page ? current.color : i < page ? `${current.color}60` : '#2a2a4a',transition:'background 0.3s'}} />
+            ))}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div style={{flex:1,overflowY:'auto',padding:'16px 20px'}}>
+          {current.content.map(renderContent)}
+        </div>
+
+        {/* Footer navigation */}
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 20px',borderTop:'1px solid #2a2a4a',flexShrink:0}}>
+          <button onClick={() => setPage(p => p - 1)} disabled={isFirst}
+            style={{padding:'6px 16px',fontSize:12,borderRadius:6,border:'1px solid #3a3a5a',background: isFirst ? '#1a1a2e' : '#2a2a4a',
+              color: isFirst ? '#444' : '#ddd',cursor: isFirst ? 'default' : 'pointer',fontWeight:600}}>
+            ← 前へ
+          </button>
+          <span style={{fontSize:11,color:'#666'}}>{page + 1} / {GUIDE_PAGES.length}</span>
+          {isLast ? (
+            <button onClick={onClose}
+              style={{padding:'6px 20px',fontSize:12,borderRadius:6,border:'none',background:'#4fc3f7',color:'#000',cursor:'pointer',fontWeight:700}}>
+              始める！
+            </button>
+          ) : (
+            <button onClick={() => setPage(p => p + 1)}
+              style={{padding:'6px 16px',fontSize:12,borderRadius:6,border:'none',background:current.color,color:'#000',cursor:'pointer',fontWeight:700}}>
+              次へ →
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GalleryLanding({ onMinigame, onSystem, onBuilder, onGuide }) {
   return (
     <div className="flex-1 overflow-y-auto p-6">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -8795,6 +9118,12 @@ function GalleryLanding({ onMinigame, onSystem, onBuilder }) {
           </div>
           <h2 className="text-xl font-bold text-mc-bright mb-1">Minecraft DataPack Builder</h2>
           <p className="text-sm text-mc-muted max-w-md mx-auto">ボタンを選択するだけでMinecraftデータパックが完成。コーディング不要！</p>
+          {onGuide && (
+            <button onClick={onGuide}
+              style={{marginTop:10,padding:'6px 20px',fontSize:12,borderRadius:6,border:'1px solid #4fc3f7',background:'#4fc3f715',color:'#4fc3f7',cursor:'pointer',fontWeight:600}}>
+              📖 使い方ガイドを見る
+            </button>
+          )}
         </div>
 
         {/* Quick Start */}
@@ -8934,6 +9263,7 @@ export default function App() {
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [showMinigameWizard, setShowMinigameWizard] = useState(false);
   const [showSystemWizard, setShowSystemWizard] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
   const [contextMenu, setContextMenu] = useState(null);
   const [activeTab, setActiveTab] = useState('editor');
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -8975,6 +9305,11 @@ export default function App() {
       setCurrentProjectId(id);
       saveProjectsList([entry]);
       setShowWizard(true);
+      // Show guide on first ever visit
+      if (!localStorage.getItem('dp_guide_seen')) {
+        setShowGuide(true);
+        localStorage.setItem('dp_guide_seen', '1');
+      }
     }
     setInitialized(true);
   }, []);
@@ -9555,10 +9890,17 @@ export default function App() {
               </button>
             ))}
 
+            <button
+              onClick={() => setShowGuide(true)}
+              className="ml-auto px-2 py-1.5 text-xs text-mc-muted hover:text-mc-info transition-colors flex items-center gap-1"
+              title="使い方ガイド"
+            >
+              <HelpCircle size={12} /> ガイド
+            </button>
             {sidebarOpen && (
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="ml-auto text-mc-muted hover:text-mc-text px-2 hidden lg:block"
+                className="text-mc-muted hover:text-mc-text px-2 hidden lg:block"
                 title="サイドバーを閉じる"
               >
                 <PanelLeftClose size={14} />
@@ -9605,7 +9947,7 @@ export default function App() {
                 // Other files → standard CodeEditor
                 return <CodeEditor file={selectedFile} onChange={handleFileContentChange} targetVersion={project.targetVersion} />;
               })() : (
-                <GalleryLanding onMinigame={() => setShowMinigameWizard(true)} onSystem={() => setShowSystemWizard(true)} onBuilder={() => setActiveTab('builder')} />
+                <GalleryLanding onMinigame={() => setShowMinigameWizard(true)} onSystem={() => setShowSystemWizard(true)} onBuilder={() => setActiveTab('builder')} onGuide={() => setShowGuide(true)} />
               )
             ) : activeTab === 'builder' ? (
               <CommandBuilderPanel
@@ -9692,6 +10034,9 @@ export default function App() {
           onComplete={handleSystemComplete}
           onClose={() => setShowSystemWizard(false)}
         />
+      )}
+      {showGuide && (
+        <VisualGuide onClose={() => setShowGuide(false)} />
       )}
       {contextMenu && (
         <ContextMenu
