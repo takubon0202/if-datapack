@@ -2347,6 +2347,16 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
 
   if (!cmd) return null;
 
+  // Check for leading slash (not needed in mcfunction)
+  if (trimmed.startsWith('/')) {
+    return { line: lineNum, msg: '.mcfunction では先頭の "/" は不要です — "/" を削除してください', type: 'warning' };
+  }
+
+  // Check for fullwidth spaces
+  if (/\u3000/.test(line)) {
+    return { line: lineNum, msg: '全角スペースが含まれています — 半角スペースに置き換えてください', type: 'error' };
+  }
+
   // Check macro version compatibility
   if (isMacro && targetVersion && !versionAtLeast(targetVersion, '1.20.2')) {
     return { line: lineNum, msg: `マクロ($)は 1.20.2 以降で使用可能です（現在: ${targetVersion}）`, type: 'error' };
@@ -2431,6 +2441,20 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
   // Check execute has run subcommand
   if (cmd === 'execute' && tokens.length > 1 && !trimmed.includes(' run ')) {
     return { line: lineNum, msg: 'execute コマンドに "run" がありません — execute ... run <コマンド> の形式で書いてください', type: 'warning' };
+  }
+  // Check execute run with nothing after
+  if (cmd === 'execute' && /\brun\s*$/.test(trimmed)) {
+    return { line: lineNum, msg: '"run" の後に実行するコマンドがありません', type: 'error' };
+  }
+
+  // Check for mixed coordinate types (^ and ~ mixed)
+  const coordMatches = trimmed.match(/[~^][^\s]*/g);
+  if (coordMatches && coordMatches.length >= 2) {
+    const hasRelative = coordMatches.some(c => c.startsWith('~'));
+    const hasLocal = coordMatches.some(c => c.startsWith('^'));
+    if (hasRelative && hasLocal) {
+      return { line: lineNum, msg: '~(相対座標)と^(ローカル座標)が混在しています — どちらか一方に統一してください', type: 'error' };
+    }
   }
 
   // Check for common typos
