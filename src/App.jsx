@@ -1209,8 +1209,13 @@ const MC_AUTO = {
     { l: 'transfer', d: 'サーバー転送', v: '1.20.5' },
     { l: 'rotate', d: 'エンティティ回転', v: '1.21.2' },
     { l: 'test', d: 'テスト実行', v: '1.21.5' },
-    { l: 'dialog', d: 'ダイアログ表示', v: '1.21.10' },
+    { l: 'dialog', d: 'ダイアログ表示', v: '1.21.6' },
     { l: 'fetchprofile', d: 'プロフィール取得', v: '1.21.9' },
+    { l: 'locate', d: '構造物/バイオーム検索' },
+    { l: 'datapack', d: 'データパック管理' },
+    { l: 'me', d: 'アクションメッセージ' }, { l: 'teammsg', d: 'チームチャット' }, { l: 'tm', d: 'チームチャット' },
+    { l: 'msg', d: '個人メッセージ' }, { l: 'tell', d: '個人メッセージ' }, { l: 'w', d: '個人メッセージ' },
+    { l: 'help', d: 'ヘルプ表示' }, { l: '?', d: 'ヘルプ表示' },
     { l: 'stopwatch', d: 'ストップウォッチ', v: '1.21.11' },
     { l: 'defaultgamemode', d: 'デフォルトゲームモード' },
   ],
@@ -1228,7 +1233,17 @@ const MC_AUTO = {
     { l: 'blocks', d: 'ブロック範囲判定' }, { l: 'score', d: 'スコア条件判定' },
     { l: 'predicate', d: '条件判定', v: '1.15' }, { l: 'data', d: 'NBTデータ存在判定' },
     { l: 'biome', d: 'バイオーム判定', v: '1.19' }, { l: 'loaded', d: 'チャンクロード判定', v: '1.19.4' },
+    { l: 'dimension', d: 'ディメンション判定', v: '1.19.4' },
     { l: 'function', d: '関数戻り値判定', v: '1.20.3' }, { l: 'items', d: 'アイテム判定', v: '1.20.5' },
+    { l: 'stopwatch', d: 'ストップウォッチ判定', v: '1.21.11' },
+  ],
+  'execute.if.data': [
+    { l: 'block', d: 'ブロックNBT' }, { l: 'entity', d: 'エンティティNBT' },
+    { l: 'storage', d: 'ストレージNBT' },
+  ],
+  'execute.if.items': [
+    { l: 'block', d: 'ブロック内アイテム', v: '1.20.5' },
+    { l: 'entity', d: 'エンティティ内アイテム', v: '1.20.5' },
   ],
   'execute.store': [
     { l: 'result', d: '結果を保存' }, { l: 'success', d: '成功フラグを保存' },
@@ -1302,15 +1317,46 @@ const MC_AUTO = {
     { l: '@e', d: 'エンティティを回転' }, { l: '@p', d: '最寄りプレイヤーを回転' },
   ],
   test: [
-    { l: 'runfunction', d: '関数テスト実行', v: '1.21.5' }, { l: 'runthese', d: '全テスト実行', v: '1.21.5' },
-    { l: 'clearall', d: 'テスト結果クリア', v: '1.21.5' }, { l: 'resetall', d: 'テスト全リセット', v: '1.21.5' },
+    { l: 'run', d: 'テスト実行', v: '1.21.5' }, { l: 'runclosest', d: '最寄りテスト実行', v: '1.21.5' },
+    { l: 'runthat', d: '注視先テスト実行', v: '1.21.5' }, { l: 'runthese', d: '全テスト実行', v: '1.21.5' },
+    { l: 'runmultiple', d: '複数回テスト', v: '1.21.5' }, { l: 'runfailed', d: '失敗テスト再実行', v: '1.21.5' },
+    { l: 'create', d: 'テスト作成', v: '1.21.5' }, { l: 'locate', d: 'テスト検索', v: '1.21.5' },
+    { l: 'pos', d: '相対位置取得', v: '1.21.5' }, { l: 'stop', d: 'テスト停止', v: '1.21.5' },
+    { l: 'verify', d: 'テスト検証', v: '1.21.5' },
+    { l: 'clearall', d: 'テスト結果クリア', v: '1.21.5' }, { l: 'clearthat', d: '注視先クリア', v: '1.21.5' },
+    { l: 'clearthese', d: '範囲内クリア', v: '1.21.5' },
+    { l: 'resetclosest', d: '最寄りリセット', v: '1.21.5' }, { l: 'resetthat', d: '注視先リセット', v: '1.21.5' },
+    { l: 'resetthese', d: '範囲内リセット', v: '1.21.5' },
+    { l: 'export', d: 'テストエクスポート', v: '1.21.5' },
+    { l: 'exportclosest', d: '最寄りエクスポート', v: '1.21.5' },
+    { l: 'exportthat', d: '注視先エクスポート', v: '1.21.5' },
+    { l: 'exportthese', d: '範囲内エクスポート', v: '1.21.5' },
+  ],
+  fetchprofile: [
+    { l: 'name', d: 'プレイヤー名で検索', v: '1.21.9' },
+    { l: 'id', d: 'UUIDで検索', v: '1.21.9' },
+  ],
+  rotate: [
+    { l: '@s', d: '実行者を回転' }, { l: '@e', d: 'エンティティを回転' },
+    { l: '@p', d: '最寄りプレイヤーを回転' }, { l: '@a', d: '全プレイヤーを回転' },
+  ],
+  'rotate.facing': [
+    { l: 'entity', d: 'エンティティに向ける', v: '1.21.2' },
+  ],
+  locate: [
+    { l: 'structure', d: '構造物検索' }, { l: 'biome', d: 'バイオーム検索', v: '1.19' },
+    { l: 'poi', d: 'POI検索', v: '1.19' },
+  ],
+  datapack: [
+    { l: 'enable', d: 'データパック有効化' }, { l: 'disable', d: 'データパック無効化' },
+    { l: 'list', d: 'データパック一覧' },
   ],
   stopwatch: [
     { l: 'create', d: 'ストップウォッチ作成', v: '1.21.11' }, { l: 'query', d: '値取得', v: '1.21.11' },
     { l: 'restart', d: '再スタート', v: '1.21.11' }, { l: 'remove', d: '削除', v: '1.21.11' },
   ],
   dialog: [
-    { l: 'show', d: 'ダイアログ表示', v: '1.21.10' }, { l: 'clear', d: 'ダイアログ消去', v: '1.21.10' },
+    { l: 'show', d: 'ダイアログ表示', v: '1.21.6' }, { l: 'clear', d: 'ダイアログ消去', v: '1.21.6' },
   ],
   place: [
     { l: 'feature', d: '地物配置', v: '1.19' }, { l: 'template', d: 'テンプレート配置', v: '1.19' },
@@ -2707,12 +2753,14 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
 
   // Check for leading slash (not needed in mcfunction)
   if (trimmed.startsWith('/')) {
-    return { line: lineNum, msg: '.mcfunction では先頭の "/" は不要です — "/" を削除してください', type: 'warning' };
+    return { line: lineNum, msg: '.mcfunction では先頭の "/" は不要です', type: 'warning',
+      fix: { label: '"/" を削除', apply: (l) => l.replace(/^\s*\//, '') } };
   }
 
   // Check for fullwidth spaces
   if (/\u3000/.test(line)) {
-    return { line: lineNum, msg: '全角スペースが含まれています — 半角スペースに置き換えてください', type: 'error' };
+    return { line: lineNum, msg: '全角スペースが含まれています', type: 'error',
+      fix: { label: '全角→半角スペースに変換', apply: (l) => l.replace(/\u3000/g, ' ') } };
   }
 
   // Check macro version compatibility
@@ -2734,7 +2782,8 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
       return diff <= d;
     });
     const hint = similar ? ` — もしかして: ${similar.l}` : ' — コマンドのスペルを確認してください';
-    return { line: lineNum, msg: `不明なコマンド: "${cmd}"${hint}`, type: 'error' };
+    return { line: lineNum, msg: `不明なコマンド: "${cmd}"${hint}`, type: 'error',
+      fix: similar ? { label: `"${similar.l}" に修正`, apply: (l) => l.replace(new RegExp(`\\b${cmd.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i'), similar.l) } : undefined };
   }
 
   // Check version-specific command availability
@@ -2860,6 +2909,52 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
     if (sub !== 'give' && sub !== 'clear' && !sub.startsWith('@')) {
       return { line: lineNum, msg: `effect のサブコマンドは "give" か "clear" です（"${sub}" は不正）`, type: 'warning' };
     }
+  }
+
+  // Validate give command has required arguments
+  if (cmd === 'give' && tokens.length < 3) {
+    return { line: lineNum, msg: 'give: 引数が不足 — give <対象> <アイテム> [数量] の形式', type: 'error' };
+  }
+
+  // Validate summon has entity argument
+  if (cmd === 'summon' && tokens.length < 2) {
+    return { line: lineNum, msg: 'summon: エンティティIDが必要です — summon <エンティティ> [座標]', type: 'error' };
+  }
+
+  // Validate setblock has enough arguments
+  if (cmd === 'setblock' && tokens.length < 5) {
+    return { line: lineNum, msg: 'setblock: 引数が不足 — setblock <x> <y> <z> <ブロック>', type: 'error' };
+  }
+
+  // Validate fill has enough arguments
+  if (cmd === 'fill' && tokens.length < 8) {
+    return { line: lineNum, msg: 'fill: 引数が不足 — fill <x1> <y1> <z1> <x2> <y2> <z2> <ブロック>', type: 'error' };
+  }
+
+  // Validate tp/teleport has target
+  if ((cmd === 'tp' || cmd === 'teleport') && tokens.length < 2) {
+    return { line: lineNum, msg: `${cmd}: 対象が必要です — ${cmd} <対象> <座標/対象>`, type: 'error' };
+  }
+
+  // Info: suggest using minecraft: namespace prefix
+  if ((cmd === 'give' || cmd === 'summon' || cmd === 'setblock' || cmd === 'fill') && tokens.length >= 2) {
+    for (let i = 1; i < tokens.length; i++) {
+      const tok = tokens[i];
+      // Check if it looks like an ID without namespace
+      if (/^[a-z_]+$/.test(tok) && (MC_ITEM_SET.has(tok) || MC_ENTITY_SET.has(tok)) && !tok.startsWith('@') && !tok.startsWith('~') && !tok.startsWith('^') && !/^\d/.test(tok)) {
+        // Only suggest for the appropriate argument position
+        if ((cmd === 'give' && i === 2) || (cmd === 'summon' && i === 1) ||
+            (cmd === 'setblock' && i === 4) || (cmd === 'fill' && i === 7)) {
+          return { line: lineNum, msg: `"minecraft:" 名前空間を付けることを推奨: minecraft:${tok}`, type: 'info',
+            fix: { label: `minecraft:${tok} に変更`, apply: (l) => l.replace(new RegExp(`\\b${tok}\\b`), `minecraft:${tok}`) } };
+        }
+      }
+    }
+  }
+
+  // Info: long command line warning
+  if (trimmed.length > 300) {
+    return { line: lineNum, msg: `行が ${trimmed.length} 文字です — 長いコマンドは関数に分割することを検討してください`, type: 'info' };
   }
 
   return null;
@@ -5873,6 +5968,7 @@ function CodeEditor({ file, onChange, targetVersion }) {
 
   const mcfErrorCount = useMemo(() => Object.values(lineErrors).filter(e => e.type === 'error').length, [lineErrors]);
   const mcfWarnCount = useMemo(() => Object.values(lineErrors).filter(e => e.type === 'warning').length, [lineErrors]);
+  const mcfInfoCount = useMemo(() => Object.values(lineErrors).filter(e => e.type === 'info').length, [lineErrors]);
 
   const highlighted = useMemo(() => {
     if (isJSON) return highlightJSON(content);
@@ -6055,21 +6151,25 @@ function CodeEditor({ file, onChange, targetVersion }) {
         {isMcfunction && (
           <div className="flex items-center gap-2">
             {mcfErrorCount > 0 && (
-              <span className="flex items-center gap-1 text-mc-accent">
-                <AlertTriangle size={12} /> {mcfErrorCount}エラー
+              <span className="flex items-center gap-1 text-mc-accent text-[10px]">
+                <span>●</span> {mcfErrorCount}
               </span>
             )}
             {mcfWarnCount > 0 && (
-              <span className="flex items-center gap-1 text-mc-warning">
-                <Info size={12} /> {mcfWarnCount}警告
+              <span className="flex items-center gap-1 text-mc-warning text-[10px]">
+                <span>▲</span> {mcfWarnCount}
               </span>
             )}
-            {mcfErrorCount === 0 && mcfWarnCount === 0 && content.trim() && (
+            {mcfInfoCount > 0 && (
+              <span className="flex items-center gap-1 text-mc-info text-[10px]">
+                <span>ℹ</span> {mcfInfoCount}
+              </span>
+            )}
+            {mcfErrorCount === 0 && mcfWarnCount === 0 && mcfInfoCount === 0 && content.trim() && (
               <span className="flex items-center gap-1 text-mc-success">
-                <CheckCircle size={12} /> 構文OK
+                <CheckCircle size={12} /> OK
               </span>
             )}
-            <span className="text-mc-muted/50 text-[10px]">補完: 入力中に候補表示</span>
           </div>
         )}
       </div>
@@ -6084,15 +6184,11 @@ function CodeEditor({ file, onChange, targetVersion }) {
         >
           {Array.from({ length: lineCount }, (_, i) => {
             const err = lineErrors[i + 1];
+            const errColor = err ? (err.type === 'error' ? 'text-mc-accent' : err.type === 'warning' ? 'text-mc-warning' : 'text-mc-info') : 'text-mc-muted/40';
+            const errIcon = err ? (err.type === 'error' ? '●' : err.type === 'warning' ? '▲' : 'ℹ') : (i + 1);
             return (
-              <div
-                key={i}
-                className={`line-num ${
-                  err ? (err.type === 'error' ? 'text-mc-accent' : 'text-mc-warning') : 'text-mc-muted/40'
-                }`}
-                title={err ? err.msg : undefined}
-              >
-                {err ? (err.type === 'error' ? '●' : '▲') : (i + 1)}
+              <div key={i} className={`line-num ${errColor}`} title={err ? err.msg : undefined}>
+                {errIcon}
               </div>
             );
           })}
@@ -6156,36 +6252,56 @@ function CodeEditor({ file, onChange, targetVersion }) {
           <span className="truncate">{jsonError}</span>
         </div>
       )}
-      {isMcfunction && (mcfErrorCount > 0 || mcfWarnCount > 0) && (
-        <div className="px-3 py-1.5 bg-mc-dark/80 border-t border-mc-border/30 text-[10px] max-h-28 overflow-y-auto">
-          <div className="flex items-center gap-2 mb-1 pb-1 border-b border-mc-border/20">
-            <AlertTriangle size={11} className="text-mc-accent" />
-            <span className="font-semibold text-mc-text">
-              {mcfErrorCount > 0 && <span className="text-mc-accent">{mcfErrorCount}個のエラー</span>}
-              {mcfErrorCount > 0 && mcfWarnCount > 0 && <span className="text-mc-muted mx-1">|</span>}
-              {mcfWarnCount > 0 && <span className="text-mc-warning">{mcfWarnCount}個の警告</span>}
-            </span>
+      {isMcfunction && (mcfErrorCount > 0 || mcfWarnCount > 0 || mcfInfoCount > 0) && (
+        <div className="bg-mc-dark/80 border-t border-mc-border/30 text-[10px] max-h-36 overflow-y-auto">
+          <div className="flex items-center gap-3 px-3 py-1 border-b border-mc-border/20 sticky top-0 bg-mc-dark/95 z-10">
+            <span className="font-semibold text-mc-text text-[11px]">Problems</span>
+            {mcfErrorCount > 0 && <span className="flex items-center gap-1 text-mc-accent"><span>●</span>{mcfErrorCount}</span>}
+            {mcfWarnCount > 0 && <span className="flex items-center gap-1 text-mc-warning"><span>▲</span>{mcfWarnCount}</span>}
+            {mcfInfoCount > 0 && <span className="flex items-center gap-1 text-mc-info"><span>ℹ</span>{mcfInfoCount}</span>}
           </div>
-          {Object.entries(lineErrors).slice(0, 12).map(([ln, e]) => (
-            <div key={ln} className={`flex items-center gap-2 py-0.5 cursor-pointer hover:bg-mc-hover/30 rounded px-1 ${e.type === 'error' ? 'text-mc-accent' : 'text-mc-warning'}`}
-              onClick={() => {
-                const ta = textareaRef.current;
-                if (ta) {
-                  const lines = ta.value.split('\n');
-                  let pos = 0;
-                  for (let i = 0; i < parseInt(ln) - 1 && i < lines.length; i++) pos += lines[i].length + 1;
-                  ta.selectionStart = ta.selectionEnd = pos;
-                  ta.focus();
-                  ta.scrollTop = Math.max(0, (parseInt(ln) - 3) * 20.8);
-                }
-              }}>
-              <span className="flex-shrink-0">{e.type === 'error' ? '●' : '▲'}</span>
-              <span className="font-mono w-8 text-right flex-shrink-0">{ln}行</span>
-              <span className="truncate">{e.msg}</span>
-            </div>
-          ))}
-          {Object.keys(lineErrors).length > 12 && (
-            <div className="text-mc-muted/50 py-0.5 pl-5">...他 {Object.keys(lineErrors).length - 12}件</div>
+          {Object.entries(lineErrors).slice(0, 16).map(([ln, e]) => {
+            const color = e.type === 'error' ? 'text-mc-accent' : e.type === 'warning' ? 'text-mc-warning' : 'text-mc-info';
+            const icon = e.type === 'error' ? '●' : e.type === 'warning' ? '▲' : 'ℹ';
+            return (
+              <div key={ln} className={`flex items-center gap-2 py-0.5 px-3 cursor-pointer hover:bg-mc-hover/30 ${color}`}
+                onClick={() => {
+                  const ta = textareaRef.current;
+                  if (ta) {
+                    const lines = ta.value.split('\n');
+                    let pos = 0;
+                    for (let i = 0; i < parseInt(ln) - 1 && i < lines.length; i++) pos += lines[i].length + 1;
+                    ta.selectionStart = ta.selectionEnd = pos;
+                    ta.focus();
+                    ta.scrollTop = Math.max(0, (parseInt(ln) - 3) * 20.8);
+                  }
+                }}>
+                <span className="flex-shrink-0 w-3 text-center">{icon}</span>
+                <span className="font-mono w-8 text-right flex-shrink-0 text-mc-muted">{ln}行</span>
+                <span className="truncate flex-1">{e.msg}</span>
+                {e.fix && (
+                  <button className="flex-shrink-0 px-1.5 py-0 rounded bg-mc-info/20 text-mc-info hover:bg-mc-info/40 text-[9px] font-medium"
+                    title={`Quick Fix: ${e.fix.label}`}
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      const ta = textareaRef.current;
+                      if (!ta) return;
+                      const lines = ta.value.split('\n');
+                      const lineIdx = parseInt(ln) - 1;
+                      if (lineIdx < lines.length) {
+                        lines[lineIdx] = e.fix.apply(lines[lineIdx]);
+                        const newContent = lines.join('\n');
+                        onChange(newContent);
+                      }
+                    }}>
+                    {e.fix.label}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+          {Object.keys(lineErrors).length > 16 && (
+            <div className="text-mc-muted/50 py-0.5 px-3">...他 {Object.keys(lineErrors).length - 16}件</div>
           )}
         </div>
       )}
@@ -6676,6 +6792,7 @@ function IntegratedMcfEditor({ file, onChange, targetVersion, namespace }) {
 
   const mcfErrorCount = useMemo(() => Object.values(lineErrors).filter(e => e.type === 'error').length, [lineErrors]);
   const mcfWarnCount = useMemo(() => Object.values(lineErrors).filter(e => e.type === 'warning').length, [lineErrors]);
+  const mcfInfoCount = useMemo(() => Object.values(lineErrors).filter(e => e.type === 'info').length, [lineErrors]);
   const cmdCount = useMemo(() => lines.filter(l => l.trim() && !l.trim().startsWith('#')).length, [lines]);
 
   const highlighted = useMemo(() => highlightMcfunction(content), [content]);
@@ -6832,10 +6949,11 @@ function IntegratedMcfEditor({ file, onChange, targetVersion, namespace }) {
             <div className="flex items-center gap-2">
               <span className="font-mono text-mc-muted" style={{fontSize:10}}>{file?.path || file?.name}</span>
             </div>
-            <div className="flex items-center gap-2">
-              {mcfErrorCount > 0 && <span className="flex items-center gap-1 text-mc-accent"><AlertTriangle size={10} /> {mcfErrorCount}</span>}
-              {mcfWarnCount > 0 && <span className="flex items-center gap-1 text-mc-warning"><Info size={10} /> {mcfWarnCount}</span>}
-              {mcfErrorCount === 0 && mcfWarnCount === 0 && content.trim() && <span className="flex items-center gap-1 text-mc-success"><CheckCircle size={10} /> OK</span>}
+            <div className="flex items-center gap-2" style={{fontSize:10}}>
+              {mcfErrorCount > 0 && <span className="flex items-center gap-1 text-mc-accent"><span>●</span>{mcfErrorCount}</span>}
+              {mcfWarnCount > 0 && <span className="flex items-center gap-1 text-mc-warning"><span>▲</span>{mcfWarnCount}</span>}
+              {mcfInfoCount > 0 && <span className="flex items-center gap-1 text-mc-info"><span>ℹ</span>{mcfInfoCount}</span>}
+              {mcfErrorCount === 0 && mcfWarnCount === 0 && mcfInfoCount === 0 && content.trim() && <span className="flex items-center gap-1 text-mc-success"><CheckCircle size={10} /> OK</span>}
             </div>
           </div>
 
@@ -6846,9 +6964,9 @@ function IntegratedMcfEditor({ file, onChange, targetVersion, namespace }) {
               {Array.from({ length: lineCount }, (_, i) => {
                 const err = lineErrors[i + 1];
                 return (
-                  <div key={i} className={`line-num ${err ? (err.type === 'error' ? 'text-mc-accent' : 'text-mc-warning') : 'text-mc-muted/40'}`}
+                  <div key={i} className={`line-num ${err ? (err.type === 'error' ? 'text-mc-accent' : err.type === 'warning' ? 'text-mc-warning' : 'text-mc-info') : 'text-mc-muted/40'}`}
                     title={err ? err.msg : undefined} style={{fontSize:13,lineHeight:'20.8px'}}>
-                    {err ? (err.type === 'error' ? '●' : '▲') : (i + 1)}
+                    {err ? (err.type === 'error' ? '●' : err.type === 'warning' ? '▲' : 'ℹ') : (i + 1)}
                   </div>
                 );
               })}
@@ -6881,15 +6999,75 @@ function IntegratedMcfEditor({ file, onChange, targetVersion, namespace }) {
             </div>
           </div>
 
+          {/* Problems panel */}
+          {(mcfErrorCount > 0 || mcfWarnCount > 0 || mcfInfoCount > 0) && (
+            <div style={{background:'#0a0a18',borderTop:'1px solid #2a2a4a',fontSize:10,maxHeight:130,overflowY:'auto',flexShrink:0}}>
+              <div style={{display:'flex',alignItems:'center',gap:10,padding:'2px 10px',borderBottom:'1px solid #1a1a3a',position:'sticky',top:0,background:'#0a0a18',zIndex:5}}>
+                <span style={{fontWeight:600,color:'#ccc',fontSize:11}}>Problems</span>
+                {mcfErrorCount > 0 && <span style={{color:'#f14c4c',display:'flex',alignItems:'center',gap:2}}>● {mcfErrorCount}</span>}
+                {mcfWarnCount > 0 && <span style={{color:'#cca700',display:'flex',alignItems:'center',gap:2}}>▲ {mcfWarnCount}</span>}
+                {mcfInfoCount > 0 && <span style={{color:'#3794ff',display:'flex',alignItems:'center',gap:2}}>ℹ {mcfInfoCount}</span>}
+              </div>
+              {Object.entries(lineErrors).slice(0, 16).map(([ln, e]) => {
+                const clr = e.type === 'error' ? '#f14c4c' : e.type === 'warning' ? '#cca700' : '#3794ff';
+                const icon = e.type === 'error' ? '●' : e.type === 'warning' ? '▲' : 'ℹ';
+                return (
+                  <div key={ln} style={{display:'flex',alignItems:'center',gap:6,padding:'1px 10px',cursor:'pointer',color:clr}}
+                    onMouseEnter={ev => ev.currentTarget.style.background='#1a1a3a'}
+                    onMouseLeave={ev => ev.currentTarget.style.background='transparent'}
+                    onClick={() => {
+                      const ta = textareaRef.current;
+                      if (ta) {
+                        const ls = ta.value.split('\n');
+                        let pos = 0;
+                        for (let i = 0; i < parseInt(ln) - 1 && i < ls.length; i++) pos += ls[i].length + 1;
+                        ta.selectionStart = ta.selectionEnd = pos;
+                        ta.focus();
+                        ta.scrollTop = Math.max(0, (parseInt(ln) - 3) * 20.8);
+                      }
+                    }}>
+                    <span style={{flexShrink:0,width:10,textAlign:'center'}}>{icon}</span>
+                    <span style={{fontFamily:'monospace',width:30,textAlign:'right',flexShrink:0,color:'#888'}}>{ln}行</span>
+                    <span style={{flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.msg}</span>
+                    {e.fix && (
+                      <button style={{flexShrink:0,padding:'0 5px',borderRadius:3,background:'rgba(55,148,255,0.15)',color:'#3794ff',border:'none',cursor:'pointer',fontSize:9,fontWeight:500}}
+                        title={`Quick Fix: ${e.fix.label}`}
+                        onClick={(ev) => {
+                          ev.stopPropagation();
+                          const ta = textareaRef.current;
+                          if (!ta) return;
+                          const ls = ta.value.split('\n');
+                          const idx = parseInt(ln) - 1;
+                          if (idx < ls.length) {
+                            ls[idx] = e.fix.apply(ls[idx]);
+                            onChange(ls.join('\n'));
+                          }
+                        }}>
+                        {e.fix.label}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+              {Object.keys(lineErrors).length > 16 && (
+                <div style={{color:'#555',padding:'1px 10px'}}>...他 {Object.keys(lineErrors).length - 16}件</div>
+              )}
+            </div>
+          )}
+
           {/* Status bar */}
           <div style={{display:'flex',alignItems:'center',gap:12,padding:'2px 12px',background:'#0d0d1a',borderTop:'1px solid #2a2a4a',fontSize:10,color:'#666',flexShrink:0}}>
+            <span style={{cursor:'pointer',display:'flex',alignItems:'center',gap:8}} title="Problems パネルを表示">
+              {mcfErrorCount > 0 && <span style={{color:'#f14c4c',display:'flex',alignItems:'center',gap:2}}>● {mcfErrorCount}</span>}
+              {mcfWarnCount > 0 && <span style={{color:'#cca700',display:'flex',alignItems:'center',gap:2}}>▲ {mcfWarnCount}</span>}
+              {mcfInfoCount > 0 && <span style={{color:'#3794ff',display:'flex',alignItems:'center',gap:2}}>ℹ {mcfInfoCount}</span>}
+              {mcfErrorCount === 0 && mcfWarnCount === 0 && mcfInfoCount === 0 && <span style={{color:'#4ec9b0'}}>OK</span>}
+            </span>
             <span>行 {cursorInfo.line}, 列 {cursorInfo.col}</span>
-            <span>{cmdCount} コマンド / {lineCount} 行</span>
-            {mcfErrorCount > 0 && <span style={{color:'#f44'}}>エラー {mcfErrorCount}</span>}
-            {mcfWarnCount > 0 && <span style={{color:'#fa4'}}>警告 {mcfWarnCount}</span>}
+            <span>{cmdCount} コマンド</span>
             <span style={{marginLeft:'auto'}}>mcfunction</span>
             <span>UTF-8</span>
-            <span style={{color:'#4fc3f7'}}>補完: 入力中に候補</span>
+            <span>{lineCount} 行</span>
           </div>
         </div>
 
