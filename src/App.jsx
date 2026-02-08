@@ -1364,6 +1364,135 @@ const MC_AUTO = {
     { l: 'spawnChunkRadius', d: 'スポーンチャンク半径', v: '1.20.5' },
     { l: 'fireSpreadRadiusAroundPlayer', d: '火の延焼距離', v: '1.21.11' },
   ],
+  _items: [
+    'stone','granite','diorite','andesite','deepslate','cobblestone','oak_planks','spruce_planks','birch_planks',
+    'jungle_planks','acacia_planks','dark_oak_planks','cherry_planks','bamboo_planks','mangrove_planks',
+    'crimson_planks','warped_planks','oak_log','spruce_log','birch_log','jungle_log','acacia_log','dark_oak_log',
+    'cherry_log','mangrove_log','bamboo_block','glass','tinted_glass','sand','red_sand','gravel','coal_ore',
+    'iron_ore','copper_ore','gold_ore','diamond_ore','emerald_ore','lapis_ore','redstone_ore','nether_gold_ore',
+    'quartz_ore','ancient_debris','coal_block','iron_block','copper_block','gold_block','diamond_block',
+    'emerald_block','lapis_block','redstone_block','netherite_block','amethyst_block','raw_iron_block',
+    'raw_copper_block','raw_gold_block','dirt','grass_block','podzol','mycelium','farmland','clay',
+    'bricks','stone_bricks','mossy_stone_bricks','cracked_stone_bricks','chiseled_stone_bricks',
+    'obsidian','crying_obsidian','bedrock','netherrack','end_stone','end_stone_bricks','purpur_block',
+    'prismarine','dark_prismarine','sea_lantern','glowstone','shroomlight','torch','lantern','soul_lantern',
+    'campfire','soul_campfire','chest','ender_chest','barrel','shulker_box','hopper','dropper','dispenser',
+    'furnace','blast_furnace','smoker','crafting_table','smithing_table','cartography_table','fletching_table',
+    'brewing_stand','enchanting_table','anvil','grindstone','stonecutter','loom','lectern','composter',
+    'cauldron','bell','lodestone','respawn_anchor','beacon','conduit','lightning_rod',
+    'note_block','jukebox','observer','piston','sticky_piston','slime_block','honey_block','tnt',
+    'redstone','redstone_torch','repeater','comparator','lever','oak_button','stone_button',
+    'oak_pressure_plate','stone_pressure_plate','heavy_weighted_pressure_plate','light_weighted_pressure_plate',
+    'tripwire_hook','daylight_detector','target','sculk_sensor','calibrated_sculk_sensor',
+    'oak_door','iron_door','oak_trapdoor','iron_trapdoor','oak_fence','oak_fence_gate',
+    'ladder','scaffolding','rail','powered_rail','detector_rail','activator_rail',
+    'oak_sign','spruce_sign','birch_sign','oak_hanging_sign','bamboo_hanging_sign',
+    'white_bed','orange_bed','red_bed','blue_bed','green_bed','yellow_bed','black_bed',
+    'painting','item_frame','glow_item_frame','armor_stand','flower_pot',
+    'white_wool','orange_wool','red_wool','blue_wool','green_wool','yellow_wool','black_wool',
+    'white_carpet','white_concrete','white_concrete_powder','white_terracotta','white_glazed_terracotta',
+    'white_stained_glass','white_stained_glass_pane','white_banner','white_candle',
+    'water_bucket','lava_bucket','milk_bucket','powder_snow_bucket','axolotl_bucket','tadpole_bucket',
+    'bucket','wooden_sword','stone_sword','iron_sword','golden_sword','diamond_sword','netherite_sword',
+    'wooden_pickaxe','stone_pickaxe','iron_pickaxe','golden_pickaxe','diamond_pickaxe','netherite_pickaxe',
+    'wooden_axe','stone_axe','iron_axe','golden_axe','diamond_axe','netherite_axe',
+    'wooden_shovel','stone_shovel','iron_shovel','golden_shovel','diamond_shovel','netherite_shovel',
+    'wooden_hoe','stone_hoe','iron_hoe','golden_hoe','diamond_hoe','netherite_hoe',
+    'bow','crossbow','trident','mace','shield','fishing_rod','shears','flint_and_steel',
+    'leather_helmet','leather_chestplate','leather_leggings','leather_boots',
+    'chainmail_helmet','chainmail_chestplate','chainmail_leggings','chainmail_boots',
+    'iron_helmet','iron_chestplate','iron_leggings','iron_boots',
+    'golden_helmet','golden_chestplate','golden_leggings','golden_boots',
+    'diamond_helmet','diamond_chestplate','diamond_leggings','diamond_boots',
+    'netherite_helmet','netherite_chestplate','netherite_leggings','netherite_boots',
+    'turtle_helmet','elytra','totem_of_undying',
+    'apple','golden_apple','enchanted_golden_apple','bread','steak','cooked_porkchop','cooked_chicken',
+    'cooked_mutton','cooked_salmon','cooked_cod','baked_potato','pumpkin_pie','cake','cookie',
+    'melon_slice','sweet_berries','glow_berries','dried_kelp','honey_bottle','chorus_fruit',
+    'beef','porkchop','chicken','mutton','rabbit','salmon','cod','tropical_fish','potato','carrot',
+    'beetroot','wheat','sugar_cane','bamboo','cactus','kelp','vine','lily_pad','cocoa_beans',
+    'arrow','spectral_arrow','tipped_arrow','firework_rocket','firework_star',
+    'potion','splash_potion','lingering_potion','experience_bottle',
+    'ender_pearl','ender_eye','blaze_rod','blaze_powder','nether_star','ghast_tear','magma_cream',
+    'slime_ball','bone','bone_meal','gunpowder','string','feather','leather','rabbit_hide',
+    'phantom_membrane','ink_sac','glow_ink_sac','spider_eye','fermented_spider_eye',
+    'coal','charcoal','raw_iron','raw_copper','raw_gold','iron_ingot','copper_ingot','gold_ingot',
+    'diamond','emerald','lapis_lazuli','quartz','netherite_scrap','netherite_ingot','amethyst_shard',
+    'redstone','glowstone_dust','prismarine_shard','prismarine_crystals',
+    'stick','flint','paper','book','writable_book','written_book','knowledge_book',
+    'compass','recovery_compass','clock','map','spyglass','name_tag','lead','saddle',
+    'minecart','chest_minecart','hopper_minecart','tnt_minecart','furnace_minecart',
+    'oak_boat','spruce_boat','birch_boat','oak_chest_boat',
+    'white_dye','orange_dye','red_dye','blue_dye','green_dye','yellow_dye','black_dye',
+    'light_blue_dye','magenta_dye','pink_dye','cyan_dye','purple_dye','brown_dye',
+    'lime_dye','gray_dye','light_gray_dye',
+    'music_disc_13','music_disc_cat','music_disc_blocks','music_disc_chirp','music_disc_far',
+    'music_disc_mall','music_disc_mellohi','music_disc_stal','music_disc_strad','music_disc_ward',
+    'music_disc_11','music_disc_wait','music_disc_otherside','music_disc_5','music_disc_pigstep','music_disc_relic',
+    'goat_horn','brush','trial_key','ominous_trial_key','wind_charge','breeze_rod',
+    'command_block','chain_command_block','repeating_command_block','structure_block','jigsaw','barrier',
+    'light','spawner','trial_spawner','vault',
+    'player_head','zombie_head','skeleton_skull','wither_skeleton_skull','creeper_head','piglin_head','dragon_head',
+    'egg','snowball','fire_charge','heart_of_the_sea','nautilus_shell','conduit','shulker_shell',
+    'dragon_breath','rabbit_foot','rabbit_stew','suspicious_stew','beetroot_soup','mushroom_stew',
+    'pufferfish','tropical_fish','globe_banner_pattern','creeper_banner_pattern','skull_banner_pattern',
+    'flower_banner_pattern','mojang_banner_pattern','piglin_banner_pattern',
+    'wolf_armor','air',
+  ],
+  _entities: [
+    'player','zombie','skeleton','creeper','spider','enderman','witch','pillager','vindicator',
+    'evoker','ravager','phantom','drowned','husk','stray','wither_skeleton','blaze','ghast',
+    'magma_cube','slime','silverfish','endermite','guardian','elder_guardian','shulker',
+    'warden','wither','ender_dragon','piglin','piglin_brute','hoglin','zoglin','zombified_piglin',
+    'breeze','bogged',
+    'cow','pig','sheep','chicken','horse','donkey','mule','llama','wolf','cat','ocelot',
+    'parrot','rabbit','fox','bee','goat','frog','tadpole','axolotl','camel','sniffer','armadillo',
+    'turtle','dolphin','squid','glow_squid','panda','polar_bear','mooshroom',
+    'villager','wandering_trader','iron_golem','snow_golem','allay',
+    'bat','cod','salmon','tropical_fish','pufferfish','strider',
+    'armor_stand','item_frame','glow_item_frame','painting','minecart','boat',
+    'tnt','falling_block','area_effect_cloud','marker','interaction','display','text_display',
+    'item_display','block_display','experience_orb','arrow','spectral_arrow','firework_rocket',
+    'ender_pearl','eye_of_ender','fireball','small_fireball','wither_skull','wind_charge',
+    'lightning_bolt','item','leash_knot','fishing_bobber',
+  ],
+  _effects: [
+    'speed','slowness','haste','mining_fatigue','strength','instant_health','instant_damage',
+    'jump_boost','nausea','regeneration','resistance','fire_resistance','water_breathing',
+    'invisibility','blindness','night_vision','hunger','weakness','poison','wither',
+    'health_boost','absorption','saturation','glowing','levitation','luck','unluck',
+    'slow_falling','conduit_power','dolphins_grace','bad_omen','hero_of_the_village',
+    'darkness','trial_omen','raid_omen','wind_charged','weaving','oozing','infested',
+  ],
+  _enchantments: [
+    'sharpness','smite','bane_of_arthropods','knockback','fire_aspect','looting','sweeping_edge',
+    'efficiency','silk_touch','fortune','unbreaking','mending','vanishing_curse','binding_curse',
+    'power','punch','flame','infinity','protection','fire_protection','blast_protection',
+    'projectile_protection','feather_falling','respiration','aqua_affinity','thorns',
+    'depth_strider','frost_walker','soul_speed','swift_sneak','luck_of_the_sea','lure',
+    'riptide','loyalty','channeling','impaling','multishot','piercing','quick_charge',
+    'density','breach','wind_burst',
+  ],
+  _particles: [
+    'flame','soul_fire_flame','smoke','large_smoke','cloud','explosion','explosion_emitter',
+    'heart','angry_villager','happy_villager','crit','enchanted_hit',
+    'portal','enchant','witch','note','dust','totem_of_undying','campfire_cosy_smoke',
+    'dripping_water','dripping_lava','end_rod','snowflake','cherry_leaves','trial_spawner_detection',
+    'gust','small_gust','gust_emitter_large','gust_emitter_small','infested','item_cobweb',
+    'raid_omen','trial_omen','ominous_spawning','vault_connection',
+  ],
+  _sounds_common: [
+    'entity.experience_orb.pickup','entity.player.levelup','entity.ender_dragon.growl',
+    'entity.wither.spawn','entity.lightning_bolt.thunder','block.note_block.pling',
+    'block.note_block.bell','block.note_block.chime','block.note_block.harp',
+    'block.anvil.use','block.chest.open','block.chest.close','block.beacon.activate',
+    'entity.firework_rocket.launch','entity.firework_rocket.blast','entity.generic.explode',
+    'item.totem.use','item.trident.thunder','ui.button.click','ui.toast.challenge_complete',
+    'entity.villager.celebrate','entity.player.attack.sweep','entity.player.attack.strong',
+    'entity.arrow.shoot','entity.arrow.hit_player','entity.blaze.shoot',
+    'entity.ghast.shoot','entity.ghast.scream','entity.wolf.howl',
+    'music.game','music.creative','music.end','music.dragon','music.nether.basalt_deltas',
+  ],
 };
 
 // ════════════════════════════════════════════════════════════
@@ -2017,6 +2146,30 @@ function getValidCommands(targetVersion) {
   return new Set(filterByVersion(MC_AUTO._root, targetVersion).map(c => c.l));
 }
 
+// Helper: convert plain string array to autocomplete items with optional category label
+function stringsToAcItems(arr, prefix, category) {
+  const lc = prefix.toLowerCase();
+  return arr.filter(s => s.startsWith(lc)).slice(0, 15).map(s => ({ l: s, d: category || '' }));
+}
+
+// Detect which argument position expects an item/entity/effect/etc
+const CMD_ARG_TYPES = {
+  give: [null, 'item', 'number'],
+  clear: [null, 'item'],
+  item: [null, null, null, 'item'],
+  summon: ['entity'],
+  kill: [null],
+  tp: [null],
+  effect: [null, null, 'effect'],
+  'effect.give': [null, 'effect'],
+  'effect.clear': [null, 'effect'],
+  enchant: [null, 'enchantment'],
+  playsound: ['sound'],
+  particle: ['particle'],
+  ride: [null],
+  damage: [null, 'number', null],
+};
+
 function getAutocompleteSuggestions(lineText, cursorCol, targetVersion) {
   const text = lineText.substring(0, cursorCol).trimStart();
   if (!text || text.startsWith('#')) return [];
@@ -2024,6 +2177,7 @@ function getAutocompleteSuggestions(lineText, cursorCol, targetVersion) {
   const tokens = text.split(/\s+/);
   const currentWord = tokens[tokens.length - 1] || '';
   const completed = tokens.slice(0, -1);
+  const cw = currentWord.toLowerCase();
 
   // Inside selector brackets
   const lastOpen = text.lastIndexOf('[');
@@ -2032,6 +2186,16 @@ function getAutocompleteSuggestions(lineText, cursorCol, targetVersion) {
     const inside = text.substring(lastOpen + 1);
     const parts = inside.split(',');
     const lastPart = parts[parts.length - 1].trim();
+    // After type= suggest entities
+    if (lastPart.startsWith('type=')) {
+      const partial = lastPart.substring(5).replace(/^!?minecraft:/, '').replace(/^!/, '');
+      return stringsToAcItems(MC_AUTO._entities, partial, 'エンティティ');
+    }
+    // After gamemode= suggest gamemodes
+    if (lastPart.startsWith('gamemode=')) {
+      const partial = lastPart.substring(9).replace(/^!/, '');
+      return ['survival','creative','adventure','spectator'].filter(s => s.startsWith(partial)).map(s => ({ l: s, d: '' }));
+    }
     return filterByVersion(MC_AUTO._selector_args, targetVersion).filter(s => s.l.startsWith(lastPart.toLowerCase()));
   }
 
@@ -2040,40 +2204,115 @@ function getAutocompleteSuggestions(lineText, cursorCol, targetVersion) {
     return filterByVersion(MC_AUTO._selectors, targetVersion).filter(s => s.l.startsWith(currentWord));
   }
 
-  // Determine context
+  // Root commands
   if (completed.length === 0) {
-    return filterByVersion(MC_AUTO._root, targetVersion).filter(s => s.l.startsWith(currentWord.toLowerCase()));
+    if (!currentWord) return filterByVersion(MC_AUTO._root, targetVersion).slice(0, 15);
+    return filterByVersion(MC_AUTO._root, targetVersion).filter(s => s.l.startsWith(cw));
   }
 
   const cmd = completed[0].toLowerCase();
 
-  // Execute chain: find last meaningful subcommand
+  // Execute chain: improved argument skipping
   if (cmd === 'execute') {
     let ctx = 'execute';
+    let expectArg = false; // true when next token is argument to skip (selector, coords, etc.)
     for (let i = 1; i < completed.length; i++) {
       const tok = completed[i].toLowerCase();
-      if (tok === 'run') { ctx = '_root'; continue; }
-      if (tok === 'if' || tok === 'unless') { ctx = 'execute.if'; continue; }
-      if (tok === 'store') { ctx = 'execute.store'; continue; }
-      if (tok === 'result' || tok === 'success') { ctx = 'execute.store.result'; continue; }
-      if (['as', 'at', 'positioned', 'rotated', 'facing', 'in', 'anchored', 'align', 'on', 'summon'].includes(tok)) {
-        ctx = 'execute'; // After argument, back to execute subcommands
+      if (expectArg) { expectArg = false; continue; }
+      if (tok === 'run') { ctx = '_root'; expectArg = false; continue; }
+      if (tok === 'if' || tok === 'unless') { ctx = 'execute.if'; expectArg = false; continue; }
+      if (tok === 'store') { ctx = 'execute.store'; expectArg = false; continue; }
+      if (tok === 'result' || tok === 'success') { ctx = 'execute.store.result'; expectArg = false; continue; }
+      if (['as', 'at', 'on'].includes(tok)) {
+        expectArg = true; ctx = 'execute'; continue; // skip next token (selector)
+      }
+      if (['positioned', 'rotated'].includes(tok)) {
+        // positioned/rotated can take 'as <selector>' or coordinates
+        const next = completed[i + 1]?.toLowerCase();
+        if (next === 'as') { i += 2; } else { i += 2; } // skip 3 coord tokens or 'as' + selector
+        ctx = 'execute'; continue;
+      }
+      if (tok === 'facing') { i += 2; ctx = 'execute'; continue; } // skip coords
+      if (tok === 'in') { expectArg = true; ctx = 'execute'; continue; } // skip dimension
+      if (tok === 'anchored') { expectArg = true; ctx = 'execute'; continue; }
+      if (tok === 'align') { expectArg = true; ctx = 'execute'; continue; }
+      if (tok === 'summon') { expectArg = true; ctx = 'execute'; continue; }
+      // After run, delegate to the run command context
+      if (ctx === '_root') {
+        // We're past 'run <cmd>', try to provide context for the run command
+        break;
       }
     }
+    // After 'run', provide contextual suggestions for the actual command
+    if (ctx === '_root' && !currentWord) return filterByVersion(MC_AUTO._root, targetVersion).slice(0, 15);
     const items = filterByVersion(MC_AUTO[ctx] || [], targetVersion);
     if (!currentWord) return items.slice(0, 15);
-    return items.filter(s => s.l.toLowerCase().startsWith(currentWord.toLowerCase()));
+    return items.filter(s => s.l.toLowerCase().startsWith(cw));
   }
+
+  // Check for contextual item/entity/effect completion
+  const argIdx = completed.length - 1; // 0-based index after command
+  const checkContextTypes = (key) => {
+    const argTypes = CMD_ARG_TYPES[key];
+    if (!argTypes || argIdx >= argTypes.length) return null;
+    const expectedType = argTypes[argIdx];
+    if (!expectedType) return null;
+    const cleanWord = cw.replace(/^minecraft:/, '');
+    if (expectedType === 'item') return stringsToAcItems(MC_AUTO._items, cleanWord, 'アイテムID');
+    if (expectedType === 'entity') return stringsToAcItems(MC_AUTO._entities, cleanWord, 'エンティティ');
+    if (expectedType === 'effect') return stringsToAcItems(MC_AUTO._effects, cleanWord, 'エフェクト');
+    if (expectedType === 'enchantment') return stringsToAcItems(MC_AUTO._enchantments, cleanWord, 'エンチャント');
+    if (expectedType === 'sound') return stringsToAcItems(MC_AUTO._sounds_common, cleanWord, 'サウンド');
+    if (expectedType === 'particle') return stringsToAcItems(MC_AUTO._particles, cleanWord, 'パーティクル');
+    return null;
+  };
+
+  // First try compound key (e.g. effect.give)
+  if (completed.length >= 2) {
+    const sub = completed[1].toLowerCase();
+    const compoundKey = `${cmd}.${sub}`;
+    const ctxResult = checkContextTypes(compoundKey);
+    if (ctxResult && ctxResult.length > 0) return ctxResult;
+  }
+  // Try simple command key
+  const ctxResult = checkContextTypes(cmd);
+  if (ctxResult && ctxResult.length > 0) return ctxResult;
 
   // Gamerule: show gamerule names
   if (cmd === 'gamerule' && completed.length === 1) {
-    return filterByVersion(MC_AUTO._gamerules, targetVersion).filter(s => s.l.toLowerCase().startsWith(currentWord.toLowerCase()));
+    return filterByVersion(MC_AUTO._gamerules, targetVersion).filter(s => s.l.toLowerCase().startsWith(cw));
   }
 
   // Title: skip selector token
   if (cmd === 'title' && completed.length >= 2 && completed[1].startsWith('@')) {
     const items = filterByVersion(MC_AUTO.title || [], targetVersion);
-    return items.filter(s => s.l.toLowerCase().startsWith(currentWord.toLowerCase()));
+    return items.filter(s => s.l.toLowerCase().startsWith(cw));
+  }
+
+  // Give/Clear/Summon: item/entity completion at correct arg position
+  if ((cmd === 'give' || cmd === 'clear') && completed.length === 2) {
+    return stringsToAcItems(MC_AUTO._items, cw.replace(/^minecraft:/, ''), 'アイテムID');
+  }
+  if (cmd === 'summon' && completed.length === 1) {
+    return stringsToAcItems(MC_AUTO._entities, cw.replace(/^minecraft:/, ''), 'エンティティ');
+  }
+  if (cmd === 'enchant' && completed.length === 2) {
+    return stringsToAcItems(MC_AUTO._enchantments, cw.replace(/^minecraft:/, ''), 'エンチャント');
+  }
+  if (cmd === 'playsound' && completed.length === 1) {
+    return stringsToAcItems(MC_AUTO._sounds_common, cw, 'サウンド');
+  }
+  if (cmd === 'particle' && completed.length === 1) {
+    return stringsToAcItems(MC_AUTO._particles, cw, 'パーティクル');
+  }
+  if ((cmd === 'effect') && completed.length >= 2) {
+    const sub = completed[1]?.toLowerCase();
+    if ((sub === 'give' && completed.length === 3) || (sub === 'clear' && completed.length === 3)) {
+      return stringsToAcItems(MC_AUTO._effects, cw.replace(/^minecraft:/, ''), 'エフェクト');
+    }
+    if (completed.length === 2 && completed[1]?.startsWith('@')) {
+      return stringsToAcItems(MC_AUTO._effects, cw.replace(/^minecraft:/, ''), 'エフェクト');
+    }
   }
 
   // General: build context key from completed tokens
@@ -2088,8 +2327,13 @@ function getAutocompleteSuggestions(lineText, cursorCol, targetVersion) {
 
   const items = filterByVersion(MC_AUTO[contextKey] || [], targetVersion);
   if (!currentWord) return items.slice(0, 15);
-  return items.filter(s => s.l.toLowerCase().startsWith(currentWord.toLowerCase()));
+  return items.filter(s => s.l.toLowerCase().startsWith(cw));
 }
+
+// Set of all known item IDs for validation
+const MC_ITEM_SET = new Set(MC_AUTO._items);
+const MC_ENTITY_SET = new Set(MC_AUTO._entities);
+const MC_EFFECT_SET = new Set(MC_AUTO._effects);
 
 function validateMcfunctionLine(line, lineNum, targetVersion) {
   const trimmed = line.trim();
@@ -2110,7 +2354,7 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
 
   // Check if command exists at all
   if (!MC_ALL_COMMANDS.has(cmd)) {
-    return { line: lineNum, msg: `不明なコマンド: ${cmd}`, type: 'error' };
+    return { line: lineNum, msg: `不明なコマンド: "${cmd}" — コマンドのスペルを確認してください`, type: 'error' };
   }
 
   // Check version-specific command availability
@@ -2118,10 +2362,10 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
     const cmdEntry = MC_AUTO._root.find(c => c.l === cmd);
     if (cmdEntry) {
       if (cmdEntry.v && !versionAtLeast(targetVersion, cmdEntry.v)) {
-        return { line: lineNum, msg: `${cmd} は ${cmdEntry.v} 以降で使用可能です（現在: ${targetVersion}）`, type: 'error' };
+        return { line: lineNum, msg: `"${cmd}" は バージョン ${cmdEntry.v} 以降で使えます（現在: ${targetVersion}）`, type: 'error' };
       }
       if (cmdEntry.rm && versionAtLeast(targetVersion, cmdEntry.rm)) {
-        return { line: lineNum, msg: `${cmd} は ${cmdEntry.rm} で削除されました（現在: ${targetVersion}）`, type: 'error' };
+        return { line: lineNum, msg: `"${cmd}" は バージョン ${cmdEntry.rm} で削除されました（現在: ${targetVersion}）`, type: 'error' };
       }
     }
   }
@@ -2133,11 +2377,11 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
     if (ch === ']') squareDepth--;
     if (ch === '{') curlyDepth++;
     if (ch === '}') curlyDepth--;
-    if (squareDepth < 0) return { line: lineNum, msg: '"]" に対応する "[" がありません', type: 'error' };
-    if (curlyDepth < 0) return { line: lineNum, msg: '"}" に対応する "{" がありません', type: 'error' };
+    if (squareDepth < 0) return { line: lineNum, msg: '"]" に対応する "[" がありません — 閉じカッコが多すぎます', type: 'error' };
+    if (curlyDepth < 0) return { line: lineNum, msg: '"}" に対応する "{" がありません — 閉じカッコが多すぎます', type: 'error' };
   }
-  if (squareDepth !== 0) return { line: lineNum, msg: '"[" が閉じられていません', type: 'error' };
-  if (curlyDepth !== 0) return { line: lineNum, msg: '"{" が閉じられていません', type: 'error' };
+  if (squareDepth !== 0) return { line: lineNum, msg: '"[" が閉じられていません — "]" を追加してください', type: 'error' };
+  if (curlyDepth !== 0) return { line: lineNum, msg: '"{" が閉じられていません — "}" を追加してください', type: 'error' };
 
   // Check selector format - version-aware for @n
   if (targetVersion && !versionAtLeast(targetVersion, '1.21')) {
@@ -2147,13 +2391,57 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
     }
     const selectorMatch = trimmed.match(/@[^aeprs\s\[]/);
     if (selectorMatch) {
-      return { line: lineNum, msg: `不正なセレクター: ${selectorMatch[0]} (@a/@e/@p/@r/@s が有効)`, type: 'warning' };
+      return { line: lineNum, msg: `不正なセレクター: ${selectorMatch[0]} — 使えるのは @a/@e/@p/@r/@s です`, type: 'warning' };
     }
   } else {
     const selectorMatch = trimmed.match(/@[^aeprsn\s\[]/);
     if (selectorMatch) {
-      return { line: lineNum, msg: `不正なセレクター: ${selectorMatch[0]} (@a/@e/@p/@r/@s/@n が有効)`, type: 'warning' };
+      return { line: lineNum, msg: `不正なセレクター: ${selectorMatch[0]} — 使えるのは @a/@e/@p/@r/@s/@n です`, type: 'warning' };
     }
+  }
+
+  // Validate item IDs for give/clear commands
+  if ((cmd === 'give' || cmd === 'clear') && tokens.length >= 3) {
+    const itemArg = tokens[2].toLowerCase().replace(/^minecraft:/, '').split('[')[0].split('{')[0];
+    if (itemArg && !isMacro && !itemArg.startsWith('$') && !MC_ITEM_SET.has(itemArg) && itemArg !== '*') {
+      return { line: lineNum, msg: `アイテムID "${itemArg}" は見つかりません — スペルを確認するか、補完機能(Tab)を使ってください`, type: 'warning' };
+    }
+  }
+
+  // Validate entity IDs for summon
+  if (cmd === 'summon' && tokens.length >= 2) {
+    const entityArg = tokens[1].toLowerCase().replace(/^minecraft:/, '');
+    if (entityArg && !isMacro && !entityArg.startsWith('$') && !MC_ENTITY_SET.has(entityArg)) {
+      return { line: lineNum, msg: `エンティティID "${entityArg}" は見つかりません — summon の後にはエンティティ名を指定してください`, type: 'warning' };
+    }
+  }
+
+  // Validate effect IDs
+  if (cmd === 'effect' && tokens.length >= 3) {
+    const sub = tokens[1]?.toLowerCase();
+    let effectIdx = (sub === 'give' || sub === 'clear') ? 3 : 2;
+    if (tokens[effectIdx]) {
+      const effectArg = tokens[effectIdx].toLowerCase().replace(/^minecraft:/, '');
+      if (effectArg && !isMacro && !effectArg.startsWith('$') && !effectArg.startsWith('@') && !MC_EFFECT_SET.has(effectArg)) {
+        return { line: lineNum, msg: `エフェクトID "${effectArg}" は見つかりません — 補完機能(Tab)で正しいIDを選べます`, type: 'warning' };
+      }
+    }
+  }
+
+  // Check execute has run subcommand
+  if (cmd === 'execute' && tokens.length > 1 && !trimmed.includes(' run ')) {
+    return { line: lineNum, msg: 'execute コマンドに "run" がありません — execute ... run <コマンド> の形式で書いてください', type: 'warning' };
+  }
+
+  // Check for common typos
+  if (cmd === 'exectue' || cmd === 'excute' || cmd === 'exeucte') {
+    return { line: lineNum, msg: `"${cmd}" → "execute" のスペルミスです`, type: 'error' };
+  }
+  if (cmd === 'scoreborad' || cmd === 'scroeboard') {
+    return { line: lineNum, msg: `"${cmd}" → "scoreboard" のスペルミスです`, type: 'error' };
+  }
+  if (cmd === 'telaport' || cmd === 'telelport') {
+    return { line: lineNum, msg: `"${cmd}" → "teleport" か "tp" を使ってください`, type: 'error' };
   }
 
   return null;
@@ -5221,7 +5509,7 @@ function CodeEditor({ file, onChange, targetVersion }) {
     }
   }, [isMcfunction, getCursorPixelPos, targetVersion]);
 
-  // Insert the selected autocomplete item
+  // Insert the selected autocomplete item then re-trigger for chained completion
   const insertCompletion = useCallback((text) => {
     const ta = textareaRef.current;
     if (!ta) return;
@@ -5236,12 +5524,14 @@ function CodeEditor({ file, onChange, targetVersion }) {
     const newVal = val.substring(0, wordStart) + text + suffix + val.substring(pos);
     onChange(newVal);
     const newPos = wordStart + text.length + suffix.length;
+    setAcItems([]);
     requestAnimationFrame(() => {
       ta.selectionStart = ta.selectionEnd = newPos;
       ta.focus();
+      // Re-trigger autocomplete immediately after insertion for chained completion
+      requestAnimationFrame(() => triggerAutocomplete());
     });
-    setAcItems([]);
-  }, [onChange]);
+  }, [onChange, triggerAutocomplete]);
 
   const handleKeyDown = (e) => {
     // Autocomplete navigation
@@ -5449,15 +5739,35 @@ function CodeEditor({ file, onChange, targetVersion }) {
         </div>
       )}
       {isMcfunction && (mcfErrorCount > 0 || mcfWarnCount > 0) && (
-        <div className="px-3 py-1 bg-mc-dark/50 border-t border-mc-border/30 text-[10px] text-mc-muted max-h-20 overflow-y-auto">
-          {Object.entries(lineErrors).slice(0, 8).map(([ln, e]) => (
-            <div key={ln} className={`flex items-center gap-2 py-0.5 ${e.type === 'error' ? 'text-mc-accent' : 'text-mc-warning'}`}>
-              <span className="font-mono w-8 text-right">{ln}行</span>
+        <div className="px-3 py-1.5 bg-mc-dark/80 border-t border-mc-border/30 text-[10px] max-h-28 overflow-y-auto">
+          <div className="flex items-center gap-2 mb-1 pb-1 border-b border-mc-border/20">
+            <AlertTriangle size={11} className="text-mc-accent" />
+            <span className="font-semibold text-mc-text">
+              {mcfErrorCount > 0 && <span className="text-mc-accent">{mcfErrorCount}個のエラー</span>}
+              {mcfErrorCount > 0 && mcfWarnCount > 0 && <span className="text-mc-muted mx-1">|</span>}
+              {mcfWarnCount > 0 && <span className="text-mc-warning">{mcfWarnCount}個の警告</span>}
+            </span>
+          </div>
+          {Object.entries(lineErrors).slice(0, 12).map(([ln, e]) => (
+            <div key={ln} className={`flex items-center gap-2 py-0.5 cursor-pointer hover:bg-mc-hover/30 rounded px-1 ${e.type === 'error' ? 'text-mc-accent' : 'text-mc-warning'}`}
+              onClick={() => {
+                const ta = textareaRef.current;
+                if (ta) {
+                  const lines = ta.value.split('\n');
+                  let pos = 0;
+                  for (let i = 0; i < parseInt(ln) - 1 && i < lines.length; i++) pos += lines[i].length + 1;
+                  ta.selectionStart = ta.selectionEnd = pos;
+                  ta.focus();
+                  ta.scrollTop = Math.max(0, (parseInt(ln) - 3) * 20.8);
+                }
+              }}>
+              <span className="flex-shrink-0">{e.type === 'error' ? '●' : '▲'}</span>
+              <span className="font-mono w-8 text-right flex-shrink-0">{ln}行</span>
               <span className="truncate">{e.msg}</span>
             </div>
           ))}
-          {Object.keys(lineErrors).length > 8 && (
-            <div className="text-mc-muted/50 py-0.5">...他 {Object.keys(lineErrors).length - 8}件</div>
+          {Object.keys(lineErrors).length > 12 && (
+            <div className="text-mc-muted/50 py-0.5 pl-5">...他 {Object.keys(lineErrors).length - 12}件</div>
           )}
         </div>
       )}
@@ -6017,9 +6327,14 @@ function IntegratedMcfEditor({ file, onChange, targetVersion, namespace }) {
     const newVal = val.substring(0, wordStart) + text + suffix + val.substring(pos);
     onChange(newVal);
     const newPos = wordStart + text.length + suffix.length;
-    requestAnimationFrame(() => { ta.selectionStart = ta.selectionEnd = newPos; ta.focus(); });
     setAcItems([]);
-  }, [onChange]);
+    requestAnimationFrame(() => {
+      ta.selectionStart = ta.selectionEnd = newPos;
+      ta.focus();
+      // Re-trigger autocomplete immediately for chained completion
+      requestAnimationFrame(() => triggerAutocomplete());
+    });
+  }, [onChange, triggerAutocomplete]);
 
   const handleScroll = () => {
     if (preRef.current && textareaRef.current) { preRef.current.scrollTop = textareaRef.current.scrollTop; preRef.current.scrollLeft = textareaRef.current.scrollLeft; }
@@ -6385,16 +6700,35 @@ function IntegratedMcfEditor({ file, onChange, targetVersion, namespace }) {
         </div>
       )}
 
-      {/* Error display */}
+      {/* Error display - improved */}
       {(mcfErrorCount > 0 || mcfWarnCount > 0) && (
-        <div className="px-3 py-1 bg-mc-dark/50 border-t border-mc-border/30 text-[10px] text-mc-muted max-h-20 overflow-y-auto" style={{flexShrink:0}}>
-          {Object.entries(lineErrors).slice(0, 8).map(([ln, e]) => (
-            <div key={ln} className={`flex items-center gap-2 py-0.5 ${e.type === 'error' ? 'text-mc-accent' : 'text-mc-warning'}`}>
-              <span className="font-mono w-8 text-right">{ln}行</span>
+        <div className="px-3 py-1.5 bg-mc-dark/80 border-t border-mc-border/30 text-[10px] max-h-28 overflow-y-auto" style={{flexShrink:0}}>
+          <div className="flex items-center gap-2 mb-1 pb-1 border-b border-mc-border/20">
+            <span className="font-semibold text-mc-text">
+              {mcfErrorCount > 0 && <span className="text-mc-accent">● {mcfErrorCount}個のエラー</span>}
+              {mcfErrorCount > 0 && mcfWarnCount > 0 && <span className="text-mc-muted mx-1">|</span>}
+              {mcfWarnCount > 0 && <span className="text-mc-warning">▲ {mcfWarnCount}個の警告</span>}
+            </span>
+          </div>
+          {Object.entries(lineErrors).slice(0, 12).map(([ln, e]) => (
+            <div key={ln} className={`flex items-center gap-2 py-0.5 cursor-pointer hover:bg-mc-hover/30 rounded px-1 ${e.type === 'error' ? 'text-mc-accent' : 'text-mc-warning'}`}
+              onClick={() => {
+                const ta = textareaRef.current;
+                if (ta) {
+                  const lines = ta.value.split('\n');
+                  let pos = 0;
+                  for (let i = 0; i < parseInt(ln) - 1 && i < lines.length; i++) pos += lines[i].length + 1;
+                  ta.selectionStart = ta.selectionEnd = pos;
+                  ta.focus();
+                  ta.scrollTop = Math.max(0, (parseInt(ln) - 3) * 20.8);
+                }
+              }}>
+              <span className="flex-shrink-0">{e.type === 'error' ? '●' : '▲'}</span>
+              <span className="font-mono w-8 text-right flex-shrink-0">{ln}行</span>
               <span className="truncate">{e.msg}</span>
             </div>
           ))}
-          {Object.keys(lineErrors).length > 8 && <div className="text-mc-muted/50 py-0.5">...他 {Object.keys(lineErrors).length - 8}件</div>}
+          {Object.keys(lineErrors).length > 12 && <div className="text-mc-muted/50 py-0.5 pl-5">...他 {Object.keys(lineErrors).length - 12}件</div>}
         </div>
       )}
     </div>
