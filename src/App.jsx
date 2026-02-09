@@ -11918,6 +11918,7 @@ export default function App() {
   const [showMinigameWizard, setShowMinigameWizard] = useState(false);
   const [showSystemWizard, setShowSystemWizard] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [sidebarDragOver, setSidebarDragOver] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const [guideMode, setGuideMode] = useState(() => {
     try { return localStorage.getItem('dp_guide_mode') !== 'false'; } catch { return true; }
@@ -12388,6 +12389,64 @@ export default function App() {
     saveProjectData(id, { project: newProject, files: importedFiles, savedAt: Date.now() });
   };
 
+  const handleSidebarDrop = async (e) => {
+    e.preventDefault();
+    setSidebarDragOver(false);
+    const dt = e.dataTransfer;
+    if (!dt || !dt.files || dt.files.length === 0) return;
+
+    const droppedFiles = dt.files;
+    let pathContents = [];
+
+    // Check if it's a single ZIP file
+    if (droppedFiles.length === 1 && droppedFiles[0].name.endsWith('.zip')) {
+      try {
+        pathContents = await importFromZip(droppedFiles[0]);
+        pathContents = stripTopFolder(pathContents);
+      } catch (err) {
+        console.error('ZIP import error:', err);
+        return;
+      }
+    } else {
+      // Multiple files / folder
+      try {
+        pathContents = await importFromFileList(droppedFiles);
+        // If all files share a common top folder via webkitRelativePath, strip it
+        if (droppedFiles[0]?.webkitRelativePath) {
+          pathContents = stripTopFolder(pathContents);
+        }
+      } catch (err) {
+        console.error('File import error:', err);
+        return;
+      }
+    }
+
+    if (pathContents.length === 0) return;
+
+    // If current project has no files, treat as full import (new project setup)
+    if (files.length === 0) {
+      const info = detectDatapackInfo(pathContents);
+      // Update project info if detected
+      if (info.name) setProject(prev => ({ ...prev, name: info.name }));
+      if (info.namespace) setProject(prev => ({ ...prev, namespace: info.namespace }));
+      if (info.description) setProject(prev => ({ ...prev, description: info.description }));
+      if (info.targetVersion) setProject(prev => ({ ...prev, targetVersion: info.targetVersion }));
+      const newFiles = addFilesFromPaths([], pathContents.map(p => ({ path: p.path, content: p.content })));
+      setFiles(newFiles);
+      const allIds = new Set();
+      newFiles.filter(f => f.type === 'folder').forEach(f => allIds.add(f.id));
+      setExpanded(allIds);
+      setShowWizard(false);
+    } else {
+      // Merge into existing project
+      const newFiles = addFilesFromPaths(files, pathContents.map(p => ({ path: p.path, content: p.content })));
+      setFiles(newFiles);
+      const allIds = new Set(expanded);
+      newFiles.filter(f => f.type === 'folder').forEach(f => allIds.add(f.id));
+      setExpanded(allIds);
+    }
+  };
+
   // ── Derived ──
   const rootFiles = files.filter(f => !f.parentId);
   const fileCount = files.filter(f => f.type !== 'folder').length;
@@ -12512,17 +12571,39 @@ export default function App() {
           </div>
 
           {/* File tree */}
-          <div className="flex-1 overflow-y-auto py-1">
-            {rootFiles.length === 0 ? (
-              <div className="text-center py-8 text-mc-muted">
-                <Folder size={24} className="mx-auto mb-2 opacity-30" />
+          <div
+            className={`flex-1 overflow-y-auto py-1 transition-colors ${sidebarDragOver ? 'bg-mc-info/10 ring-1 ring-inset ring-mc-info/40' : ''}`}
+            onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; setSidebarDragOver(true); }}
+            onDragEnter={(e) => { e.preventDefault(); setSidebarDragOver(true); }}
+            onDragLeave={(e) => { if (e.currentTarget.contains(e.relatedTarget)) return; setSidebarDragOver(false); }}
+            onDrop={handleSidebarDrop}
+          >
+            {sidebarDragOver ? (
+              <div className="flex flex-col items-center justify-center h-full text-mc-info anim-fade">
+                <UploadCloud size={28} className="mb-2 opacity-80" />
+                <p className="text-xs font-medium">ここにドロップしてインポート</p>
+                <p className="text-[10px] text-mc-muted mt-1">ZIP / ファイル / フォルダ</p>
+              </div>
+            ) : rootFiles.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-mc-muted">
+                <UploadCloud size={28} className="mx-auto mb-2 opacity-20" />
                 <p className="text-xs">ファイルがありません</p>
-                <button
-                  onClick={() => setShowWizard(true)}
-                  className="text-xs text-mc-info hover:underline mt-1"
-                >
-                  ウィザードで作成
-                </button>
+                <p className="text-[10px] mt-1 opacity-60">ファイルをドラッグ&ドロップ</p>
+                <div className="flex items-center gap-2 mt-3">
+                  <button
+                    onClick={() => setShowWizard(true)}
+                    className="text-[10px] text-mc-info hover:underline"
+                  >
+                    ウィザードで作成
+                  </button>
+                  <span className="text-[10px] opacity-30">|</span>
+                  <button
+                    onClick={() => setShowImportModal(true)}
+                    className="text-[10px] text-mc-info hover:underline"
+                  >
+                    インポート
+                  </button>
+                </div>
               </div>
             ) : (
               rootFiles.map(file => (
