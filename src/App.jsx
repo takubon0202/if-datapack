@@ -12,6 +12,7 @@ import {
   Gamepad2, Users, Timer, Trophy, Sword, Target, Play, Square,
   Clipboard, Sparkles, Crown, Flag, Shield, Heart,
   Send, Key, Bot, Loader, RotateCcw, MessageSquare, StopCircle,
+  UploadCloud, FolderInput,
 } from 'lucide-react';
 
 // ════════════════════════════════════════════════════════════
@@ -2621,8 +2622,8 @@ function getAutocompleteSuggestions(lineText, cursorCol, targetVersion) {
 
   // NBT autocomplete: detect { } context in summon/data/execute store
   const lastBrace = text.lastIndexOf('{');
-  const lastClose = text.lastIndexOf('}');
-  if (lastBrace > lastClose && lastBrace < text.length) {
+  const lastBraceClose = text.lastIndexOf('}');
+  if (lastBrace > lastBraceClose && lastBrace < text.length) {
     // We're inside a { } block - offer NBT keys
     const inside = text.substring(lastBrace + 1);
     // Find the last key being typed (after , or { or : )
@@ -3954,6 +3955,290 @@ async function generateZip(project, files) {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// ════════════════════════════════════════════════════════════
+// FILE IMPORT UTILITIES
+// ════════════════════════════════════════════════════════════
+
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error(`ファイル読み取りエラー: ${file.name}`));
+    reader.readAsText(file);
+  });
+}
+
+async function importFromZip(zipFile) {
+  const zip = await JSZip.loadAsync(zipFile);
+  const pathContents = [];
+  const entries = [];
+  zip.forEach((relativePath, entry) => {
+    if (!entry.dir) entries.push({ relativePath, entry });
+  });
+  for (const { relativePath, entry } of entries) {
+    const normalized = relativePath.replace(/\\/g, '/');
+    if (normalized.startsWith('__MACOSX/') || normalized.includes('.DS_Store')) continue;
+    const ext = normalized.split('.').pop()?.toLowerCase();
+    const isBinary = ['png', 'jpg', 'jpeg', 'gif', 'nbt', 'dat'].includes(ext);
+    let content;
+    if (isBinary) {
+      if (ext === 'png') {
+        const base64 = await entry.async('base64');
+        content = `data:image/png;base64,${base64}`;
+      } else {
+        content = `[バイナリファイル: ${normalized}]`;
+      }
+    } else {
+      content = await entry.async('string');
+    }
+    pathContents.push({ path: normalized, content });
+  }
+  return pathContents;
+}
+
+async function importFromFileList(fileList) {
+  const pathContents = [];
+  for (const file of fileList) {
+    const relativePath = (file.webkitRelativePath || file.name).replace(/\\/g, '/');
+    if (relativePath.includes('.DS_Store') || relativePath.includes('__MACOSX')) continue;
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    const isBinary = ['png', 'jpg', 'jpeg', 'gif', 'nbt', 'dat'].includes(ext);
+    let content;
+    if (isBinary) {
+      if (ext === 'png') {
+        const base64 = await new Promise((res, rej) => {
+          const r = new FileReader();
+          r.onload = () => res(r.result);
+          r.onerror = () => rej(new Error(`読み取りエラー: ${file.name}`));
+          r.readAsDataURL(file);
+        });
+        content = base64;
+      } else {
+        content = `[バイナリファイル: ${file.name}]`;
+      }
+    } else {
+      content = await readFileAsText(file);
+    }
+    pathContents.push({ path: relativePath, content });
+  }
+  return pathContents;
+}
+
+function detectDatapackInfo(pathContents) {
+  let name = '';
+  let description = '';
+  let namespace = '';
+  let targetVersion = '1.21.11';
+  const mcmetaEntry = pathContents.find(p => p.path.endsWith('pack.mcmeta'));
+  if (mcmetaEntry) {
+    try {
+      const meta = JSON.parse(mcmetaEntry.content);
+      const pack = meta.pack || {};
+      description = typeof pack.description === 'string' ? pack.description : '';
+      const fmt = pack.pack_format;
+      if (fmt) {
+        const versionMap = {
+          15: '1.20', 18: '1.20.2', 26: '1.20.4', 41: '1.20.5',
+          48: '1.21', 57: '1.21.2', 71: '1.21.5', 80: '1.21.6',
+          81: '1.21.8', 88: '1.21.10', 94: '1.21.11',
+        };
+        targetVersion = versionMap[fmt] || '1.21.11';
+      }
+    } catch {}
+  }
+  const nsSet = new Set();
+  for (const p of pathContents) {
+    const m = p.path.match(/^(?:[^/]+\/)?data\/([a-z0-9_.-]+)\//);
+    if (m && m[1] !== 'minecraft') nsSet.add(m[1]);
+  }
+  if (nsSet.size > 0) namespace = [...nsSet][0];
+  const topFolder = pathContents[0]?.path.split('/')[0] || '';
+  if (topFolder && !topFolder.includes('.')) name = topFolder;
+  else if (namespace) name = namespace + '-datapack';
+  return { name, description, namespace, targetVersion };
+}
+
+function stripTopFolder(pathContents) {
+  if (pathContents.length === 0) return pathContents;
+  const firstParts = pathContents[0].path.split('/');
+  if (firstParts.length <= 1) return pathContents;
+  const topFolder = firstParts[0];
+  const allHaveTop = pathContents.every(p => p.path.startsWith(topFolder + '/'));
+  if (!allHaveTop) return pathContents;
+  return pathContents.map(p => ({ ...p, path: p.path.substring(topFolder.length + 1) }));
+}
+
+// ── ImportModal Component ──
+
+function ImportModal({ onImport, onClose }) {
+  const [dragging, setDragging] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const zipRef = useRef(null);
+  const folderRef = useRef(null);
+
+  const processFiles = async (pathContents) => {
+    if (pathContents.length === 0) { setError('ファイルが見つかりませんでした'); return; }
+    const info = detectDatapackInfo(pathContents);
+    const stripped = stripTopFolder(pathContents);
+    const hasMcmeta = stripped.some(p => p.path === 'pack.mcmeta' || p.path.endsWith('/pack.mcmeta'));
+    setPreview({ pathContents: stripped, info, fileCount: stripped.length, hasMcmeta });
+  };
+
+  const handleZipSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLoading(true); setError(null); setPreview(null);
+    try {
+      const pathContents = await importFromZip(file);
+      await processFiles(pathContents);
+    } catch (err) { setError(`ZIP読み取りエラー: ${err.message}`); }
+    setLoading(false);
+  };
+
+  const handleFolderSelect = async (e) => {
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
+    setLoading(true); setError(null); setPreview(null);
+    try {
+      const pathContents = await importFromFileList(fileList);
+      await processFiles(pathContents);
+    } catch (err) { setError(`フォルダ読み取りエラー: ${err.message}`); }
+    setLoading(false);
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault(); setDragging(false);
+    setLoading(true); setError(null); setPreview(null);
+    try {
+      const items = e.dataTransfer.items;
+      if (items && items.length === 1 && items[0].type.includes('zip')) {
+        const file = items[0].getAsFile();
+        const pathContents = await importFromZip(file);
+        await processFiles(pathContents);
+      } else if (items) {
+        const allFiles = [];
+        for (let i = 0; i < e.dataTransfer.files.length; i++) {
+          allFiles.push(e.dataTransfer.files[i]);
+        }
+        if (allFiles.length === 1 && allFiles[0].name.endsWith('.zip')) {
+          const pathContents = await importFromZip(allFiles[0]);
+          await processFiles(pathContents);
+        } else {
+          const pathContents = await importFromFileList(allFiles);
+          await processFiles(pathContents);
+        }
+      }
+    } catch (err) { setError(`インポートエラー: ${err.message}`); }
+    setLoading(false);
+  };
+
+  const handleConfirm = () => {
+    if (preview) onImport(preview.pathContents, preview.info);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="bg-mc-sidebar border border-mc-border rounded-lg w-full max-w-lg mx-4 anim-scale overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-mc-border">
+          <div className="flex items-center gap-2">
+            <UploadCloud size={16} className="text-mc-info" />
+            <span className="text-sm font-semibold">データパックをインポート</span>
+          </div>
+          <button onClick={onClose} className="text-mc-muted hover:text-mc-text transition-colors"><X size={16} /></button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {/* Drop zone */}
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={handleDrop}
+            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
+              dragging ? 'border-mc-info bg-mc-info/10' : 'border-mc-border hover:border-mc-muted'
+            }`}
+            onClick={() => zipRef.current?.click()}
+          >
+            {loading ? (
+              <div className="flex flex-col items-center gap-2">
+                <Loader size={24} className="text-mc-info animate-spin" />
+                <span className="text-sm text-mc-muted">読み込み中...</span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <UploadCloud size={32} className="text-mc-muted" />
+                <span className="text-sm text-mc-text">ZIPファイルをドロップ、またはクリックして選択</span>
+                <span className="text-xs text-mc-muted">データパックのZIPファイルをインポートできます</span>
+              </div>
+            )}
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => zipRef.current?.click()}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium bg-mc-dark border border-mc-border rounded hover:border-mc-muted transition-colors"
+            >
+              <Package size={14} /> ZIPファイル
+            </button>
+            <button
+              onClick={() => folderRef.current?.click()}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium bg-mc-dark border border-mc-border rounded hover:border-mc-muted transition-colors"
+            >
+              <FolderInput size={14} /> フォルダ選択
+            </button>
+          </div>
+
+          <input ref={zipRef} type="file" accept=".zip" className="hidden" onChange={handleZipSelect} />
+          <input ref={folderRef} type="file" webkitdirectory="" directory="" multiple className="hidden" onChange={handleFolderSelect} />
+
+          {/* Error */}
+          {error && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/30 rounded text-xs text-red-400">
+              <AlertTriangle size={14} /> {error}
+            </div>
+          )}
+
+          {/* Preview */}
+          {preview && (
+            <div className="bg-mc-dark rounded border border-mc-border p-4 space-y-3 anim-fade">
+              <div className="flex items-center gap-2">
+                <CheckCircle size={14} className="text-mc-success" />
+                <span className="text-sm font-medium text-mc-success">インポート準備完了</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div><span className="text-mc-muted">ファイル数:</span> <span className="text-mc-text">{preview.fileCount}</span></div>
+                <div><span className="text-mc-muted">pack.mcmeta:</span> <span className={preview.hasMcmeta ? 'text-mc-success' : 'text-mc-warning'}>{preview.hasMcmeta ? '検出' : '未検出'}</span></div>
+                {preview.info.name && <div><span className="text-mc-muted">パック名:</span> <span className="text-mc-text">{preview.info.name}</span></div>}
+                {preview.info.namespace && <div><span className="text-mc-muted">名前空間:</span> <span className="text-mc-keyword">{preview.info.namespace}</span></div>}
+                {preview.info.targetVersion && <div><span className="text-mc-muted">バージョン:</span> <span className="text-mc-text">{preview.info.targetVersion}</span></div>}
+              </div>
+              {!preview.hasMcmeta && (
+                <div className="flex items-center gap-2 text-xs text-mc-warning">
+                  <AlertTriangle size={12} /> pack.mcmetaが見つかりません。通常のフォルダとしてインポートされます。
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end gap-2 px-5 pb-5">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-mc-muted hover:text-mc-text transition-colors">キャンセル</button>
+          <button
+            onClick={handleConfirm}
+            disabled={!preview}
+            className="px-5 py-2 text-sm font-medium rounded bg-mc-info hover:bg-mc-info/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+          >
+            <UploadCloud size={14} /> インポート
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ════════════════════════════════════════════════════════════
@@ -5655,7 +5940,7 @@ tellraw @a {"text":"ロビーがリセットされました","color":"gray"}` })
 // SETUP WIZARD
 // ════════════════════════════════════════════════════════════
 
-function SetupWizard({ onComplete, onCancel }) {
+function SetupWizard({ onComplete, onCancel, onImport }) {
   const [step, setStep] = useState(0);
   const [config, setConfig] = useState({
     name: 'my-datapack',
@@ -5729,6 +6014,16 @@ function SetupWizard({ onComplete, onCancel }) {
                   ))}
                 </select>
               </div>
+              {onImport && (
+                <div className="pt-2 border-t border-mc-border/50">
+                  <button
+                    onClick={onImport}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-xs text-mc-muted hover:text-mc-info border border-dashed border-mc-border hover:border-mc-info rounded transition-colors"
+                  >
+                    <UploadCloud size={14} /> 既存のデータパックをインポート
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -11622,6 +11917,7 @@ export default function App() {
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [showMinigameWizard, setShowMinigameWizard] = useState(false);
   const [showSystemWizard, setShowSystemWizard] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const [guideMode, setGuideMode] = useState(() => {
     try { return localStorage.getItem('dp_guide_mode') !== 'false'; } catch { return true; }
@@ -12061,6 +12357,37 @@ export default function App() {
     }
   };
 
+  const handleImport = (pathContents, info) => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    if (currentProjectId) {
+      saveProjectData(currentProjectId, { project, files, savedAt: Date.now() });
+    }
+    const id = `proj_${++_idCounter}`;
+    const pName = info.name || 'imported-datapack';
+    const entry = { id, name: pName, createdAt: Date.now() };
+    const newList = [...projectsList, entry];
+    setProjectsList(newList);
+    saveProjectsList(newList);
+    setCurrentProjectId(id);
+    const newProject = {
+      name: pName,
+      description: info.description || '',
+      targetVersion: info.targetVersion || '1.21.11',
+      namespace: info.namespace || 'mypack',
+      packIcon: null,
+    };
+    setProject(newProject);
+    const importedFiles = addFilesFromPaths([], pathContents.map(p => ({ path: p.path, content: p.content })));
+    setFiles(importedFiles);
+    const allFolderIds = new Set();
+    importedFiles.filter(f => f.type === 'folder').forEach(f => allFolderIds.add(f.id));
+    setExpanded(allFolderIds);
+    setSelectedId(null);
+    setShowWizard(false);
+    setShowImportModal(false);
+    saveProjectData(id, { project: newProject, files: importedFiles, savedAt: Date.now() });
+  };
+
   // ── Derived ──
   const rootFiles = files.filter(f => !f.parentId);
   const fileCount = files.filter(f => f.type !== 'folder').length;
@@ -12123,6 +12450,12 @@ export default function App() {
             title="プロジェクト設定"
           >
             <Settings size={13} /> <span className="hidden sm:inline">設定</span>
+          </button>
+          <button onClick={() => setShowImportModal(true)}
+            className="text-xs px-2.5 py-1.5 text-mc-muted hover:text-mc-text hover:bg-mc-dark rounded transition-colors flex items-center gap-1.5"
+            title="データパックをインポート"
+          >
+            <UploadCloud size={13} /> <span className="hidden sm:inline">インポート</span>
           </button>
           <button onClick={handleReset}
             className="text-xs px-2.5 py-1.5 text-mc-muted hover:text-mc-text hover:bg-mc-dark rounded transition-colors"
@@ -12367,6 +12700,7 @@ export default function App() {
         <SetupWizard
           onComplete={handleWizardComplete}
           onCancel={() => setShowWizard(false)}
+          onImport={() => { setShowWizard(false); setShowImportModal(true); }}
         />
       )}
       {showSettings && (
@@ -12404,6 +12738,12 @@ export default function App() {
       )}
       {showGuide && (
         <VisualGuide onClose={() => setShowGuide(false)} />
+      )}
+      {showImportModal && (
+        <ImportModal
+          onImport={handleImport}
+          onClose={() => setShowImportModal(false)}
+        />
       )}
       {contextMenu && (
         <ContextMenu
