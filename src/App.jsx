@@ -2619,6 +2619,29 @@ function getAutocompleteSuggestions(lineText, cursorCol, targetVersion) {
     }
   }
 
+  // NBT autocomplete: detect { } context in summon/data/execute store
+  const lastBrace = text.lastIndexOf('{');
+  const lastClose = text.lastIndexOf('}');
+  if (lastBrace > lastClose && lastBrace < text.length) {
+    // We're inside a { } block - offer NBT keys
+    const inside = text.substring(lastBrace + 1);
+    // Find the last key being typed (after , or { or : )
+    const keyMatch = inside.match(/(?:^|,|\{)\s*([A-Za-z_]*)$/);
+    if (keyMatch) {
+      const partial = keyMatch[1].toLowerCase();
+      // Determine entity type from summon context
+      let entityId = null;
+      if (cmd === 'summon' && completed.length >= 2) entityId = completed[1];
+      if (cmd === 'data' && completed.length >= 4) entityId = null; // generic
+      const nbtKeys = getNBTKeysForEntity(entityId);
+      const results = Object.entries(nbtKeys)
+        .filter(([k]) => k.toLowerCase().startsWith(partial))
+        .map(([k, v]) => ({ l: k + ':', d: `${v.d} (${v.t})`, _nbt: true }))
+        .slice(0, 15);
+      if (results.length > 0) return results;
+    }
+  }
+
   // Commands where arg[1] is a selector and arg[2] is a subcommand (tag @s add, attribute @s ...)
   const SELECTOR_THEN_SUB = ['tag', 'ride'];
   if (SELECTOR_THEN_SUB.includes(cmd) && completed.length >= 2) {
@@ -2733,6 +2756,127 @@ function getAutocompleteSuggestions(lineText, cursorCol, targetVersion) {
   if (!currentWord) return items.slice(0, 15);
   return items.filter(s => s.l.toLowerCase().startsWith(cw));
 }
+
+// ========================================================================
+// NBT Tag Schema (Entity-specific NBT fields for autocomplete)
+// ========================================================================
+const NBT_COMMON = {
+  entity: {
+    Air: { t: 'short', d: '呼吸可能時間(tick)' }, CustomName: { t: 'string', d: '表示名(JSONテキスト)' },
+    CustomNameVisible: { t: 'byte', d: '常時名前表示(0/1)' }, Fire: { t: 'short', d: '炎上残り(tick)' },
+    Glowing: { t: 'byte', d: '発光(0/1)' }, HasVisualFire: { t: 'byte', d: '見た目のみ炎上(0/1)' },
+    Invulnerable: { t: 'byte', d: '無敵(0/1)' }, Motion: { t: 'list<double>', d: '[dx,dy,dz]' },
+    NoGravity: { t: 'byte', d: '重力無効(0/1)' }, Passengers: { t: 'list<compound>', d: '騎乗エンティティ' },
+    Pos: { t: 'list<double>', d: '[x,y,z]' }, Rotation: { t: 'list<float>', d: '[yaw,pitch]' },
+    Silent: { t: 'byte', d: '無音(0/1)' }, Tags: { t: 'list<string>', d: 'タグ配列' },
+    TicksFrozen: { t: 'int', d: '凍結tick' }, fall_distance: { t: 'double', d: '落下距離' },
+    data: { t: 'compound', d: 'カスタムデータ' },
+  },
+  mob: {
+    Health: { t: 'float', d: '体力' }, NoAI: { t: 'byte', d: 'AI無効(0/1)' },
+    CanPickUpLoot: { t: 'byte', d: '装備拾得(0/1)' }, PersistenceRequired: { t: 'byte', d: 'デスポーン抑止(0/1)' },
+    LeftHanded: { t: 'byte', d: '左利き(0/1)' }, equipment: { t: 'compound', d: '装備(1.21.5+)' },
+    drop_chances: { t: 'compound', d: 'ドロップ率' }, DeathLootTable: { t: 'string', d: 'ルートテーブル' },
+    leash: { t: 'compound', d: 'リード情報' },
+  },
+  breedable: {
+    Age: { t: 'int', d: '年齢(負=子供)' }, ForcedAge: { t: 'int', d: '成長補正' },
+    InLove: { t: 'int', d: '繁殖ハートtick' },
+  },
+  tameable: {
+    Owner: { t: 'int[]', d: '飼い主UUID' }, Sitting: { t: 'byte', d: '座り(0/1)' },
+  },
+  angerable: {
+    AngerTime: { t: 'int', d: '敵対残りtick' }, AngryAt: { t: 'int[]', d: '敵対対象UUID' },
+  },
+};
+const NBT_ENTITIES = {
+  armor_stand: { _inh: ['entity','mob'], DisabledSlots: { t:'int', d:'装備操作禁止ビットマスク' }, Invisible: { t:'byte', d:'透明(0/1)' }, Marker: { t:'byte', d:'極小ヒットボックス(0/1)' }, NoBasePlate: { t:'byte', d:'台座非表示(0/1)' }, ShowArms: { t:'byte', d:'腕表示(0/1)' }, Small: { t:'byte', d:'小型(0/1)' }, Pose: { t:'compound', d:'Head/Body/Arms/Legsの回転' } },
+  creeper: { _inh: ['entity','mob'], ExplosionRadius: { t:'byte', d:'爆発半径' }, Fuse: { t:'short', d:'起爆tick(30)' }, ignited: { t:'byte', d:'着火(0/1)' }, powered: { t:'byte', d:'帯電(0/1)' } },
+  zombie: { _inh: ['entity','mob'], CanBreakDoors: { t:'byte', d:'ドア破壊(0/1)' }, IsBaby: { t:'byte', d:'子供(0/1)' }, DrownedConversionTime: { t:'int', d:'溺死変換tick' } },
+  skeleton: { _inh: ['entity','mob'], StrayConversionTime: { t:'int', d:'ストレイ化tick' } },
+  zombie_villager: { _inh: ['entity','mob'], ConversionTime: { t:'int', d:'治療完了tick(-1=未治療)' }, VillagerData: { t:'compound', d:'職業データ(level/profession/type)' } },
+  villager: { _inh: ['entity','mob','breedable'], VillagerData: { t:'compound', d:'職業データ' }, Xp: { t:'int', d:'村人経験値' }, Offers: { t:'compound', d:'取引データ' }, Inventory: { t:'list<compound>', d:'インベントリ(最大8)' }, Willing: { t:'byte', d:'繁殖意欲(0/1)' } },
+  enderman: { _inh: ['entity','mob','angerable'], carriedBlockState: { t:'compound', d:'保持ブロック(Name/Properties)' } },
+  piglin: { _inh: ['entity','mob'], IsBaby: { t:'byte', d:'子供(0/1)' }, IsImmuneToZombification: { t:'byte', d:'ゾンビ化耐性(0/1)' }, CannotHunt: { t:'byte', d:'ホグリン狩り禁止(0/1)' }, Inventory: { t:'list<compound>', d:'インベントリ' } },
+  ender_dragon: { _inh: ['entity','mob'], DragonPhase: { t:'int', d:'行動フェーズ(0-10)' } },
+  wither: { _inh: ['entity','mob'], Invul: { t:'int', d:'召喚無敵tick' } },
+  shulker: { _inh: ['entity','mob'], AttachFace: { t:'byte', d:'付着面(0-5)' }, Color: { t:'byte', d:'色(0-16)' }, Peek: { t:'byte', d:'開閉量' } },
+  bee: { _inh: ['entity','mob','breedable','angerable'], HasNectar: { t:'byte', d:'花粉所持(0/1)' }, HasStung: { t:'byte', d:'刺針済(0/1)' }, CannotEnterHiveTicks: { t:'int', d:'巣に戻れないtick' }, flower_pos: { t:'int[]', d:'記憶花座標' }, hive_pos: { t:'int[]', d:'巣座標' } },
+  slime: { _inh: ['entity','mob'], Size: { t:'int', d:'サイズ(0-126)' } },
+  magma_cube: { _inh: ['entity','mob'], Size: { t:'int', d:'サイズ(0-126)' } },
+  phantom: { _inh: ['entity','mob'], size: { t:'int', d:'サイズ(0-64)' }, anchor_pos: { t:'int[]', d:'周回中心座標' } },
+  wolf: { _inh: ['entity','mob','breedable','tameable','angerable'], CollarColor: { t:'byte', d:'首輪色(0-15)' }, variant: { t:'string', d:'バリアントID' } },
+  cat: { _inh: ['entity','mob','breedable','tameable'], CollarColor: { t:'byte', d:'首輪色(0-15)' }, variant: { t:'string', d:'猫バリアントID' } },
+  horse: { _inh: ['entity','mob','breedable'], Tame: { t:'byte', d:'調教済(0/1)' }, Temper: { t:'int', d:'なつき値(0-100)' }, Variant: { t:'int', d:'毛色/模様' } },
+  sheep: { _inh: ['entity','mob','breedable'], Color: { t:'byte', d:'羊毛色(0-15)' }, Sheared: { t:'byte', d:'毛刈り済(0/1)' } },
+  cow: { _inh: ['entity','mob','breedable'], variant: { t:'string', d:'バリアントID' } },
+  chicken: { _inh: ['entity','mob','breedable'], EggLayTime: { t:'int', d:'産卵までtick' }, IsChickenJockey: { t:'byte', d:'ジョッキー(0/1)' } },
+  pig: { _inh: ['entity','mob','breedable'] },
+  goat: { _inh: ['entity','mob','breedable'], HasLeftHorn: { t:'byte', d:'左角(0/1)' }, HasRightHorn: { t:'byte', d:'右角(0/1)' }, IsScreamingGoat: { t:'byte', d:'叫ぶヤギ(0/1)' } },
+  fox: { _inh: ['entity','mob','breedable'], Crouching: { t:'byte', d:'しゃがみ(0/1)' }, Sleeping: { t:'byte', d:'睡眠(0/1)' }, Type: { t:'string', d:'キツネ種ID' } },
+  rabbit: { _inh: ['entity','mob','breedable'], RabbitType: { t:'int', d:'見た目バリアント' } },
+  axolotl: { _inh: ['entity','mob','breedable'], FromBucket: { t:'byte', d:'バケツ由来(0/1)' }, Variant: { t:'int', d:'ウーパールーパー種ID' } },
+  frog: { _inh: ['entity','mob','breedable'], variant: { t:'string', d:'種別(temperate/warm/cold)' } },
+  allay: { _inh: ['entity','mob'], DuplicationCooldown: { t:'long', d:'複製クールダウン' }, Inventory: { t:'list<compound>', d:'回収アイテム' } },
+  warden: { _inh: ['entity','mob'], anger: { t:'compound', d:'怒り値データ' } },
+  item: { _inh: ['entity'], Item: { t:'compound', d:'アイテムデータ(id/count)' }, Age: { t:'short', d:'存在tick(-32768=無限)' }, PickupDelay: { t:'short', d:'拾得不可tick' } },
+  arrow: { _inh: ['entity'], damage: { t:'double', d:'ダメージ値' }, pickup: { t:'byte', d:'拾得可否(0-2)' }, crit: { t:'byte', d:'クリティカル(0/1)' } },
+};
+function getNBTKeysForEntity(entityId) {
+  const e = entityId ? entityId.replace(/^minecraft:/, '') : null;
+  const spec = e && NBT_ENTITIES[e];
+  const result = {};
+  const visited = new Set();
+  function addCommon(cat) {
+    if (visited.has(cat) || !NBT_COMMON[cat]) return;
+    visited.add(cat);
+    Object.entries(NBT_COMMON[cat]).forEach(([k, v]) => { result[k] = v; });
+  }
+  if (spec) {
+    if (spec._inh) spec._inh.forEach(addCommon);
+    Object.entries(spec).forEach(([k, v]) => { if (k !== '_inh') result[k] = v; });
+  } else {
+    addCommon('entity'); addCommon('mob');
+  }
+  return result;
+}
+
+// ========================================================================
+// Command Guide & Preview Data (30 commands)
+// ========================================================================
+const COMMAND_GUIDE = {
+  give: { d: 'プレイヤーにアイテムを与えます', a: [{ n:'target', d:'対象(@s等)', t:'selector' }, { n:'item', d:'アイテムID', t:'item' }, { n:'count', d:'個数(省略可)', t:'int' }], p: '{target} に {item} を {count}個 与える', ex: ['give @s diamond 64','give @a golden_apple'] },
+  summon: { d: 'エンティティを召喚します', a: [{ n:'entity', d:'エンティティID', t:'entity' }, { n:'pos', d:'座標(省略可)', t:'pos' }, { n:'nbt', d:'NBTデータ(省略可)', t:'nbt' }], p: '{pos} に {entity} を召喚', ex: ['summon zombie ~ ~ ~','summon creeper ~ ~ ~ {powered:1b}'] },
+  effect: { d: 'ステータス効果を付与/解除します', a: [{ n:'action', d:'give/clear', t:'enum', o:['give','clear'] }, { n:'target', d:'対象', t:'selector' }, { n:'effect', d:'効果ID', t:'effect' }, { n:'seconds', d:'秒数', t:'int' }, { n:'amplifier', d:'レベル-1', t:'int' }], p: '{target} に {effect} Lv.{amplifier} を {seconds}秒 付与', ex: ['effect give @a speed 30 1','effect clear @s'] },
+  tp: { d: 'テレポートさせます', a: [{ n:'target', d:'対象', t:'selector' }, { n:'dest', d:'座標 or 対象', t:'pos' }], p: '{target} を {dest} へテレポート', ex: ['tp @s ~ ~10 ~','tp @e[type=cow] @s'] },
+  teleport: { d: 'テレポートさせます (tpと同じ)', a: [{ n:'target', d:'対象', t:'selector' }, { n:'dest', d:'座標 or 対象', t:'pos' }], p: '{target} を {dest} へテレポート', ex: ['teleport @s 0 64 0'] },
+  execute: { d: '条件付きでコマンドを実行します', a: [{ n:'subcommand', d:'as/at/if/run等', t:'enum', o:['as','at','if','unless','run','store','positioned','facing'] }], p: '条件・文脈を変えてコマンド実行', ex: ['execute as @a run say hi','execute if score @s val matches 1.. run say ok'] },
+  scoreboard: { d: 'スコアボード（変数）を管理します', a: [{ n:'category', d:'objectives/players', t:'enum', o:['objectives','players'] }, { n:'action', d:'add/set/remove等', t:'string' }], p: 'スコアボード操作: {category} {action}', ex: ['scoreboard objectives add hp health','scoreboard players set @s score 10'] },
+  title: { d: '画面にテキストを表示します', a: [{ n:'target', d:'対象', t:'selector' }, { n:'slot', d:'title/subtitle/actionbar', t:'enum', o:['title','subtitle','actionbar','times','clear'] }, { n:'text', d:'JSONテキスト', t:'json' }], p: '{target} の {slot} にテキスト表示', ex: ['title @a title {"text":"Hello!","color":"gold"}'] },
+  tellraw: { d: 'チャットに装飾付きメッセージを表示', a: [{ n:'target', d:'対象', t:'selector' }, { n:'message', d:'JSONテキスト', t:'json' }], p: '{target} にメッセージ送信', ex: ['tellraw @a {"text":"Hi","color":"green"}'] },
+  bossbar: { d: 'ボスバーを作成・操作します', a: [{ n:'action', d:'add/set/remove/list', t:'enum', o:['add','set','remove','list','get'] }, { n:'id', d:'バーID', t:'id' }], p: 'ボスバー {id} を {action}', ex: ['bossbar add ns:bar "Timer"','bossbar set ns:bar value 50'] },
+  team: { d: 'チームを管理します', a: [{ n:'action', d:'add/join/leave/modify', t:'enum', o:['add','join','leave','modify','remove','list'] }, { n:'team', d:'チーム名', t:'string' }], p: 'チーム {team} を {action}', ex: ['team add red','team join red @s'] },
+  particle: { d: 'パーティクルを表示します', a: [{ n:'name', d:'パーティクル名', t:'particle' }, { n:'pos', d:'座標', t:'pos' }, { n:'delta', d:'拡散(dx dy dz)', t:'vec3' }, { n:'speed', d:'速度', t:'float' }, { n:'count', d:'個数', t:'int' }], p: '{pos} に {name} を {count}個 表示', ex: ['particle flame ~ ~1 ~ 0.2 0.2 0.2 0.05 20'] },
+  playsound: { d: 'サウンドを再生します', a: [{ n:'sound', d:'サウンドID', t:'sound' }, { n:'source', d:'カテゴリ', t:'enum', o:['master','music','record','weather','block','hostile','neutral','player','ambient','voice'] }, { n:'target', d:'対象', t:'selector' }], p: '{target} に {sound} を再生', ex: ['playsound minecraft:entity.experience_orb.pickup master @a'] },
+  setblock: { d: '指定座標にブロックを設置します', a: [{ n:'pos', d:'座標(x y z)', t:'pos' }, { n:'block', d:'ブロックID', t:'block' }, { n:'mode', d:'モード(省略可)', t:'enum', o:['replace','destroy','keep'] }], p: '{pos} を {block} に設置', ex: ['setblock ~ ~-1 ~ stone','setblock 0 64 0 air destroy'] },
+  fill: { d: '範囲をブロックで埋めます', a: [{ n:'from', d:'始点(x y z)', t:'pos' }, { n:'to', d:'終点(x y z)', t:'pos' }, { n:'block', d:'ブロックID', t:'block' }, { n:'mode', d:'モード(省略可)', t:'enum', o:['replace','destroy','keep','hollow','outline'] }], p: '{from}~{to} を {block} で fill', ex: ['fill ~-5 ~ ~-5 ~5 ~3 ~5 stone hollow'] },
+  clone: { d: '範囲のブロックをコピーします', a: [{ n:'from', d:'始点', t:'pos' }, { n:'to', d:'終点', t:'pos' }, { n:'dest', d:'コピー先', t:'pos' }], p: '{from}~{to} を {dest} にコピー', ex: ['clone 0 60 0 10 70 10 100 60 100'] },
+  damage: { d: 'ダメージを与えます', a: [{ n:'target', d:'対象', t:'selector' }, { n:'amount', d:'ダメージ量', t:'float' }, { n:'type', d:'ダメージタイプ(省略可)', t:'damage_type' }], p: '{target} に {amount} ダメージ ({type})', ex: ['damage @s 5 minecraft:magic'] },
+  ride: { d: 'エンティティを乗降させます', a: [{ n:'target', d:'対象', t:'selector' }, { n:'action', d:'mount/dismount', t:'enum', o:['mount','dismount'] }, { n:'vehicle', d:'乗り物(mount時)', t:'selector' }], p: '{target} を {action}', ex: ['ride @s mount @e[type=horse,limit=1]'] },
+  item: { d: 'アイテムを操作・置換します', a: [{ n:'action', d:'replace/modify', t:'enum', o:['replace','modify'] }, { n:'type', d:'entity/block', t:'string' }], p: 'アイテム操作: {action} {type}', ex: ['item replace entity @s weapon.mainhand with diamond_sword'] },
+  attribute: { d: '属性（HP、速度等）を変更します', a: [{ n:'target', d:'対象', t:'selector' }, { n:'attr', d:'属性名', t:'attribute' }, { n:'action', d:'get/base/modifier', t:'string' }], p: '{target} の {attr} を操作', ex: ['attribute @s minecraft:max_health base set 40'] },
+  schedule: { d: '関数を遅延実行します', a: [{ n:'action', d:'function/clear', t:'enum', o:['function','clear'] }, { n:'function', d:'関数ID', t:'function' }, { n:'time', d:'遅延(1s,20t)', t:'time' }], p: '{time} 後に {function} を実行', ex: ['schedule function ns:tick 1s'] },
+  forceload: { d: 'チャンクを強制読み込みします', a: [{ n:'action', d:'add/remove/query', t:'enum', o:['add','remove','query'] }, { n:'pos', d:'座標(XZ)', t:'pos' }], p: 'チャンクの強制読み込みを {action}', ex: ['forceload add ~ ~'] },
+  worldborder: { d: 'ワールドボーダーを設定します', a: [{ n:'action', d:'set/add/center/get', t:'enum', o:['set','add','center','get','warning','damage'] }, { n:'value', d:'値', t:'float' }], p: 'ボーダーを {action} {value}', ex: ['worldborder set 100 10','worldborder center 0 0'] },
+  random: { d: '乱数を生成します', a: [{ n:'action', d:'value/roll/reset', t:'enum', o:['value','roll','reset'] }, { n:'range', d:'範囲(min..max)', t:'range' }], p: '{range} で乱数 ({action})', ex: ['random value 1..100'] },
+  tag: { d: 'タグを付け外しします', a: [{ n:'target', d:'対象', t:'selector' }, { n:'action', d:'add/remove/list', t:'enum', o:['add','remove','list'] }, { n:'name', d:'タグ名', t:'string' }], p: '{target} のタグ {name} を {action}', ex: ['tag @s add admin','tag @e remove temp'] },
+  loot: { d: 'ルートテーブルからアイテム生成', a: [{ n:'target', d:'give/spawn/insert/replace', t:'enum', o:['give','spawn','insert','replace'] }, { n:'source', d:'loot/kill/mine', t:'string' }], p: 'ルートテーブルからアイテム生成: {target}', ex: ['loot give @s loot minecraft:chests/simple_dungeon'] },
+  kill: { d: 'エンティティを消去します', a: [{ n:'target', d:'対象', t:'selector' }], p: '{target} をキル', ex: ['kill @e[type=zombie]','kill @e[type=!player]'] },
+  gamemode: { d: 'ゲームモードを変更します', a: [{ n:'mode', d:'モード', t:'enum', o:['survival','creative','adventure','spectator'] }, { n:'target', d:'対象(省略可)', t:'selector' }], p: '{target} を {mode} モードに変更', ex: ['gamemode creative @s'] },
+  gamerule: { d: 'ゲームルールを設定します', a: [{ n:'rule', d:'ルール名', t:'gamerule' }, { n:'value', d:'true/false or 数値', t:'string' }], p: 'ルール {rule} = {value}', ex: ['gamerule keepInventory true','gamerule randomTickSpeed 100'] },
+  clear: { d: 'インベントリからアイテムを除去します', a: [{ n:'target', d:'対象', t:'selector' }, { n:'item', d:'アイテム(省略=全部)', t:'item' }, { n:'count', d:'個数(省略=全部)', t:'int' }], p: '{target} から {item} を {count}個 除去', ex: ['clear @s diamond 10','clear @a'] },
+};
 
 // Set of all known item IDs for validation
 const MC_ITEM_SET = new Set(MC_AUTO._items);
@@ -5925,7 +6069,7 @@ function FileTreeNode({ file, files, depth, selectedId, expanded, onSelect, onTo
 // CODE EDITOR with syntax highlighting overlay
 // ════════════════════════════════════════════════════════════
 
-function CodeEditor({ file, onChange, targetVersion }) {
+function CodeEditor({ file, onChange, targetVersion, guideMode = false }) {
   const textareaRef = useRef(null);
   const preRef = useRef(null);
   const lineNumRef = useRef(null);
@@ -5935,6 +6079,7 @@ function CodeEditor({ file, onChange, targetVersion }) {
   const [acIndex, setAcIndex] = useState(0);
   const [acPos, setAcPos] = useState({ top: 0, left: 0 });
   const acRafRef = useRef(null);
+  const [cursorLineText, setCursorLineText] = useState('');
 
   const content = file?.content ?? '';
   const lines = content.split('\n');
@@ -6211,7 +6356,8 @@ function CodeEditor({ file, onChange, targetVersion }) {
             onChange={e => { onChange(e.target.value); if (acRafRef.current) cancelAnimationFrame(acRafRef.current); acRafRef.current = requestAnimationFrame(triggerAutocomplete); }}
             onScroll={handleScroll}
             onKeyDown={handleKeyDown}
-            onClick={() => setAcItems([])}
+            onClick={() => { setAcItems([]); const ta=textareaRef.current; if(ta){const pos=ta.selectionStart;const ls=ta.value.split('\n');let c=0;for(const l of ls){if(c+l.length>=pos){setCursorLineText(l);break;}c+=l.length+1;}} }}
+            onSelect={() => { const ta=textareaRef.current; if(ta&&isMcfunction){const pos=ta.selectionStart;const ls=ta.value.split('\n');let c=0;for(const l of ls){if(c+l.length>=pos){setCursorLineText(l);break;}c+=l.length+1;}} }}
             spellCheck={false}
             autoComplete="off"
             autoCorrect="off"
@@ -6232,7 +6378,7 @@ function CodeEditor({ file, onChange, targetVersion }) {
                   }`}
                   onMouseDown={(e) => { e.preventDefault(); insertCompletion(item.l); }}
                 >
-                  <span className="font-mono text-sky-300 font-medium">{item.l}</span>
+                  <span className={`font-mono font-medium ${item._nbt ? 'text-orange-400' : 'text-sky-300'}`}>{item.l}</span>
                   {item.v && <span className="text-[9px] px-1 py-0.5 rounded bg-mc-info/20 text-mc-info flex-shrink-0">{item.v}+</span>}
                   <span className="text-mc-muted text-[10px] truncate">{item.d}</span>
                 </div>
@@ -6305,6 +6451,34 @@ function CodeEditor({ file, onChange, targetVersion }) {
           )}
         </div>
       )}
+      {/* Command Guide Panel */}
+      {guideMode && isMcfunction && (() => {
+        const cmd = cursorLineText.trim().split(/\s+/)[0]?.replace(/^\//,'');
+        const guide = cmd && COMMAND_GUIDE[cmd];
+        if (!guide) return null;
+        const tokens = cursorLineText.trim().split(/\s+/);
+        const curArgIdx = Math.max(0, tokens.length - 2);
+        return (
+          <div className="bg-mc-dark/90 border-t border-mc-border/30 text-[10px] max-h-32 overflow-y-auto px-3 py-1.5 anim-fade">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-mc-info font-semibold text-[11px]">📖 {cmd}</span>
+              <span className="text-mc-muted">{guide.d}</span>
+            </div>
+            <div className="flex flex-wrap gap-1 mb-1">
+              {guide.a.map((arg, i) => (
+                <span key={i} className={`px-1.5 py-0.5 rounded border text-[9px] ${i === curArgIdx ? 'border-mc-info bg-mc-info/15 text-mc-info' : 'border-mc-border/30 text-mc-muted'}`}>
+                  <span className="opacity-60">{arg.t} </span>{arg.n}{i === curArgIdx && <span className="text-mc-info ml-1">← 入力中</span>}
+                </span>
+              ))}
+            </div>
+            <div className="text-mc-success/80 font-mono text-[9px]">▶ {guide.p.replace(/\{(\w+)\}/g, (_, k) => {
+              const idx = guide.a.findIndex(a => a.n === k);
+              return idx >= 0 && tokens[idx + 1] ? tokens[idx + 1] : `[${k}]`;
+            })}</div>
+            {guide.ex.length > 0 && <div className="text-mc-muted/60 mt-0.5 text-[9px]">例: {guide.ex[0]}</div>}
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -6752,7 +6926,7 @@ const SNIPPET_TEMPLATES = [
   ]},
 ];
 
-function IntegratedMcfEditor({ file, onChange, targetVersion, namespace }) {
+function IntegratedMcfEditor({ file, onChange, targetVersion, namespace, guideMode = false }) {
   const textareaRef = useRef(null);
   const preRef = useRef(null);
   const lineNumRef = useRef(null);
@@ -6988,7 +7162,7 @@ function IntegratedMcfEditor({ file, onChange, targetVersion, namespace }) {
                   {acItems.map((item, i) => (
                     <div key={item.l} className={`px-3 py-1.5 text-xs cursor-pointer flex items-center gap-3 min-w-[200px] ${i === acIndex ? 'bg-mc-info/30 text-white' : 'text-mc-text hover:bg-mc-dark'}`}
                       onMouseDown={(e) => { e.preventDefault(); insertCompletion(item.l); }}>
-                      <span className="font-mono text-sky-300 font-medium">{item.l}</span>
+                      <span className={`font-mono font-medium ${item._nbt ? 'text-orange-400' : 'text-sky-300'}`}>{item.l}</span>
                       {item.v && <span className="text-[9px] px-1 py-0.5 rounded bg-mc-info/20 text-mc-info flex-shrink-0">{item.v}+</span>}
                       <span className="text-mc-muted text-[10px] truncate">{item.d}</span>
                     </div>
@@ -7055,6 +7229,35 @@ function IntegratedMcfEditor({ file, onChange, targetVersion, namespace }) {
             </div>
           )}
 
+          {/* Inline Guide Panel */}
+          {guideMode && (() => {
+            const ls = content.split('\n');
+            const curLine = ls[cursorInfo.line - 1] || '';
+            const cmd = curLine.trim().split(/\s+/)[0]?.replace(/^\//,'');
+            const guide = cmd && COMMAND_GUIDE[cmd];
+            if (!guide) return null;
+            const tokens = curLine.trim().split(/\s+/);
+            const curArgIdx = Math.max(0, tokens.length - 2);
+            return (
+              <div style={{background:'#0d0d1a',borderTop:'1px solid #1a1a3a',padding:'3px 10px',fontSize:10,flexShrink:0,display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                <span style={{color:'#4fc3f7',fontWeight:700,fontFamily:'monospace'}}>📖 {cmd}</span>
+                <span style={{color:'#777'}}>{guide.d}</span>
+                {guide.a.map((arg, i) => (
+                  <span key={i} style={{padding:'0 4px',borderRadius:2,fontSize:9,
+                    border: i === curArgIdx ? '1px solid #4fc3f7' : '1px solid #222',
+                    background: i === curArgIdx ? '#4fc3f715' : 'transparent',
+                    color: i === curArgIdx ? '#4fc3f7' : '#555'}}>
+                    {arg.n}
+                  </span>
+                ))}
+                <span style={{color:'#4ec9b0',fontFamily:'monospace',fontSize:9,marginLeft:'auto'}}>▶ {guide.p.replace(/\{(\w+)\}/g, (_, k) => {
+                  const idx = guide.a.findIndex(a => a.n === k);
+                  return idx >= 0 && tokens[idx + 1] ? tokens[idx + 1] : `[${k}]`;
+                })}</span>
+              </div>
+            );
+          })()}
+
           {/* Status bar */}
           <div style={{display:'flex',alignItems:'center',gap:12,padding:'2px 12px',background:'#0d0d1a',borderTop:'1px solid #2a2a4a',fontSize:10,color:'#666',flexShrink:0}}>
             <span style={{cursor:'pointer',display:'flex',alignItems:'center',gap:8}} title="Problems パネルを表示">
@@ -7065,7 +7268,10 @@ function IntegratedMcfEditor({ file, onChange, targetVersion, namespace }) {
             </span>
             <span>行 {cursorInfo.line}, 列 {cursorInfo.col}</span>
             <span>{cmdCount} コマンド</span>
-            <span style={{marginLeft:'auto'}}>mcfunction</span>
+            <span style={{marginLeft:'auto',color: guideMode ? '#4fc3f7' : '#555',cursor:'default'}} title={guideMode ? 'ガイドモード ON (設定で切替)' : 'ガイドモード OFF (設定で切替)'}>
+              {guideMode ? '📖 ガイド' : 'ガイド OFF'}
+            </span>
+            <span>mcfunction</span>
             <span>UTF-8</span>
             <span>{lineCount} 行</span>
           </div>
@@ -7076,7 +7282,7 @@ function IntegratedMcfEditor({ file, onChange, targetVersion, namespace }) {
           <div style={{width:280,borderLeft:'1px solid #2a2a4a',display:'flex',flexDirection:'column',background:'#111122',flexShrink:0}}>
             {/* Sidebar tabs */}
             <div style={{display:'flex',borderBottom:'1px solid #2a2a4a',flexShrink:0}}>
-              {[{id:'quick',label:'クイック',icon:'⚡'},{id:'builder',label:'ビルダー',icon:'🔧'},{id:'snippets',label:'テンプレ',icon:'📋'}].map(t => (
+              {[{id:'quick',label:'クイック',icon:'⚡'},{id:'builder',label:'ビルダー',icon:'🔧'},{id:'snippets',label:'テンプレ',icon:'📋'},{id:'guide',label:'ガイド',icon:'📖'}].map(t => (
                 <button key={t.id} onClick={() => setSidebarTab(t.id)}
                   style={{flex:1,padding:'6px 4px',fontSize:10,border:'none',cursor:'pointer',borderBottom: sidebarTab === t.id ? '2px solid #4fc3f7' : '2px solid transparent',
                     background:'transparent',color: sidebarTab === t.id ? '#4fc3f7' : '#888'}}>
@@ -7248,6 +7454,106 @@ function IntegratedMcfEditor({ file, onChange, targetVersion, namespace }) {
                   ))}
                 </div>
               )}
+
+              {/* GUIDE TAB */}
+              {sidebarTab === 'guide' && (() => {
+                const ls = content.split('\n');
+                const curLine = ls[cursorInfo.line - 1] || '';
+                const cmd = curLine.trim().split(/\s+/)[0]?.replace(/^\//,'');
+                const guide = cmd && COMMAND_GUIDE[cmd];
+                const tokens = curLine.trim().split(/\s+/);
+                const curArgIdx = Math.max(0, tokens.length - 2);
+
+                // NBT info for summon/data context
+                let nbtInfo = null;
+                if (cmd === 'summon' && tokens.length >= 2) {
+                  const eid = tokens[1]?.replace(/^minecraft:/, '');
+                  const nbtKeys = getNBTKeysForEntity(eid);
+                  nbtInfo = { entityId: eid, keys: Object.entries(nbtKeys).slice(0, 20) };
+                }
+
+                return (
+                  <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                    <div style={{fontSize:10,color:'#888',padding:'2px 4px'}}>カーソル行のコマンドガイド</div>
+                    {guide ? (
+                      <div style={{background:'#1a1a2e',border:'1px solid #2a2a4a',borderRadius:4,padding:8}}>
+                        <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:6}}>
+                          <span style={{fontSize:13,color:'#4fc3f7',fontWeight:700,fontFamily:'monospace'}}>/{cmd}</span>
+                          <span style={{fontSize:9,color:'#aaa'}}>{guide.d}</span>
+                        </div>
+                        {/* Argument chips */}
+                        <div style={{display:'flex',flexWrap:'wrap',gap:3,marginBottom:6}}>
+                          {guide.a.map((arg, i) => (
+                            <span key={i} style={{padding:'2px 5px',borderRadius:3,fontSize:9,
+                              border: i === curArgIdx ? '1px solid #4fc3f7' : '1px solid #333',
+                              background: i === curArgIdx ? '#4fc3f720' : 'transparent',
+                              color: i === curArgIdx ? '#4fc3f7' : '#888'}}>
+                              <span style={{opacity:0.6}}>{arg.t} </span>{arg.n}
+                              {i === curArgIdx && <span style={{color:'#4fc3f7',marginLeft:3}}>←</span>}
+                            </span>
+                          ))}
+                        </div>
+                        {/* Current arg detail */}
+                        {guide.a[curArgIdx] && (
+                          <div style={{background:'#0d0d1a',borderRadius:3,padding:'4px 6px',fontSize:9,color:'#7ec8e3',borderLeft:'2px solid #4fc3f7',marginBottom:4}}>
+                            <b>{guide.a[curArgIdx].n}:</b> {guide.a[curArgIdx].d}
+                            {guide.a[curArgIdx].o && <div style={{color:'#666',marginTop:2}}>候補: {guide.a[curArgIdx].o.join(', ')}</div>}
+                          </div>
+                        )}
+                        {/* Preview */}
+                        <div style={{background:'#0a0a16',borderRadius:3,padding:'4px 6px',fontSize:9,fontFamily:'monospace'}}>
+                          <span style={{color:'#666'}}>▶ </span>
+                          <span style={{color:'#4ec9b0'}}>{guide.p.replace(/\{(\w+)\}/g, (_, k) => {
+                            const idx = guide.a.findIndex(a => a.n === k);
+                            return idx >= 0 && tokens[idx + 1] ? tokens[idx + 1] : `[${k}]`;
+                          })}</span>
+                        </div>
+                        {/* Examples */}
+                        <div style={{marginTop:4,fontSize:9,color:'#555'}}>
+                          {guide.ex.map((e, i) => <div key={i} style={{fontFamily:'monospace'}}>例: {e}</div>)}
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{fontSize:10,color:'#555',padding:8,textAlign:'center'}}>
+                        {cmd ? `"${cmd}" のガイドはありません` : 'コマンド行にカーソルを移動してください'}
+                      </div>
+                    )}
+                    {/* NBT Reference */}
+                    {nbtInfo && (
+                      <div style={{background:'#1a1a2e',border:'1px solid #2a2a4a',borderRadius:4,padding:8}}>
+                        <div style={{fontSize:10,color:'#f0a040',fontWeight:600,marginBottom:4}}>🏷️ NBTタグ: {nbtInfo.entityId}</div>
+                        <div style={{display:'flex',flexDirection:'column',gap:2}}>
+                          {nbtInfo.keys.map(([k, v]) => (
+                            <div key={k} style={{display:'flex',gap:4,fontSize:9,cursor:'pointer',padding:'1px 3px',borderRadius:2}}
+                              onMouseEnter={e => e.currentTarget.style.background='#2a2a4a'}
+                              onMouseLeave={e => e.currentTarget.style.background='transparent'}
+                              onClick={() => insertAtCursor(k + ':')}>
+                              <span style={{color:'#f0a040',fontFamily:'monospace',minWidth:90}}>{k}</span>
+                              <span style={{color:'#666'}}>{v.t}</span>
+                              <span style={{color:'#555',flex:1}}>{v.d}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {/* General guide: all commands */}
+                    {!guide && !nbtInfo && (
+                      <div style={{display:'flex',flexDirection:'column',gap:2,marginTop:4}}>
+                        <div style={{fontSize:10,color:'#888',padding:'2px 4px'}}>コマンド一覧</div>
+                        {Object.entries(COMMAND_GUIDE).slice(0, 25).map(([name, g]) => (
+                          <div key={name} style={{display:'flex',gap:4,fontSize:9,cursor:'pointer',padding:'2px 4px',borderRadius:2}}
+                            onMouseEnter={e => e.currentTarget.style.background='#2a2a4a'}
+                            onMouseLeave={e => e.currentTarget.style.background='transparent'}
+                            onClick={() => insertAtCursor(name + ' ')}>
+                            <span style={{color:'#4fc3f7',fontFamily:'monospace',minWidth:80}}>{name}</span>
+                            <span style={{color:'#666'}}>{g.d}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}
@@ -8359,7 +8665,7 @@ function SimulatorPanel({ project, files }) {
 // SETTINGS PANEL
 // ════════════════════════════════════════════════════════════
 
-function SettingsPanel({ project, setProject, onClose }) {
+function SettingsPanel({ project, setProject, onClose, guideMode, setGuideMode }) {
   const handleIconUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -8438,6 +8744,21 @@ function SettingsPanel({ project, setProject, onClose }) {
               )}
               <span className="text-xs text-mc-muted">64x64 PNG推奨</span>
             </div>
+          </div>
+          {/* Guide Mode Toggle */}
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="block text-xs font-medium text-mc-muted mb-0.5">コマンドガイド</label>
+              <span className="text-[10px] text-mc-muted/70">コマンド入力時にガイド・プレビュー・NBT補完を表示</span>
+            </div>
+            <button
+              onClick={() => setGuideMode && setGuideMode(p => !p)}
+              className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                guideMode ? 'bg-mc-info text-white' : 'bg-mc-dark border border-mc-border text-mc-muted'
+              }`}
+            >
+              {guideMode ? '📖 ON' : 'OFF'}
+            </button>
           </div>
         </div>
 
@@ -11302,6 +11623,9 @@ export default function App() {
   const [showMinigameWizard, setShowMinigameWizard] = useState(false);
   const [showSystemWizard, setShowSystemWizard] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  const [guideMode, setGuideMode] = useState(() => {
+    try { return localStorage.getItem('dp_guide_mode') !== 'false'; } catch { return true; }
+  });
   const [contextMenu, setContextMenu] = useState(null);
   const [activeTab, setActiveTab] = useState('editor');
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -11351,6 +11675,9 @@ export default function App() {
     }
     setInitialized(true);
   }, []);
+
+  // Persist guide mode preference
+  useEffect(() => { try { localStorage.setItem('dp_guide_mode', guideMode ? 'true' : 'false'); } catch {} }, [guideMode]);
 
   // Load a project's data from localStorage
   const loadProject = (id) => {
@@ -11961,7 +12288,7 @@ export default function App() {
 
                 // mcfunction → IntegratedMcfEditor (VS Code + command builder hybrid, always)
                 if (isMcfunction) {
-                  return <IntegratedMcfEditor file={selectedFile} onChange={handleFileContentChange} targetVersion={project.targetVersion} namespace={project.namespace} />;
+                  return <IntegratedMcfEditor file={selectedFile} onChange={handleFileContentChange} targetVersion={project.targetVersion} namespace={project.namespace} guideMode={guideMode} />;
                 }
 
                 // Recipe JSON → SplitJsonEditor with RecipeVisualEditor
@@ -11983,7 +12310,7 @@ export default function App() {
                 }
 
                 // Other files → standard CodeEditor
-                return <CodeEditor file={selectedFile} onChange={handleFileContentChange} targetVersion={project.targetVersion} />;
+                return <CodeEditor file={selectedFile} onChange={handleFileContentChange} targetVersion={project.targetVersion} guideMode={guideMode} />;
               })() : (
                 <GalleryLanding onMinigame={() => setShowMinigameWizard(true)} onSystem={() => setShowSystemWizard(true)} onBuilder={() => setActiveTab('builder')} onGuide={() => setShowGuide(true)} />
               )
@@ -12047,6 +12374,8 @@ export default function App() {
           project={project}
           setProject={setProject}
           onClose={() => setShowSettings(false)}
+          guideMode={guideMode}
+          setGuideMode={setGuideMode}
         />
       )}
       {showTemplateSelector && (
