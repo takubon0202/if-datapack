@@ -1092,7 +1092,7 @@ const COMMAND_BUILDER_DEFS = [
   },
   // ── Attribute commands ──
   {
-    id: 'attribute_base_set', name: '属性値設定', icon: '📈', cat: '属性(attribute)',
+    id: 'attribute_base_set', name: '属性値設定/リセット', icon: '📈', cat: '属性(attribute)',
     fields: [
       { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@e'], def:'@s' },
       { key:'attr', label:'属性', type:'select', options:[
@@ -1103,9 +1103,12 @@ const COMMAND_BUILDER_DEFS = [
         'movement_efficiency','oxygen_bonus','safe_fall_distance','scale','step_height',
         'submerged_mining_speed','sweeping_damage_ratio','tempt_range','water_movement_efficiency',
       ], def:'movement_speed' },
-      { key:'value', label:'値', type:'text', def:'0.1' },
+      { key:'action', label:'操作', type:'select', options:['set','reset'], def:'set' },
+      { key:'value', label:'値(set時)', type:'text', def:'0.1' },
     ],
-    build: (f) => `attribute ${f.target} minecraft:${f.attr} base set ${f.value}`,
+    build: (f) => f.action === 'reset'
+      ? `attribute ${f.target} minecraft:${f.attr} base reset`
+      : `attribute ${f.target} minecraft:${f.attr} base set ${f.value}`,
   },
   {
     id: 'attribute_base_get', name: '属性値取得', icon: '📊', cat: '属性(attribute)',
@@ -1283,6 +1286,7 @@ const COMMAND_SNIPPETS = [
       { label: '攻撃力設定', code: 'attribute @s minecraft:attack_damage base set 10', desc: '攻撃ダメージ量' },
       { label: 'サイズ変更', code: 'attribute @s minecraft:scale base set 2.0', desc: 'エンティティのサイズ（1.20.5+）' },
       { label: '重力変更', code: 'attribute @s minecraft:gravity base set 0.04', desc: 'デフォルト0.08、低重力' },
+      { label: '属性リセット', code: 'attribute @s minecraft:movement_speed base reset', desc: '属性をデフォルト値にリセット' },
       { label: 'モディファイア追加', code: 'attribute @s minecraft:movement_speed modifier add mypack:speed_boost 0.05 add_value', desc: '属性にモディファイアを追加' },
       { label: 'モディファイア削除', code: 'attribute @s minecraft:movement_speed modifier remove mypack:speed_boost', desc: 'モディファイアを削除' },
     ],
@@ -1514,8 +1518,8 @@ const MC_AUTO = {
     { l: '@e', d: 'エンティティ' }, { l: '@a', d: '全プレイヤー' },
   ],
   'attribute.action': [
-    { l: 'get', d: '属性値取得' }, { l: 'base', d: '基本値操作' },
-    { l: 'modifier', d: '修飾子操作' },
+    { l: 'get', d: '現在の属性値取得' }, { l: 'base', d: '基本値操作(set/get/reset)' },
+    { l: 'modifier', d: '修飾子操作(add/remove/value get)' },
   ],
   experience: [
     { l: 'add', d: '経験値加算' }, { l: 'set', d: '経験値設定' }, { l: 'query', d: '経験値取得' },
