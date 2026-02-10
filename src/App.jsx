@@ -853,7 +853,7 @@ const COMMAND_BUILDER_DEFS = [
   {
     id: 'give', name: 'アイテム付与', icon: '🎒', cat: 'アイテム',
     fields: [
-      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@a[tag=player]','@r'], def:'@a[tag=player]' },
+      { key:'target', label:'対象', type:'select', options:['@a','@s','@p','@r','@e'], def:'@a' },
       { key:'item', label:'アイテム', type:'mc_item', def:'minecraft:diamond_sword' },
       { key:'count', label:'個数', type:'number', min:1, max:64, def:1 },
     ],
@@ -862,7 +862,7 @@ const COMMAND_BUILDER_DEFS = [
   {
     id: 'clear', name: 'アイテム消去', icon: '🗑️', cat: 'アイテム',
     fields: [
-      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@a[tag=player]'], def:'@a[tag=player]' },
+      { key:'target', label:'対象', type:'select', options:['@a','@s','@p'], def:'@a' },
       { key:'item', label:'アイテム(空=全部)', type:'mc_item_optional', def:'' },
     ],
     build: (f) => f.item ? `clear ${f.target} ${f.item}` : `clear ${f.target}`,
@@ -870,7 +870,7 @@ const COMMAND_BUILDER_DEFS = [
   {
     id: 'effect_give', name: 'エフェクト付与', icon: '✨', cat: 'エフェクト',
     fields: [
-      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@a[tag=player]','@e[type=zombie]'], def:'@a[tag=player]' },
+      { key:'target', label:'対象', type:'select', options:['@a','@s','@p','@e'], def:'@a' },
       { key:'effect', label:'エフェクト', type:'mc_effect', def:'speed' },
       { key:'duration', label:'秒数', type:'number', min:1, max:999999, def:10 },
       { key:'amplifier', label:'レベル(0=Lv1)', type:'number', min:0, max:255, def:0 },
@@ -881,7 +881,7 @@ const COMMAND_BUILDER_DEFS = [
   {
     id: 'effect_clear', name: 'エフェクト解除', icon: '🚫', cat: 'エフェクト',
     fields: [
-      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@a[tag=player]'], def:'@a[tag=player]' },
+      { key:'target', label:'対象', type:'select', options:['@a','@s','@p'], def:'@a' },
       { key:'effect', label:'エフェクト(空=全部)', type:'mc_effect_optional', def:'' },
     ],
     build: (f) => f.effect ? `effect clear ${f.target} ${f.effect}` : `effect clear ${f.target}`,
@@ -889,7 +889,7 @@ const COMMAND_BUILDER_DEFS = [
   {
     id: 'tp', name: 'テレポート', icon: '🌀', cat: '移動',
     fields: [
-      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@a[tag=player]'], def:'@a[tag=player]' },
+      { key:'target', label:'対象', type:'select', options:['@a','@s','@p','@e'], def:'@a' },
       { key:'x', label:'X座標', type:'text', def:'~' },
       { key:'y', label:'Y座標', type:'text', def:'~' },
       { key:'z', label:'Z座標', type:'text', def:'~' },
@@ -910,7 +910,7 @@ const COMMAND_BUILDER_DEFS = [
   {
     id: 'title', name: 'タイトル表示', icon: '📺', cat: 'テキスト',
     fields: [
-      { key:'target', label:'対象', type:'select', options:['@s','@a','@a[tag=player]'], def:'@a[tag=player]' },
+      { key:'target', label:'対象', type:'select', options:['@a','@s','@p'], def:'@a' },
       { key:'position', label:'表示位置', type:'select', options:['title','subtitle','actionbar'], def:'title' },
       { key:'richtext', label:'テキスト', type:'mc_richtext', def:'{"text":"Hello!","color":"gold","bold":true}' },
     ],
@@ -919,7 +919,7 @@ const COMMAND_BUILDER_DEFS = [
   {
     id: 'tellraw', name: 'チャットメッセージ', icon: '💬', cat: 'テキスト',
     fields: [
-      { key:'target', label:'対象', type:'select', options:['@s','@a','@a[tag=player]'], def:'@a[tag=player]' },
+      { key:'target', label:'対象', type:'select', options:['@a','@s','@p'], def:'@a' },
       { key:'richtext', label:'テキスト', type:'mc_richtext', def:'{"text":"メッセージ","color":"green"}' },
     ],
     build: (f) => `tellraw ${f.target} ${f.richtext}`,
@@ -927,7 +927,7 @@ const COMMAND_BUILDER_DEFS = [
   {
     id: 'give_named', name: 'カスタム名アイテム', icon: '🏷️', cat: 'アイテム',
     fields: [
-      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@a[tag=player]'], def:'@a[tag=player]' },
+      { key:'target', label:'対象', type:'select', options:['@a','@s','@p'], def:'@a' },
       { key:'item', label:'アイテム', type:'mc_item', def:'minecraft:diamond_sword' },
       { key:'count', label:'個数', type:'number', min:1, max:64, def:1 },
       { key:'name', label:'カスタム名', type:'mc_richtext', def:'{"text":"伝説の剣","color":"gold","bold":true,"italic":false}' },
@@ -940,7 +940,7 @@ const COMMAND_BUILDER_DEFS = [
     fields: [
       { key:'sound', label:'サウンド', type:'mc_sound', def:'minecraft:entity.experience_orb.pickup' },
       { key:'source', label:'カテゴリ', type:'select', options:['master','music','record','weather','block','hostile','neutral','player','ambient','voice'], def:'master' },
-      { key:'target', label:'対象', type:'select', options:['@s','@a','@a[tag=player]','@p'], def:'@a[tag=player]' },
+      { key:'target', label:'対象', type:'select', options:['@a','@s','@p'], def:'@a' },
     ],
     build: (f) => `playsound ${f.sound} ${f.source} ${f.target}`,
   },
@@ -959,7 +959,7 @@ const COMMAND_BUILDER_DEFS = [
     id: 'scoreboard_add', name: 'スコアボード作成', icon: '📊', cat: 'スコア',
     fields: [
       { key:'name', label:'目的名', type:'text', def:'my_score' },
-      { key:'criteria', label:'基準', type:'select', options:['dummy','deathCount','playerKillCount','totalKillCount','health','trigger','minecraft.used:minecraft.carrot_on_a_stick'], def:'dummy' },
+      { key:'criteria', label:'基準', type:'select', options:['dummy','deathCount','playerKillCount','totalKillCount','health','food','air','armor','level','xp','trigger','minecraft.used:minecraft.carrot_on_a_stick','minecraft.custom:minecraft.jump'], def:'dummy' },
       { key:'display', label:'表示名', type:'text', def:'スコア' },
     ],
     build: (f) => `scoreboard objectives add ${f.name} ${f.criteria} "${f.display}"`,
@@ -968,7 +968,7 @@ const COMMAND_BUILDER_DEFS = [
     id: 'scoreboard_set', name: 'スコア設定', icon: '🔢', cat: 'スコア',
     fields: [
       { key:'action', label:'操作', type:'select', options:['set','add','remove'], def:'set' },
-      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@a[tag=player]','#変数'], def:'@s' },
+      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','#変数'], def:'@s' },
       { key:'objective', label:'目的', type:'text', def:'my_score' },
       { key:'value', label:'値', type:'number', min:-2147483648, max:2147483647, def:0 },
     ],
@@ -978,18 +978,39 @@ const COMMAND_BUILDER_DEFS = [
     id: 'gamemode', name: 'ゲームモード', icon: '🎮', cat: 'ゲーム管理',
     fields: [
       { key:'mode', label:'モード', type:'select', options:['adventure','survival','creative','spectator'], def:'adventure' },
-      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@a[tag=player]'], def:'@a[tag=player]' },
+      { key:'target', label:'対象', type:'select', options:['@a','@s','@p'], def:'@a' },
     ],
     build: (f) => `gamemode ${f.mode} ${f.target}`,
   },
   {
-    id: 'tag', name: 'タグ操作', icon: '🏷️', cat: 'ゲーム管理',
+    id: 'tag', name: 'タグ操作', icon: '🏷️', cat: 'タグ管理',
     fields: [
-      { key:'action', label:'操作', type:'select', options:['add','remove'], def:'add' },
-      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@a[tag=player]','@a[distance=..5]'], def:'@a[tag=player]' },
-      { key:'tag', label:'タグ名', type:'text', def:'player' },
+      { key:'action', label:'操作', type:'select', options:['add','remove','list'], def:'add' },
+      { key:'target', label:'対象', type:'select', options:['@a','@s','@p','@e'], def:'@a' },
+      { key:'tag', label:'タグ名', type:'text', def:'my_tag' },
     ],
-    build: (f) => `tag ${f.target} ${f.action} ${f.tag}`,
+    build: (f) => f.action === 'list' ? `tag ${f.target} list` : `tag ${f.target} ${f.action} ${f.tag}`,
+  },
+  {
+    id: 'tag_conditional', name: 'タグ条件付与', icon: '🔖', cat: 'タグ管理',
+    fields: [
+      { key:'condition', label:'条件', type:'select', options:['if entity','if score','unless entity','unless score'], def:'if entity' },
+      { key:'condParam', label:'条件パラメータ', type:'text', def:'@s[type=player]' },
+      { key:'target', label:'対象', type:'select', options:['@a','@s','@p','@e'], def:'@s' },
+      { key:'action', label:'操作', type:'select', options:['add','remove'], def:'add' },
+      { key:'tag', label:'タグ名', type:'text', def:'my_tag' },
+    ],
+    build: (f) => `execute ${f.condition} ${f.condParam} run tag ${f.target} ${f.action} ${f.tag}`,
+  },
+  {
+    id: 'tag_selector', name: 'タグ付きセレクター', icon: '🎯', cat: 'タグ管理',
+    fields: [
+      { key:'base', label:'ベース', type:'select', options:['@a','@e','@s','@p'], def:'@a' },
+      { key:'tag', label:'タグ名', type:'text', def:'my_tag' },
+      { key:'negate', label:'タグなし(!)', type:'checkbox', def:false },
+      { key:'cmd', label:'実行コマンド', type:'text', def:'say タグ付きです' },
+    ],
+    build: (f) => `execute as ${f.base}[tag=${f.negate ? '!' : ''}${f.tag}] run ${f.cmd}`,
   },
   {
     id: 'team_add', name: 'チーム作成', icon: '👥', cat: 'チーム',
@@ -1005,7 +1026,7 @@ const COMMAND_BUILDER_DEFS = [
     id: 'team_join', name: 'チーム参加', icon: '➕', cat: 'チーム',
     fields: [
       { key:'team', label:'チーム名', type:'text', def:'team_red' },
-      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@a[tag=player]','@a[tag=team1]'], def:'@a[tag=player]' },
+      { key:'target', label:'対象', type:'select', options:['@a','@s','@p'], def:'@a' },
     ],
     build: (f) => `team join ${f.team} ${f.target}`,
   },
@@ -1032,7 +1053,7 @@ const COMMAND_BUILDER_DEFS = [
   {
     id: 'execute_as', name: '対象として実行 (execute)', icon: '👤', cat: '条件分岐',
     fields: [
-      { key:'target', label:'対象セレクター', type:'select', options:['@a','@a[tag=player]','@e[type=zombie]','@a[scores={alive=1}]','@p'], def:'@a[tag=player]' },
+      { key:'target', label:'対象セレクター', type:'select', options:['@a','@s','@p','@e','@a[scores={alive=1}]'], def:'@a' },
       { key:'at', label:'at @s も付ける', type:'checkbox', def:true },
       { key:'run', label:'実行コマンド', type:'text', def:'say hello' },
     ],
@@ -1062,12 +1083,96 @@ const COMMAND_BUILDER_DEFS = [
   {
     id: 'spawnpoint', name: 'スポーン地点設定', icon: '🛏️', cat: 'ゲーム管理',
     fields: [
-      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@a[tag=player]'], def:'@a[tag=player]' },
+      { key:'target', label:'対象', type:'select', options:['@a','@s','@p'], def:'@a' },
       { key:'x', label:'X', type:'text', def:'~' },
       { key:'y', label:'Y', type:'text', def:'~' },
       { key:'z', label:'Z', type:'text', def:'~' },
     ],
     build: (f) => `spawnpoint ${f.target} ${f.x} ${f.y} ${f.z}`,
+  },
+  // ── Attribute commands ──
+  {
+    id: 'attribute_base_set', name: '属性値設定', icon: '📈', cat: '属性(attribute)',
+    fields: [
+      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@e'], def:'@s' },
+      { key:'attr', label:'属性', type:'select', options:[
+        'max_health','movement_speed','attack_damage','attack_speed','armor','armor_toughness',
+        'knockback_resistance','flying_speed','follow_range','luck','spawn_reinforcements',
+        'jump_strength','block_interaction_range','entity_interaction_range','block_break_speed',
+        'burning_time','explosion_knockback_resistance','gravity','mining_efficiency',
+        'movement_efficiency','oxygen_bonus','safe_fall_distance','scale','step_height',
+        'submerged_mining_speed','sweeping_damage_ratio','tempt_range','water_movement_efficiency',
+      ], def:'movement_speed' },
+      { key:'value', label:'値', type:'text', def:'0.1' },
+    ],
+    build: (f) => `attribute ${f.target} minecraft:${f.attr} base set ${f.value}`,
+  },
+  {
+    id: 'attribute_base_get', name: '属性値取得', icon: '📊', cat: '属性(attribute)',
+    fields: [
+      { key:'target', label:'対象', type:'select', options:['@s','@a','@p'], def:'@s' },
+      { key:'attr', label:'属性', type:'select', options:[
+        'max_health','movement_speed','attack_damage','attack_speed','armor','armor_toughness',
+        'knockback_resistance','follow_range','luck','scale','gravity',
+      ], def:'movement_speed' },
+      { key:'scale', label:'スケール', type:'number', min:0.01, max:100, def:1, step:0.01 },
+    ],
+    build: (f) => `attribute ${f.target} minecraft:${f.attr} base get ${f.scale}`,
+  },
+  {
+    id: 'attribute_modifier', name: '属性モディファイア', icon: '🔧', cat: '属性(attribute)',
+    fields: [
+      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','@e'], def:'@s' },
+      { key:'attr', label:'属性', type:'select', options:[
+        'max_health','movement_speed','attack_damage','attack_speed','armor','armor_toughness',
+        'knockback_resistance','scale','gravity',
+      ], def:'movement_speed' },
+      { key:'action', label:'操作', type:'select', options:['add','remove'], def:'add' },
+      { key:'id', label:'モディファイアID', type:'text', def:'mypack:speed_boost' },
+      { key:'value', label:'値(add時)', type:'text', def:'0.05' },
+      { key:'operation', label:'演算(add時)', type:'select', options:['add_value','add_multiplied_base','add_multiplied_total'], def:'add_value' },
+    ],
+    build: (f) => f.action === 'remove'
+      ? `attribute ${f.target} minecraft:${f.attr} modifier remove ${f.id}`
+      : `attribute ${f.target} minecraft:${f.attr} modifier add ${f.id} ${f.value} ${f.operation}`,
+  },
+  // ── Enhanced Scoreboard commands ──
+  {
+    id: 'scoreboard_display', name: 'スコア表示切替', icon: '📺', cat: 'スコア',
+    fields: [
+      { key:'slot', label:'表示位置', type:'select', options:['sidebar','list','below_name'], def:'sidebar' },
+      { key:'objective', label:'目的', type:'text', def:'my_score' },
+    ],
+    build: (f) => `scoreboard objectives setdisplay ${f.slot} ${f.objective}`,
+  },
+  {
+    id: 'scoreboard_remove', name: 'スコアボード削除', icon: '❌', cat: 'スコア',
+    fields: [
+      { key:'objective', label:'目的名', type:'text', def:'my_score' },
+    ],
+    build: (f) => `scoreboard objectives remove ${f.objective}`,
+  },
+  {
+    id: 'scoreboard_operation', name: 'スコア演算', icon: '🔢', cat: 'スコア',
+    fields: [
+      { key:'target', label:'対象', type:'select', options:['@s','@a','@p','#変数'], def:'@s' },
+      { key:'targetObj', label:'対象の目的', type:'text', def:'my_score' },
+      { key:'operation', label:'演算子', type:'select', options:['=','+=','-=','*=','/=','%=','>','<','><'], def:'+=' },
+      { key:'source', label:'参照', type:'text', def:'#変数' },
+      { key:'sourceObj', label:'参照の目的', type:'text', def:'my_score' },
+    ],
+    build: (f) => `scoreboard players operation ${f.target} ${f.targetObj} ${f.operation} ${f.source} ${f.sourceObj}`,
+  },
+  {
+    id: 'scoreboard_conditional', name: 'スコア条件実行', icon: '⚡', cat: 'スコア',
+    fields: [
+      { key:'check', label:'判定', type:'select', options:['if','unless'], def:'if' },
+      { key:'target', label:'対象', type:'text', def:'@s' },
+      { key:'objective', label:'目的', type:'text', def:'my_score' },
+      { key:'range', label:'範囲(例: 1..)', type:'text', def:'1..' },
+      { key:'run', label:'実行コマンド', type:'text', def:'say スコア条件成立' },
+    ],
+    build: (f) => `execute ${f.check} score ${f.target} ${f.objective} matches ${f.range} run ${f.run}`,
   },
 ];
 const COMMAND_BUILDER_CATS = [...new Set(COMMAND_BUILDER_DEFS.map(d=>d.cat))];
@@ -1094,7 +1199,7 @@ const COMMAND_SNIPPETS = [
     items: [
       { label: 'チーム作成', code: 'team add <名前> "表示名"', desc: 'チームを新規作成' },
       { label: 'チーム色設定', code: 'team modify <名前> color red', desc: 'red/blue/green/yellow等' },
-      { label: 'チーム参加', code: 'team join <名前> @a[tag=team1]', desc: 'タグ付きプレイヤーを参加させる' },
+      { label: 'チーム参加', code: 'team join <名前> @a', desc: 'プレイヤーをチームに参加させる' },
       { label: 'FF無効化', code: 'team modify <名前> friendlyFire false', desc: '味方への攻撃を無効化' },
       { label: 'ネームタグ非表示', code: 'team modify <名前> nametagVisibility hideForOtherTeams', desc: '敵チームからネームタグを隠す' },
     ],
@@ -1105,8 +1210,8 @@ const COMMAND_SNIPPETS = [
     items: [
       { label: 'スコア条件', code: 'execute if score #game state matches 1 run ...', desc: 'スコアが条件を満たすとき実行' },
       { label: 'エンティティ条件', code: 'execute if entity @a[tag=winner] run ...', desc: '条件に合うエンティティが存在するとき' },
-      { label: 'プレイヤーとして実行', code: 'execute as @a[tag=player] run ...', desc: '各プレイヤーとして実行' },
-      { label: '位置で実行', code: 'execute at @a[tag=player] run ...', desc: 'プレイヤーの位置で実行' },
+      { label: 'プレイヤーとして実行', code: 'execute as @a run ...', desc: '各プレイヤーとして実行' },
+      { label: '位置で実行', code: 'execute at @a run ...', desc: 'プレイヤーの位置で実行' },
       { label: '結果を保存', code: 'execute store result score #count obj run ...', desc: 'コマンド結果をスコアに保存' },
     ],
   },
@@ -1125,10 +1230,10 @@ const COMMAND_SNIPPETS = [
     category: 'エフェクト・テレポート',
     icon: Sparkles,
     items: [
-      { label: 'エフェクト付与', code: 'effect give @a[tag=player] speed 10 1 true', desc: '10秒間スピードLv2（trueで粒子非表示）' },
-      { label: 'エフェクト解除', code: 'effect clear @a[tag=player]', desc: '全エフェクトを解除' },
-      { label: 'テレポート', code: 'tp @a[tag=player] ~ ~ ~', desc: '指定座標にテレポート' },
-      { label: 'スポーン設定', code: 'spawnpoint @a[tag=player] ~ ~ ~', desc: 'リスポーン地点を設定' },
+      { label: 'エフェクト付与', code: 'effect give @a speed 10 1 true', desc: '10秒間スピードLv2（trueで粒子非表示）' },
+      { label: 'エフェクト解除', code: 'effect clear @a', desc: '全エフェクトを解除' },
+      { label: 'テレポート', code: 'tp @a ~ ~ ~', desc: '指定座標にテレポート' },
+      { label: 'スポーン設定', code: 'spawnpoint @a ~ ~ ~', desc: 'リスポーン地点を設定' },
       { label: '属性変更', code: 'attribute @s movement_speed base set 0.1', desc: '移動速度を変更（デフォルト0.1）', v: '1.16' },
     ],
   },
@@ -1147,11 +1252,39 @@ const COMMAND_SNIPPETS = [
     category: 'ゲーム管理',
     icon: Settings,
     items: [
-      { label: 'ゲームモード変更', code: 'gamemode adventure @a[tag=player]', desc: 'adventure/survival/spectator/creative' },
-      { label: 'アイテム消去', code: 'clear @a[tag=player]', desc: '全アイテムを消去' },
-      { label: 'アイテム付与', code: 'give @a[tag=player] diamond_sword 1', desc: 'アイテムを付与' },
+      { label: 'ゲームモード変更', code: 'gamemode adventure @a', desc: 'adventure/survival/spectator/creative' },
+      { label: 'アイテム消去', code: 'clear @a', desc: '全アイテムを消去' },
+      { label: 'アイテム付与', code: 'give @a diamond_sword 1', desc: 'アイテムを付与' },
       { label: 'サウンド再生', code: 'execute at @s run playsound minecraft:ui.toast.challenge_complete master @s', desc: '進捗達成音を再生' },
-      { label: 'タグ管理', code: 'tag @a[distance=..5] add player', desc: '近くのプレイヤーにタグ付与' },
+      { label: 'タグ付与', code: 'tag @a add my_tag', desc: 'プレイヤーにタグを付与' },
+      { label: 'タグ削除', code: 'tag @a remove my_tag', desc: 'プレイヤーからタグを削除' },
+      { label: 'タグ確認', code: 'tag @s list', desc: '自分のタグ一覧を表示' },
+    ],
+  },
+  {
+    category: 'タグ管理',
+    icon: Tag,
+    items: [
+      { label: 'タグ付与', code: 'tag @a add my_tag', desc: '全プレイヤーにタグ付与' },
+      { label: 'タグ削除', code: 'tag @a remove my_tag', desc: 'タグを削除' },
+      { label: 'タグ一覧', code: 'tag @s list', desc: '自分のタグ一覧を表示' },
+      { label: 'タグ条件付与', code: 'execute as @a[scores={alive=1}] run tag @s add survivor', desc: 'スコア条件付きタグ付与' },
+      { label: 'タグで選別', code: 'execute as @a[tag=my_tag] run say タグ持ち', desc: 'タグ付きプレイヤーに実行' },
+      { label: '否定タグ', code: 'execute as @a[tag=!my_tag] run tag @s add my_tag', desc: 'タグがない人に付与' },
+      { label: '複数タグ条件', code: '@a[tag=team_red,tag=!dead]', desc: '複数タグのAND条件' },
+    ],
+  },
+  {
+    category: '属性(attribute)',
+    icon: Zap,
+    items: [
+      { label: '移動速度設定', code: 'attribute @s minecraft:movement_speed base set 0.15', desc: 'デフォルト0.1、0.15で1.5倍速' },
+      { label: '最大体力変更', code: 'attribute @s minecraft:max_health base set 40', desc: 'デフォルト20（ハート10個）' },
+      { label: '攻撃力設定', code: 'attribute @s minecraft:attack_damage base set 10', desc: '攻撃ダメージ量' },
+      { label: 'サイズ変更', code: 'attribute @s minecraft:scale base set 2.0', desc: 'エンティティのサイズ（1.20.5+）' },
+      { label: '重力変更', code: 'attribute @s minecraft:gravity base set 0.04', desc: 'デフォルト0.08、低重力' },
+      { label: 'モディファイア追加', code: 'attribute @s minecraft:movement_speed modifier add mypack:speed_boost 0.05 add_value', desc: '属性にモディファイアを追加' },
+      { label: 'モディファイア削除', code: 'attribute @s minecraft:movement_speed modifier remove mypack:speed_boost', desc: 'モディファイアを削除' },
     ],
   },
   {
@@ -2866,12 +2999,12 @@ const COMMAND_GUIDE = {
   damage: { d: 'ダメージを与えます', a: [{ n:'target', d:'対象', t:'selector' }, { n:'amount', d:'ダメージ量', t:'float' }, { n:'type', d:'ダメージタイプ(省略可)', t:'damage_type' }], p: '{target} に {amount} ダメージ ({type})', ex: ['damage @s 5 minecraft:magic'] },
   ride: { d: 'エンティティを乗降させます', a: [{ n:'target', d:'対象', t:'selector' }, { n:'action', d:'mount/dismount', t:'enum', o:['mount','dismount'] }, { n:'vehicle', d:'乗り物(mount時)', t:'selector' }], p: '{target} を {action}', ex: ['ride @s mount @e[type=horse,limit=1]'] },
   item: { d: 'アイテムを操作・置換します', a: [{ n:'action', d:'replace/modify', t:'enum', o:['replace','modify'] }, { n:'type', d:'entity/block', t:'string' }], p: 'アイテム操作: {action} {type}', ex: ['item replace entity @s weapon.mainhand with diamond_sword'] },
-  attribute: { d: '属性（HP、速度等）を変更します', a: [{ n:'target', d:'対象', t:'selector' }, { n:'attr', d:'属性名', t:'attribute' }, { n:'action', d:'get/base/modifier', t:'string' }], p: '{target} の {attr} を操作', ex: ['attribute @s minecraft:max_health base set 40'] },
+  attribute: { d: '属性（HP、速度、攻撃力等）を変更します', a: [{ n:'target', d:'対象', t:'selector' }, { n:'attr', d:'属性名(max_health,movement_speed等)', t:'attribute' }, { n:'action', d:'base set/base get/modifier add/modifier remove', t:'string' }], p: '{target} の {attr} を操作', ex: ['attribute @s minecraft:max_health base set 40','attribute @s minecraft:movement_speed base set 0.15','attribute @s minecraft:scale base set 2.0','attribute @s minecraft:movement_speed modifier add mypack:buff 0.05 add_value'] },
   schedule: { d: '関数を遅延実行します', a: [{ n:'action', d:'function/clear', t:'enum', o:['function','clear'] }, { n:'function', d:'関数ID', t:'function' }, { n:'time', d:'遅延(1s,20t)', t:'time' }], p: '{time} 後に {function} を実行', ex: ['schedule function ns:tick 1s'] },
   forceload: { d: 'チャンクを強制読み込みします', a: [{ n:'action', d:'add/remove/query', t:'enum', o:['add','remove','query'] }, { n:'pos', d:'座標(XZ)', t:'pos' }], p: 'チャンクの強制読み込みを {action}', ex: ['forceload add ~ ~'] },
   worldborder: { d: 'ワールドボーダーを設定します', a: [{ n:'action', d:'set/add/center/get', t:'enum', o:['set','add','center','get','warning','damage'] }, { n:'value', d:'値', t:'float' }], p: 'ボーダーを {action} {value}', ex: ['worldborder set 100 10','worldborder center 0 0'] },
   random: { d: '乱数を生成します', a: [{ n:'action', d:'value/roll/reset', t:'enum', o:['value','roll','reset'] }, { n:'range', d:'範囲(min..max)', t:'range' }], p: '{range} で乱数 ({action})', ex: ['random value 1..100'] },
-  tag: { d: 'タグを付け外しします', a: [{ n:'target', d:'対象', t:'selector' }, { n:'action', d:'add/remove/list', t:'enum', o:['add','remove','list'] }, { n:'name', d:'タグ名', t:'string' }], p: '{target} のタグ {name} を {action}', ex: ['tag @s add admin','tag @e remove temp'] },
+  tag: { d: 'エンティティにタグを付け外しします。タグはセレクターの[tag=xxx]で使えます', a: [{ n:'target', d:'対象', t:'selector' }, { n:'action', d:'add/remove/list', t:'enum', o:['add','remove','list'] }, { n:'name', d:'タグ名(自由に命名可)', t:'string' }], p: '{target} のタグ {name} を {action}', ex: ['tag @a add my_tag','tag @s remove my_tag','tag @s list','execute as @a[tag=my_tag] run say タグ持ち','execute as @a[tag=!my_tag] run tag @s add my_tag'] },
   loot: { d: 'ルートテーブルからアイテム生成', a: [{ n:'target', d:'give/spawn/insert/replace', t:'enum', o:['give','spawn','insert','replace'] }, { n:'source', d:'loot/kill/mine', t:'string' }], p: 'ルートテーブルからアイテム生成: {target}', ex: ['loot give @s loot minecraft:chests/simple_dungeon'] },
   kill: { d: 'エンティティを消去します', a: [{ n:'target', d:'対象', t:'selector' }], p: '{target} をキル', ex: ['kill @e[type=zombie]','kill @e[type=!player]'] },
   gamemode: { d: 'ゲームモードを変更します', a: [{ n:'mode', d:'モード', t:'enum', o:['survival','creative','adventure','spectator'] }, { n:'target', d:'対象(省略可)', t:'selector' }], p: '{target} を {mode} モードに変更', ex: ['gamemode creative @s'] },
