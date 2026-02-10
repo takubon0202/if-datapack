@@ -1603,6 +1603,11 @@ const MC_AUTO = {
     { l: '@s', d: '実行者スコア' }, { l: '@p', d: '最寄りプレイヤー' },
     { l: '#', d: 'フェイクプレイヤー (#名前)' },
   ],
+  'execute.in': [
+    { l: 'minecraft:overworld', d: 'オーバーワールド' },
+    { l: 'minecraft:the_nether', d: 'ネザー' },
+    { l: 'minecraft:the_end', d: 'ジ・エンド' },
+  ],
   'execute.on': [
     { l: 'passengers', d: '乗客', v: '1.19.4' }, { l: 'vehicle', d: '乗り物', v: '1.19.4' },
     { l: 'origin', d: '発射元', v: '1.19.4' }, { l: 'owner', d: '飼い主', v: '1.19.4' },
@@ -1706,6 +1711,30 @@ const MC_AUTO = {
     { l: 'maxCommandForkCount', d: 'コマンドフォーク上限', v: '1.20.2' },
     { l: 'spawnChunkRadius', d: 'スポーンチャンク半径', v: '1.20.5' },
     { l: 'fireSpreadRadiusAroundPlayer', d: '火の延焼距離', v: '1.21.11' },
+  ],
+  _dimensions: [
+    { l: 'minecraft:overworld', d: 'オーバーワールド' },
+    { l: 'minecraft:the_nether', d: 'ネザー' },
+    { l: 'minecraft:the_end', d: 'ジ・エンド' },
+  ],
+  _structures: [
+    { l: 'minecraft:village_plains', d: '平原の村' }, { l: 'minecraft:village_desert', d: '砂漠の村' },
+    { l: 'minecraft:village_taiga', d: 'タイガの村' }, { l: 'minecraft:village_snowy', d: '雪の村' },
+    { l: 'minecraft:village_savanna', d: 'サバンナの村' },
+    { l: 'minecraft:mansion', d: '森の洋館' }, { l: 'minecraft:monument', d: '海底神殿' },
+    { l: 'minecraft:stronghold', d: '要塞' }, { l: 'minecraft:fortress', d: 'ネザー要塞' },
+    { l: 'minecraft:bastion_remnant', d: '砦の遺跡' },
+    { l: 'minecraft:end_city', d: 'エンドシティ' }, { l: 'minecraft:mineshaft', d: '廃坑' },
+    { l: 'minecraft:buried_treasure', d: '埋もれた宝' }, { l: 'minecraft:shipwreck', d: '難破船' },
+    { l: 'minecraft:ocean_ruin_warm', d: '海底遺跡(暖)' }, { l: 'minecraft:ocean_ruin_cold', d: '海底遺跡(冷)' },
+    { l: 'minecraft:ruined_portal', d: '荒廃したポータル' },
+    { l: 'minecraft:ancient_city', d: '古代都市', v: '1.19' },
+    { l: 'minecraft:trail_ruins', d: 'トレイル遺跡', v: '1.20' },
+    { l: 'minecraft:trial_chambers', d: 'トライアルチャンバー', v: '1.21' },
+  ],
+  _time_presets: [
+    { l: '1t', d: '1ティック (0.05秒)' }, { l: '20t', d: '1秒' }, { l: '1s', d: '1秒' },
+    { l: '5s', d: '5秒' }, { l: '10s', d: '10秒' }, { l: '1d', d: '1日(ゲーム内)' },
   ],
   _items: [
     'stone','granite','diorite','andesite','deepslate','cobblestone','oak_planks','spruce_planks','birch_planks',
@@ -2677,7 +2706,7 @@ function getAutocompleteSuggestions(lineText, cursorCol, targetVersion) {
         ctx = 'execute'; continue;
       }
       if (tok === 'facing') { i += 2; ctx = 'execute'; continue; }
-      if (tok === 'in') { expectArg = true; ctx = 'execute'; continue; }
+      if (tok === 'in') { ctx = 'execute.in'; expectArg = false; continue; }
       if (tok === 'anchored') { expectArg = true; ctx = 'execute'; continue; }
       if (tok === 'align') { expectArg = true; ctx = 'execute'; continue; }
       if (tok === 'summon') { expectArg = true; ctx = 'execute'; continue; }
@@ -3014,6 +3043,19 @@ const COMMAND_GUIDE = {
   gamemode: { d: 'ゲームモードを変更します', a: [{ n:'mode', d:'モード', t:'enum', o:['survival','creative','adventure','spectator'] }, { n:'target', d:'対象(省略可)', t:'selector' }], p: '{target} を {mode} モードに変更', ex: ['gamemode creative @s'] },
   gamerule: { d: 'ゲームルールを設定します', a: [{ n:'rule', d:'ルール名', t:'gamerule' }, { n:'value', d:'true/false or 数値', t:'string' }], p: 'ルール {rule} = {value}', ex: ['gamerule keepInventory true','gamerule randomTickSpeed 100'] },
   clear: { d: 'インベントリからアイテムを除去します', a: [{ n:'target', d:'対象', t:'selector' }, { n:'item', d:'アイテム(省略=全部)', t:'item' }, { n:'count', d:'個数(省略=全部)', t:'int' }], p: '{target} から {item} を {count}個 除去', ex: ['clear @s diamond 10','clear @a'] },
+  data: { d: 'エンティティ/ブロックのNBTを読み書きします', a: [{ n:'action', d:'get/merge/modify/remove', t:'enum', o:['get','merge','modify','remove'] }, { n:'type', d:'entity/block/storage', t:'enum', o:['entity','block','storage'] }, { n:'target', d:'対象/座標', t:'string' }, { n:'path', d:'NBTパス(省略可)', t:'string' }], p: '{type} {target} のデータを {action}', ex: ['data get entity @s Pos','data merge entity @s {Invulnerable:1b}','data modify storage ns:temp val set value 1'] },
+  function: { d: '他のmcfunction関数を呼び出します', a: [{ n:'function_id', d:'名前空間:パス', t:'function' }], p: '関数 {function_id} を呼び出し', ex: ['function mypack:init','function mypack:game/start'] },
+  enchant: { d: 'エンチャントを付与します', a: [{ n:'target', d:'対象', t:'selector' }, { n:'enchantment', d:'エンチャントID', t:'enchantment' }, { n:'level', d:'レベル(省略=1)', t:'int' }], p: '{target} に {enchantment} Lv.{level}', ex: ['enchant @s sharpness 5','enchant @a mending'] },
+  experience: { d: '経験値を操作します (xpと同じ)', a: [{ n:'action', d:'add/set/query', t:'enum', o:['add','set','query'] }, { n:'target', d:'対象', t:'selector' }, { n:'amount', d:'量', t:'int' }], p: '{target} の経験値を {action} {amount}', ex: ['experience add @s 10 levels','experience set @s 0 points'] },
+  xp: { d: '経験値を操作します (experienceと同じ)', a: [{ n:'action', d:'add/set/query', t:'enum', o:['add','set','query'] }, { n:'target', d:'対象', t:'selector' }, { n:'amount', d:'量', t:'int' }], p: '{target} のXPを {action} {amount}', ex: ['xp add @s 30 levels'] },
+  difficulty: { d: '難易度を設定します', a: [{ n:'difficulty', d:'難易度', t:'enum', o:['peaceful','easy','normal','hard'] }], p: '難易度を {difficulty} に設定', ex: ['difficulty hard'] },
+  weather: { d: '天候を変更します', a: [{ n:'weather', d:'天候', t:'enum', o:['clear','rain','thunder'] }, { n:'duration', d:'秒数(省略可)', t:'int' }], p: '天候を {weather} に変更', ex: ['weather clear','weather rain 600'] },
+  time: { d: 'ゲーム内時間を操作します', a: [{ n:'action', d:'set/add/query', t:'enum', o:['set','add','query'] }, { n:'value', d:'時間値', t:'time' }], p: 'ゲーム時間を {action} {value}', ex: ['time set day','time add 1000','time query daytime'] },
+  locate: { d: '構造物やバイオームの位置を検索します', a: [{ n:'type', d:'structure/biome/poi', t:'enum', o:['structure','biome','poi'] }, { n:'name', d:'名前', t:'string' }], p: '{type} {name} を検索', ex: ['locate structure minecraft:village_plains','locate biome minecraft:cherry_grove'] },
+  advancement: { d: '進捗を付与/取り消します', a: [{ n:'action', d:'grant/revoke', t:'enum', o:['grant','revoke'] }, { n:'target', d:'対象', t:'selector' }, { n:'mode', d:'everything/only/from/through/until', t:'string' }], p: '{target} の進捗を {action}', ex: ['advancement grant @s only mypack:my_adv','advancement revoke @a everything'] },
+  trigger: { d: 'トリガーの値を操作します (プレイヤーが実行)', a: [{ n:'objective', d:'目的名', t:'string' }, { n:'action', d:'add/set(省略可)', t:'enum', o:['add','set'] }, { n:'value', d:'値(省略可)', t:'int' }], p: 'トリガー {objective} を操作', ex: ['trigger my_trigger','trigger my_trigger set 1'] },
+  reload: { d: 'データパックを再読み込みします', a: [], p: 'データパックをリロード', ex: ['reload'] },
+  say: { d: 'チャットにメッセージを表示', a: [{ n:'message', d:'メッセージ', t:'string' }], p: 'メッセージ送信', ex: ['say Hello World','say ゲーム開始！'] },
 };
 
 // Set of all known item IDs for validation
@@ -3231,6 +3273,148 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
             fix: { label: `minecraft:${tok} に変更`, apply: (l) => l.replace(new RegExp(`\\b${tok}\\b`), `minecraft:${tok}`) } };
         }
       }
+    }
+  }
+
+  // Validate JSON text in tellraw/title (basic check)
+  if ((cmd === 'tellraw' || cmd === 'title') && trimmed.includes('{')) {
+    const jsonStart = trimmed.indexOf('{', trimmed.indexOf(cmd));
+    if (jsonStart >= 0) {
+      const jsonPart = trimmed.substring(jsonStart);
+      // Check for common JSON mistakes
+      if (jsonPart.includes("'text'") || jsonPart.includes("'color'")) {
+        return { line: lineNum, msg: 'JSONではシングルクォート(\')ではなくダブルクォート(")を使用してください', type: 'error',
+          fix: { label: "' → \" に変換", apply: (l) => l.replace(/'/g, '"') } };
+      }
+      if (/\{[^}]*text\s*:/.test(jsonPart) && !/\{[^}]*"text"\s*:/.test(jsonPart)) {
+        return { line: lineNum, msg: 'JSONのキーはダブルクォートで囲む必要があります — 例: {"text":"hello"}', type: 'error' };
+      }
+      // Trailing comma before }
+      if (/,\s*\}/.test(jsonPart)) {
+        return { line: lineNum, msg: 'JSONの最後にカンマがあります — "}" の前のカンマ(,)を削除してください', type: 'error',
+          fix: { label: '末尾カンマを削除', apply: (l) => l.replace(/,(\s*\})/g, '$1') } };
+      }
+    }
+  }
+
+  // Validate selector argument values
+  const selectorBlocks = trimmed.match(/@[aeprsn]\[([^\]]*)\]/g);
+  if (selectorBlocks) {
+    for (const sel of selectorBlocks) {
+      const inner = sel.match(/@[aeprsn]\[([^\]]*)\]/)?.[1];
+      if (!inner) continue;
+      // Check for negative distance
+      if (/distance\s*=\s*-/.test(inner)) {
+        return { line: lineNum, msg: 'distance の値は負にできません — 0以上の数値を指定してください', type: 'error' };
+      }
+      // Check limit with 0
+      if (/limit\s*=\s*0(?!\.)/.test(inner)) {
+        return { line: lineNum, msg: 'limit=0 は無効です — 1以上の数値を指定してください', type: 'error' };
+      }
+      // Check for duplicate selector keys
+      const keyMatches = inner.match(/([a-z_]+)\s*=/g);
+      if (keyMatches) {
+        const keys = keyMatches.map(k => k.replace(/\s*=/, ''));
+        const noDupKeys = ['distance', 'limit', 'sort', 'type', 'gamemode', 'name', 'level'];
+        for (const k of noDupKeys) {
+          if (keys.filter(kk => kk === k).length > 1) {
+            return { line: lineNum, msg: `セレクター引数 "${k}" が重複しています — 同じ引数を2回指定できません (tag/scores除く)`, type: 'warning' };
+          }
+        }
+      }
+      // Check for unknown selector args
+      const allKeys = inner.match(/([a-z_]+)\s*=/g);
+      if (allKeys) {
+        const validKeys = new Set(['tag','scores','distance','type','name','limit','sort','level','gamemode','nbt','x','y','z','dx','dy','dz','predicate','x_rotation','y_rotation','team','advancements']);
+        for (const km of allKeys) {
+          const k = km.replace(/\s*=/, '');
+          if (!validKeys.has(k)) {
+            return { line: lineNum, msg: `不明なセレクター引数: "${k}" — tag, scores, distance, type 等を使用してください`, type: 'warning' };
+          }
+        }
+      }
+    }
+  }
+
+  // Validate coordinate format (basic)
+  if ((cmd === 'tp' || cmd === 'teleport' || cmd === 'setblock' || cmd === 'fill' || cmd === 'summon') && tokens.length >= 3) {
+    for (let i = 1; i < tokens.length && i < 8; i++) {
+      const tok = tokens[i];
+      if (/^[~^]/.test(tok)) {
+        const numPart = tok.substring(1);
+        if (numPart && !/^-?\d*\.?\d*$/.test(numPart)) {
+          return { line: lineNum, msg: `座標値 "${tok}" のフォーマットが不正です — ~5, ~-3.5, ^2 のように数値を指定してください`, type: 'warning' };
+        }
+      }
+    }
+  }
+
+  // Validate NBT basic syntax (check for common mistakes)
+  if (trimmed.includes('{') && (cmd === 'summon' || cmd === 'data' || cmd === 'give')) {
+    const nbtStart = trimmed.indexOf('{');
+    const nbtPart = trimmed.substring(nbtStart);
+    // Check for = instead of : in NBT
+    if (/\{[^}]*[A-Za-z_]+=/.test(nbtPart) && !/\{[^}]*[A-Za-z_]+:/.test(nbtPart)) {
+      return { line: lineNum, msg: 'NBTでは "=" ではなく ":" を使います — 例: {Health:20}', type: 'error',
+        fix: { label: '= → : に変換', apply: (l) => { const i = l.indexOf('{'); return i >= 0 ? l.substring(0, i) + l.substring(i).replace(/(\w)=([^=])/g, '$1:$2') : l; } } };
+    }
+    // Check for missing value after key
+    if (/[A-Za-z_]+:\s*[,}]/.test(nbtPart)) {
+      return { line: lineNum, msg: 'NBTキーの後に値がありません — {Key:Value} の形式で指定してください', type: 'error' };
+    }
+  }
+
+  // Validate attribute command structure
+  if (cmd === 'attribute' && tokens.length >= 2 && tokens.length < 4) {
+    return { line: lineNum, msg: 'attribute: 引数が不足 — attribute <対象> <属性名> <base/get/modifier> ...', type: 'error' };
+  }
+
+  // Validate tag command structure
+  if (cmd === 'tag' && tokens.length >= 2 && tokens.length < 3) {
+    return { line: lineNum, msg: 'tag: 引数が不足 — tag <対象> <add/remove/list> [タグ名]', type: 'error' };
+  }
+  if (cmd === 'tag' && tokens.length >= 3) {
+    const sub = tokens[2]?.toLowerCase();
+    if (sub !== 'add' && sub !== 'remove' && sub !== 'list') {
+      return { line: lineNum, msg: `tag のサブコマンドは "add", "remove", "list" です（"${sub}" は不正）`, type: 'warning' };
+    }
+    if ((sub === 'add' || sub === 'remove') && tokens.length < 4) {
+      return { line: lineNum, msg: `tag ${sub}: タグ名が必要です — tag <対象> ${sub} <タグ名>`, type: 'error' };
+    }
+  }
+
+  // Validate schedule time format
+  if (cmd === 'schedule' && tokens.length >= 4) {
+    const timeArg = tokens[3];
+    if (timeArg && !/^\d+[tsd]?$/.test(timeArg) && timeArg !== 'append' && timeArg !== 'replace') {
+      return { line: lineNum, msg: `schedule の時間形式が不正: "${timeArg}" — 例: 20t(ティック), 1s(秒), 1d(日)`, type: 'warning' };
+    }
+  }
+
+  // Validate team subcommand
+  if (cmd === 'team' && tokens.length >= 2) {
+    const sub = tokens[1]?.toLowerCase();
+    const validSubs = new Set(['add', 'remove', 'join', 'leave', 'modify', 'list', 'empty']);
+    if (!validSubs.has(sub)) {
+      return { line: lineNum, msg: `team のサブコマンドが不正: "${sub}" — add/remove/join/leave/modify/list`, type: 'warning' };
+    }
+  }
+
+  // Validate bossbar subcommand
+  if (cmd === 'bossbar' && tokens.length >= 2) {
+    const sub = tokens[1]?.toLowerCase();
+    const validSubs = new Set(['add', 'remove', 'set', 'get', 'list']);
+    if (!validSubs.has(sub)) {
+      return { line: lineNum, msg: `bossbar のサブコマンドが不正: "${sub}" — add/remove/set/get/list`, type: 'warning' };
+    }
+  }
+
+  // Validate data subcommand
+  if (cmd === 'data' && tokens.length >= 2) {
+    const sub = tokens[1]?.toLowerCase();
+    const validSubs = new Set(['get', 'merge', 'modify', 'remove']);
+    if (!validSubs.has(sub)) {
+      return { line: lineNum, msg: `data のサブコマンドが不正: "${sub}" — get/merge/modify/remove`, type: 'warning' };
     }
   }
 
