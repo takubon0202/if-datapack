@@ -309,11 +309,11 @@ team modify team_blue friendlyFire false
 # 初期化時: scoreboard objectives add deaths deathCount "死亡"
 
 # 死亡したプレイヤーを検知
-execute as @a[tag=player,scores={deaths=1..}] run tellraw @a[tag=player] [{"selector":"@s","color":"red"},{"text":" がやられた！","color":"gray"}]
+execute as @a[scores={deaths=1..}] run tellraw @a [{"selector":"@s","color":"red"},{"text":" がやられた！","color":"gray"}]
 
 # 死亡したプレイヤーをスペクテイターに
-execute as @a[tag=player,scores={deaths=1..}] run gamemode spectator @s
-execute as @a[tag=player,scores={deaths=1..}] run scoreboard players set @s alive 0
+execute as @a[scores={deaths=1..}] run gamemode spectator @s
+execute as @a[scores={deaths=1..}] run scoreboard players set @s alive 0
 
 # カウンターリセット（毎tick）
 scoreboard players set @a deaths 0
@@ -328,7 +328,7 @@ scoreboard players set @a deaths 0
 bossbar add ${ns}:timer "タイマー"
 
 # 設定
-bossbar set ${ns}:timer players @a[tag=player]
+bossbar set ${ns}:timer players @a
 bossbar set ${ns}:timer max 300
 bossbar set ${ns}:timer value 300
 bossbar set ${ns}:timer color yellow
@@ -4882,6 +4882,8 @@ function addFilesFromPaths(existingFiles, pathContents) {
 
 function generateMinigameFiles(ns, gameType, settings) {
   const gt = settings.gameTime || 300;
+  const pTag = settings.playerTag || '';
+  const P = pTag ? `@a[tag=${pTag}]` : '@a'; // Player selector
   const files = [];
 
   // ── Common: load.json / tick.json (merge with existing) ──
@@ -4931,11 +4933,11 @@ team join runner @a[tag=runner_tag]
 tag @a remove chaser_pick
 
 # リセット
-clear @a[tag=player]
-effect clear @a[tag=player]
-scoreboard players set @a[tag=player] alive 1
-scoreboard players set @a[tag=player] deaths 0
-gamemode adventure @a[tag=player]
+clear ${P}
+effect clear ${P}
+scoreboard players set ${P} alive 1
+scoreboard players set ${P} deaths 0
+gamemode adventure ${P}
 
 # タイマー設定（${gt}秒）
 scoreboard players set #timer timer_tick 0
@@ -4944,7 +4946,7 @@ scoreboard players set #timer pre_count 60
 
 # ボスバー
 bossbar add ${ns}:timer ""
-bossbar set ${ns}:timer players @a[tag=player]
+bossbar set ${ns}:timer players ${P}
 bossbar set ${ns}:timer max ${gt}
 bossbar set ${ns}:timer value ${gt}
 bossbar set ${ns}:timer color yellow
@@ -4952,9 +4954,9 @@ bossbar set ${ns}:timer style notched_10
 
 # ゲーム開始
 scoreboard players set #game game_state 1
-title @a[tag=player] title {"text":"${tA}ごっこ","bold":true,"color":"gold"}
-title @a[tag=player] subtitle {"text":"まもなく開始...","color":"yellow"}
-playsound minecraft:block.note_block.pling master @a[tag=player]` });
+title ${P} title {"text":"${tA}ごっこ","bold":true,"color":"gold"}
+title ${P} subtitle {"text":"まもなく開始...","color":"yellow"}
+playsound minecraft:block.note_block.pling master ${P}` });
 
     files.push({ path: `data/${ns}/function/game_loop.mcfunction`, content:
 `# ═══ ゲームループ（ゲーム中毎tick） ═══
@@ -4965,14 +4967,14 @@ gamemode spectator @a[tag=player,scores={alive=0}]
 
 # ── 死亡検知（${tB}が死亡→捕まった） ──
 execute as @a[tag=runner_tag,scores={deaths=1..}] run scoreboard players set @s alive 0
-execute as @a[tag=runner_tag,scores={deaths=1..}] run tellraw @a[tag=player] [{"selector":"@s","color":"${settings.colorB || 'blue'}"},{"text":" が捕まった！","color":"yellow"}]
-scoreboard players set @a[tag=player] deaths 0
+execute as @a[tag=runner_tag,scores={deaths=1..}] run tellraw ${P} [{"selector":"@s","color":"${settings.colorB || 'blue'}"},{"text":" が捕まった！","color":"yellow"}]
+scoreboard players set ${P} deaths 0
 
 # ── 開始カウントダウン（3秒） ──
-execute if score #timer pre_count matches 60 run title @a[tag=player] title {"text":"3","bold":true,"color":"light_purple"}
-execute if score #timer pre_count matches 40 run title @a[tag=player] title {"text":"2","bold":true,"color":"yellow"}
-execute if score #timer pre_count matches 20 run title @a[tag=player] title {"text":"1","bold":true,"color":"red"}
-execute if score #timer pre_count matches 1 run title @a[tag=player] title {"text":"スタート！","bold":true,"color":"green"}
+execute if score #timer pre_count matches 60 run title ${P} title {"text":"3","bold":true,"color":"light_purple"}
+execute if score #timer pre_count matches 40 run title ${P} title {"text":"2","bold":true,"color":"yellow"}
+execute if score #timer pre_count matches 20 run title ${P} title {"text":"1","bold":true,"color":"red"}
+execute if score #timer pre_count matches 1 run title ${P} title {"text":"スタート！","bold":true,"color":"green"}
 execute if score #timer pre_count matches 1 run tellraw @a[tag=chaser_tag] {"text":"あなたは${tA}です！全員捕まえろ！","color":"${settings.colorA || 'red'}","bold":true}
 execute if score #timer pre_count matches 1 run tellraw @a[tag=runner_tag] {"text":"あなたは${tB}です！逃げろ！","color":"${settings.colorB || 'blue'}","bold":true}
 execute if score #timer pre_count matches 1.. run scoreboard players remove #timer pre_count 1
@@ -4989,7 +4991,7 @@ bossbar set ${ns}:timer name ["",{"text":"残り ","color":"yellow"},{"score":{"
 # ── HUD表示 ──
 scoreboard players set #runner_count team_count 0
 execute as @a[tag=runner_tag,scores={alive=1}] run scoreboard players add #runner_count team_count 1
-title @a[tag=player] actionbar ["",{"text":"${tA} ","bold":true,"color":"${settings.colorA || 'red'}"},{"text":"vs ","color":"gray"},{"text":"${tB} 残り","color":"${settings.colorB || 'blue'}"},{"score":{"name":"#runner_count","objective":"team_count"},"color":"white"},{"text":"人","color":"${settings.colorB || 'blue'}"}]
+title ${P} actionbar ["",{"text":"${tA} ","bold":true,"color":"${settings.colorA || 'red'}"},{"text":"vs ","color":"gray"},{"text":"${tB} 残り","color":"${settings.colorB || 'blue'}"},{"score":{"name":"#runner_count","objective":"team_count"},"color":"white"},{"text":"人","color":"${settings.colorB || 'blue'}"}]
 
 # ── 勝利判定 ──
 execute if score #runner_count team_count matches 0 run function ${ns}:win_chaser
@@ -4997,17 +4999,17 @@ execute if score #timer pre_count matches 0 if score #timer timer_sec matches 0 
 
     files.push({ path: `data/${ns}/function/win_chaser.mcfunction`, content:
 `# ═══ ${tA}の勝利 ═══
-title @a[tag=player] title {"text":"${tA}の勝利！","bold":true,"color":"${settings.colorA || 'red'}"}
-title @a[tag=player] subtitle {"text":"全員捕まえた！","color":"yellow"}
-tellraw @a[tag=player] {"text":"═══ ゲーム終了 ═══","color":"gold","bold":true}
+title ${P} title {"text":"${tA}の勝利！","bold":true,"color":"${settings.colorA || 'red'}"}
+title ${P} subtitle {"text":"全員捕まえた！","color":"yellow"}
+tellraw ${P} {"text":"═══ ゲーム終了 ═══","color":"gold","bold":true}
 execute as @a[tag=chaser_tag] at @s run playsound minecraft:ui.toast.challenge_complete master @s
 function ${ns}:end` });
 
     files.push({ path: `data/${ns}/function/win_runner.mcfunction`, content:
 `# ═══ ${tB}の勝利 ═══
-title @a[tag=player] title {"text":"逃走成功！","bold":true,"color":"${settings.colorB || 'blue'}"}
-title @a[tag=player] subtitle {"text":"${tB}の勝利！","color":"yellow"}
-tellraw @a[tag=player] {"text":"═══ ゲーム終了 ═══","color":"gold","bold":true}
+title ${P} title {"text":"逃走成功！","bold":true,"color":"${settings.colorB || 'blue'}"}
+title ${P} subtitle {"text":"${tB}の勝利！","color":"yellow"}
+tellraw ${P} {"text":"═══ ゲーム終了 ═══","color":"gold","bold":true}
 execute as @a[tag=runner_tag,scores={alive=1}] at @s run playsound minecraft:ui.toast.challenge_complete master @s
 function ${ns}:end` });
 
@@ -5015,15 +5017,15 @@ function ${ns}:end` });
 `# ═══ ゲーム終了 & リセット ═══
 scoreboard players set #game game_state 0
 bossbar remove ${ns}:timer
-gamemode adventure @a[tag=player]
-clear @a[tag=player]
-effect clear @a[tag=player]
-scoreboard players set @a[tag=player] alive 0
+gamemode adventure ${P}
+clear ${P}
+effect clear ${P}
+scoreboard players set ${P} alive 0
 tag @a remove chaser_tag
 tag @a remove runner_tag
 team empty chaser
 team empty runner
-tellraw @a[tag=player] {"text":"ゲームがリセットされました","color":"gray"}` });
+tellraw ${P} {"text":"ゲームがリセットされました","color":"gray"}` });
 
   } else if (gameType === 'pvp_arena') {
     const tA = settings.teamA || '赤チーム';
@@ -5060,39 +5062,39 @@ tag @a[tag=player,tag=!team_a_pick] add team_b_tag
 tag @a[tag=team_a_pick] add team_a_tag
 tag @a remove team_a_pick
 
-clear @a[tag=player]
-effect clear @a[tag=player]
-scoreboard players set @a[tag=player] kills 0
-scoreboard players set @a[tag=player] deaths 0
+clear ${P}
+effect clear ${P}
+scoreboard players set ${P} kills 0
+scoreboard players set ${P} deaths 0
 scoreboard players set #team_a kills 0
 scoreboard players set #team_b kills 0
-gamemode adventure @a[tag=player]
+gamemode adventure ${P}
 
 scoreboard players set #timer timer_tick 0
 scoreboard players set #timer timer_sec ${gt}
 scoreboard players set #timer pre_count 60
 
 bossbar add ${ns}:timer ""
-bossbar set ${ns}:timer players @a[tag=player]
+bossbar set ${ns}:timer players ${P}
 bossbar set ${ns}:timer max ${gt}
 bossbar set ${ns}:timer value ${gt}
 bossbar set ${ns}:timer color yellow
 
-give @a[tag=player] iron_sword
-give @a[tag=player] bow
-give @a[tag=player] arrow 16
+give ${P} iron_sword
+give ${P} bow
+give ${P} arrow 16
 
 scoreboard players set #game game_state 1
-title @a[tag=player] title {"text":"PvPアリーナ","bold":true,"color":"gold"}` });
+title ${P} title {"text":"PvPアリーナ","bold":true,"color":"gold"}` });
 
     files.push({ path: `data/${ns}/function/game_loop.mcfunction`, content:
 `# ═══ PvPアリーナ ゲームループ ═══
 
 # カウントダウン
-execute if score #timer pre_count matches 60 run title @a[tag=player] title {"text":"3","bold":true,"color":"light_purple"}
-execute if score #timer pre_count matches 40 run title @a[tag=player] title {"text":"2","bold":true,"color":"yellow"}
-execute if score #timer pre_count matches 20 run title @a[tag=player] title {"text":"1","bold":true,"color":"red"}
-execute if score #timer pre_count matches 1 run title @a[tag=player] title {"text":"戦え！","bold":true,"color":"green"}
+execute if score #timer pre_count matches 60 run title ${P} title {"text":"3","bold":true,"color":"light_purple"}
+execute if score #timer pre_count matches 40 run title ${P} title {"text":"2","bold":true,"color":"yellow"}
+execute if score #timer pre_count matches 20 run title ${P} title {"text":"1","bold":true,"color":"red"}
+execute if score #timer pre_count matches 1 run title ${P} title {"text":"戦え！","bold":true,"color":"green"}
 execute if score #timer pre_count matches 1.. run scoreboard players remove #timer pre_count 1
 
 # タイマー
@@ -5104,7 +5106,7 @@ execute store result bossbar ${ns}:timer value run scoreboard players get #timer
 # キル検知
 execute as @a[tag=team_a_tag,scores={deaths=1..}] run scoreboard players add #team_b kills 1
 execute as @a[tag=team_b_tag,scores={deaths=1..}] run scoreboard players add #team_a kills 1
-execute as @a[scores={deaths=1..}] run tellraw @a[tag=player] [{"selector":"@s"},{"text":" がやられた！","color":"gray"}]
+execute as @a[scores={deaths=1..}] run tellraw ${P} [{"selector":"@s"},{"text":" がやられた！","color":"gray"}]
 scoreboard players set @a deaths 0
 
 # HUD
@@ -5116,12 +5118,12 @@ execute if score #team_b kills matches ${tk}.. run function ${ns}:win_b
 execute if score #timer pre_count matches 0 if score #timer timer_sec matches 0 run function ${ns}:win_check` });
 
     files.push({ path: `data/${ns}/function/win_a.mcfunction`, content:
-`title @a[tag=player] title {"text":"${tA}の勝利！","bold":true,"color":"${settings.colorA || 'red'}"}
+`title ${P} title {"text":"${tA}の勝利！","bold":true,"color":"${settings.colorA || 'red'}"}
 execute as @a[tag=team_a_tag] at @s run playsound minecraft:ui.toast.challenge_complete master @s
 function ${ns}:end` });
 
     files.push({ path: `data/${ns}/function/win_b.mcfunction`, content:
-`title @a[tag=player] title {"text":"${tB}の勝利！","bold":true,"color":"${settings.colorB || 'blue'}"}
+`title ${P} title {"text":"${tB}の勝利！","bold":true,"color":"${settings.colorB || 'blue'}"}
 execute as @a[tag=team_b_tag] at @s run playsound minecraft:ui.toast.challenge_complete master @s
 function ${ns}:end` });
 
@@ -5129,20 +5131,20 @@ function ${ns}:end` });
 `# 時間切れ: キル数が多いチームが勝利
 execute if score #team_a kills > #team_b kills run function ${ns}:win_a
 execute if score #team_b kills > #team_a kills run function ${ns}:win_b
-execute if score #team_a kills = #team_b kills run tellraw @a[tag=player] {"text":"引き分け！","color":"yellow","bold":true}
+execute if score #team_a kills = #team_b kills run tellraw ${P} {"text":"引き分け！","color":"yellow","bold":true}
 execute if score #team_a kills = #team_b kills run function ${ns}:end` });
 
     files.push({ path: `data/${ns}/function/end.mcfunction`, content:
 `scoreboard players set #game game_state 0
 bossbar remove ${ns}:timer
-gamemode adventure @a[tag=player]
-clear @a[tag=player]
-effect clear @a[tag=player]
+gamemode adventure ${P}
+clear ${P}
+effect clear ${P}
 tag @a remove team_a_tag
 tag @a remove team_b_tag
 team empty team_a
 team empty team_b
-tellraw @a[tag=player] {"text":"ゲームリセット完了","color":"gray"}` });
+tellraw ${P} {"text":"ゲームリセット完了","color":"gray"}` });
 
   } else if (gameType === 'spleef') {
     const fallY = settings.fallY || 50;
@@ -5162,10 +5164,10 @@ say [スプリーフ] 読み込み完了！` });
     files.push({ path: `data/${ns}/function/start.mcfunction`, content:
 `# ═══ スプリーフ 開始 ═══
 # 事前: tag @a add player
-clear @a[tag=player]
-effect clear @a[tag=player]
-scoreboard players set @a[tag=player] alive 1
-gamemode adventure @a[tag=player]
+clear ${P}
+effect clear ${P}
+scoreboard players set ${P} alive 1
+gamemode adventure ${P}
 
 scoreboard players set #timer timer_tick 0
 scoreboard players set #timer timer_sec ${gt}
@@ -5173,25 +5175,25 @@ scoreboard players set #timer pre_count 60
 scoreboard players set #alive_count alive 0
 
 bossbar add ${ns}:timer ""
-bossbar set ${ns}:timer players @a[tag=player]
+bossbar set ${ns}:timer players ${P}
 bossbar set ${ns}:timer max ${gt}
 bossbar set ${ns}:timer value ${gt}
 bossbar set ${ns}:timer color aqua
 
 # プレイヤーにシャベルを配布
-give @a[tag=player] diamond_shovel
+give ${P} diamond_shovel
 
 scoreboard players set #game game_state 1
-title @a[tag=player] title {"text":"スプリーフ","bold":true,"color":"aqua"}` });
+title ${P} title {"text":"スプリーフ","bold":true,"color":"aqua"}` });
 
     files.push({ path: `data/${ns}/function/game_loop.mcfunction`, content:
 `# ═══ スプリーフ ゲームループ ═══
 
 # カウントダウン
-execute if score #timer pre_count matches 60 run title @a[tag=player] title {"text":"3","bold":true,"color":"light_purple"}
-execute if score #timer pre_count matches 40 run title @a[tag=player] title {"text":"2","bold":true,"color":"yellow"}
-execute if score #timer pre_count matches 20 run title @a[tag=player] title {"text":"1","bold":true,"color":"red"}
-execute if score #timer pre_count matches 1 run title @a[tag=player] title {"text":"掘れ！","bold":true,"color":"aqua"}
+execute if score #timer pre_count matches 60 run title ${P} title {"text":"3","bold":true,"color":"light_purple"}
+execute if score #timer pre_count matches 40 run title ${P} title {"text":"2","bold":true,"color":"yellow"}
+execute if score #timer pre_count matches 20 run title ${P} title {"text":"1","bold":true,"color":"red"}
+execute if score #timer pre_count matches 1 run title ${P} title {"text":"掘れ！","bold":true,"color":"aqua"}
 execute if score #timer pre_count matches 1.. run scoreboard players remove #timer pre_count 1
 
 # タイマー
@@ -5216,17 +5218,17 @@ execute if score #alive_count alive matches ..1 run function ${ns}:win` });
 
     files.push({ path: `data/${ns}/function/win.mcfunction`, content:
 `# ═══ 勝者決定 ═══
-execute as @a[tag=player,scores={alive=1}] run title @a[tag=player] title [{"selector":"@s","bold":true,"color":"gold"},{"text":"の勝利！","bold":true,"color":"yellow"}]
+execute as @a[tag=player,scores={alive=1}] run title ${P} title [{"selector":"@s","bold":true,"color":"gold"},{"text":"の勝利！","bold":true,"color":"yellow"}]
 execute as @a[tag=player,scores={alive=1}] at @s run playsound minecraft:ui.toast.challenge_complete master @s
 function ${ns}:end` });
 
     files.push({ path: `data/${ns}/function/end.mcfunction`, content:
 `scoreboard players set #game game_state 0
 bossbar remove ${ns}:timer
-gamemode adventure @a[tag=player]
-clear @a[tag=player]
-effect clear @a[tag=player]
-scoreboard players set @a[tag=player] alive 0
+gamemode adventure ${P}
+clear ${P}
+effect clear ${P}
+scoreboard players set ${P} alive 0
 tag @a remove player
 tellraw @a {"text":"ゲームリセット完了","color":"gray"}` });
 
@@ -5248,33 +5250,33 @@ say [レース] 読み込み完了！` });
     files.push({ path: `data/${ns}/function/start.mcfunction`, content:
 `# ═══ レース 開始 ═══
 # 事前: tag @a add player
-clear @a[tag=player]
-effect clear @a[tag=player]
-scoreboard players set @a[tag=player] checkpoint 0
-scoreboard players set @a[tag=player] finished 0
-gamemode adventure @a[tag=player]
+clear ${P}
+effect clear ${P}
+scoreboard players set ${P} checkpoint 0
+scoreboard players set ${P} finished 0
+gamemode adventure ${P}
 
 scoreboard players set #timer timer_tick 0
 scoreboard players set #timer timer_sec 0
 scoreboard players set #timer pre_count 60
 
 bossbar add ${ns}:timer ""
-bossbar set ${ns}:timer players @a[tag=player]
+bossbar set ${ns}:timer players ${P}
 bossbar set ${ns}:timer max ${gt}
 bossbar set ${ns}:timer value 0
 bossbar set ${ns}:timer color green
 
 scoreboard players set #game game_state 1
-title @a[tag=player] title {"text":"レース","bold":true,"color":"green"}` });
+title ${P} title {"text":"レース","bold":true,"color":"green"}` });
 
     files.push({ path: `data/${ns}/function/game_loop.mcfunction`, content:
 `# ═══ レース ゲームループ ═══
 
 # カウントダウン
-execute if score #timer pre_count matches 60 run title @a[tag=player] title {"text":"3","bold":true,"color":"light_purple"}
-execute if score #timer pre_count matches 40 run title @a[tag=player] title {"text":"2","bold":true,"color":"yellow"}
-execute if score #timer pre_count matches 20 run title @a[tag=player] title {"text":"1","bold":true,"color":"red"}
-execute if score #timer pre_count matches 1 run title @a[tag=player] title {"text":"GO！","bold":true,"color":"green"}
+execute if score #timer pre_count matches 60 run title ${P} title {"text":"3","bold":true,"color":"light_purple"}
+execute if score #timer pre_count matches 40 run title ${P} title {"text":"2","bold":true,"color":"yellow"}
+execute if score #timer pre_count matches 20 run title ${P} title {"text":"1","bold":true,"color":"red"}
+execute if score #timer pre_count matches 1 run title ${P} title {"text":"GO！","bold":true,"color":"green"}
 execute if score #timer pre_count matches 1.. run scoreboard players remove #timer pre_count 1
 
 # タイマー（経過時間カウントアップ）
@@ -5289,7 +5291,7 @@ execute store result bossbar ${ns}:timer value run scoreboard players get #timer
 
 # HUD
 bossbar set ${ns}:timer name ["",{"text":"経過: ","color":"green"},{"score":{"name":"#timer","objective":"timer_sec"},"color":"white"},{"text":"秒","color":"green"}]
-title @a[tag=player] actionbar ["",{"text":"チェックポイント: ","color":"green"},{"score":{"name":"@s","objective":"checkpoint"},"color":"white"}]
+title ${P} actionbar ["",{"text":"チェックポイント: ","color":"green"},{"score":{"name":"@s","objective":"checkpoint"},"color":"white"}]
 
 # 制限時間チェック
 execute if score #timer timer_sec matches ${gt}.. run function ${ns}:end` });
@@ -5298,14 +5300,14 @@ execute if score #timer timer_sec matches ${gt}.. run function ${ns}:end` });
 `# ═══ ゴール処理 ═══
 # ゴール地点で: execute as @a[tag=player,scores={finished=0}] at @s if entity @e[tag=goal,distance=..3] run function ${ns}:goal
 scoreboard players set @s finished 1
-tellraw @a[tag=player] [{"selector":"@s","color":"gold","bold":true},{"text":" がゴール！ （","color":"green"},{"score":{"name":"#timer","objective":"timer_sec"},"color":"white"},{"text":"秒）","color":"green"}]
+tellraw ${P} [{"selector":"@s","color":"gold","bold":true},{"text":" がゴール！ （","color":"green"},{"score":{"name":"#timer","objective":"timer_sec"},"color":"white"},{"text":"秒）","color":"green"}]
 title @s title {"text":"ゴール！","bold":true,"color":"gold"}
 playsound minecraft:ui.toast.challenge_complete master @s` });
 
     files.push({ path: `data/${ns}/function/end.mcfunction`, content:
 `scoreboard players set #game game_state 0
 bossbar remove ${ns}:timer
-gamemode adventure @a[tag=player]
+gamemode adventure ${P}
 tag @a remove player
 tellraw @a {"text":"レース終了！","color":"gold","bold":true}` });
 
@@ -5328,34 +5330,34 @@ say [宝探し] 読み込み完了！` });
 
     files.push({ path: `data/${ns}/function/start.mcfunction`, content:
 `# ═══ 宝探し 開始 ═══
-clear @a[tag=player]
-effect clear @a[tag=player]
-scoreboard players set @a[tag=player] score 0
-scoreboard players set @a[tag=player] pickup 0
-gamemode adventure @a[tag=player]
+clear ${P}
+effect clear ${P}
+scoreboard players set ${P} score 0
+scoreboard players set ${P} pickup 0
+gamemode adventure ${P}
 
 scoreboard players set #timer timer_tick 0
 scoreboard players set #timer timer_sec ${gt}
 scoreboard players set #timer pre_count 60
 
 bossbar add ${ns}:timer ""
-bossbar set ${ns}:timer players @a[tag=player]
+bossbar set ${ns}:timer players ${P}
 bossbar set ${ns}:timer max ${gt}
 bossbar set ${ns}:timer value ${gt}
 bossbar set ${ns}:timer color purple
 
 scoreboard players set #game game_state 1
-title @a[tag=player] title {"text":"宝探し","bold":true,"color":"light_purple"}
-title @a[tag=player] subtitle {"text":"${itemName}を集めろ！","color":"yellow"}` });
+title ${P} title {"text":"宝探し","bold":true,"color":"light_purple"}
+title ${P} subtitle {"text":"${itemName}を集めろ！","color":"yellow"}` });
 
     files.push({ path: `data/${ns}/function/game_loop.mcfunction`, content:
 `# ═══ 宝探し ゲームループ ═══
 
 # カウントダウン
-execute if score #timer pre_count matches 60 run title @a[tag=player] title {"text":"3","bold":true,"color":"light_purple"}
-execute if score #timer pre_count matches 40 run title @a[tag=player] title {"text":"2","bold":true,"color":"yellow"}
-execute if score #timer pre_count matches 20 run title @a[tag=player] title {"text":"1","bold":true,"color":"red"}
-execute if score #timer pre_count matches 1 run title @a[tag=player] title {"text":"探せ！","bold":true,"color":"light_purple"}
+execute if score #timer pre_count matches 60 run title ${P} title {"text":"3","bold":true,"color":"light_purple"}
+execute if score #timer pre_count matches 40 run title ${P} title {"text":"2","bold":true,"color":"yellow"}
+execute if score #timer pre_count matches 20 run title ${P} title {"text":"1","bold":true,"color":"red"}
+execute if score #timer pre_count matches 1 run title ${P} title {"text":"探せ！","bold":true,"color":"light_purple"}
 execute if score #timer pre_count matches 1.. run scoreboard players remove #timer pre_count 1
 
 # タイマー
@@ -5366,30 +5368,30 @@ execute store result bossbar ${ns}:timer value run scoreboard players get #timer
 
 # アイテム取得検知
 execute as @a[tag=player,scores={pickup=1..}] run scoreboard players operation @s score += @s pickup
-execute as @a[tag=player,scores={pickup=1..}] run tellraw @a[tag=player] [{"selector":"@s","color":"gold"},{"text":" が${itemName}を見つけた！(計","color":"yellow"},{"score":{"name":"@s","objective":"score"},"color":"white"},{"text":"個)","color":"yellow"}]
-scoreboard players set @a[tag=player] pickup 0
+execute as @a[tag=player,scores={pickup=1..}] run tellraw ${P} [{"selector":"@s","color":"gold"},{"text":" が${itemName}を見つけた！(計","color":"yellow"},{"score":{"name":"@s","objective":"score"},"color":"white"},{"text":"個)","color":"yellow"}]
+scoreboard players set ${P} pickup 0
 
 # HUD
 bossbar set ${ns}:timer name ["",{"text":"残り ","color":"yellow"},{"score":{"name":"#timer","objective":"timer_sec"},"color":"aqua"},{"text":"秒","color":"yellow"}]
-title @a[tag=player] actionbar ["",{"text":"スコア: ","color":"light_purple"},{"score":{"name":"@s","objective":"score"},"color":"white"},{"text":"個","color":"light_purple"}]
+title ${P} actionbar ["",{"text":"スコア: ","color":"light_purple"},{"score":{"name":"@s","objective":"score"},"color":"white"},{"text":"個","color":"light_purple"}]
 
 # 時間切れ
 execute if score #timer pre_count matches 0 if score #timer timer_sec matches 0 run function ${ns}:result` });
 
     files.push({ path: `data/${ns}/function/result.mcfunction`, content:
 `# ═══ 結果発表 ═══
-tellraw @a[tag=player] {"text":"═══ 宝探し終了！ ═══","color":"gold","bold":true}
-tellraw @a[tag=player] {"text":"--- スコアボード ---","color":"yellow"}
-execute as @a[tag=player] run tellraw @a[tag=player] [{"selector":"@s"},{"text":": ","color":"gray"},{"score":{"name":"@s","objective":"score"},"color":"white"},{"text":"個","color":"gray"}]
-title @a[tag=player] title {"text":"終了！","bold":true,"color":"gold"}
+tellraw ${P} {"text":"═══ 宝探し終了！ ═══","color":"gold","bold":true}
+tellraw ${P} {"text":"--- スコアボード ---","color":"yellow"}
+execute as ${P} run tellraw ${P} [{"selector":"@s"},{"text":": ","color":"gray"},{"score":{"name":"@s","objective":"score"},"color":"white"},{"text":"個","color":"gray"}]
+title ${P} title {"text":"終了！","bold":true,"color":"gold"}
 function ${ns}:end` });
 
     files.push({ path: `data/${ns}/function/end.mcfunction`, content:
 `scoreboard players set #game game_state 0
 bossbar remove ${ns}:timer
-gamemode adventure @a[tag=player]
-clear @a[tag=player]
-effect clear @a[tag=player]
+gamemode adventure ${P}
+clear ${P}
+effect clear ${P}
 tag @a remove player
 tellraw @a {"text":"ゲームリセット完了","color":"gray"}` });
 
@@ -5430,34 +5432,34 @@ tag @a[tag=player,tag=!team_a_pick] add team_b_tag
 tag @a[tag=team_a_pick] add team_a_tag
 tag @a remove team_a_pick
 
-clear @a[tag=player]
-effect clear @a[tag=player]
+clear ${P}
+effect clear ${P}
 scoreboard players set #team_a hill_score 0
 scoreboard players set #team_b hill_score 0
-gamemode adventure @a[tag=player]
+gamemode adventure ${P}
 
 scoreboard players set #timer timer_tick 0
 scoreboard players set #timer timer_sec ${gt}
 scoreboard players set #timer pre_count 60
 
 bossbar add ${ns}:timer ""
-bossbar set ${ns}:timer players @a[tag=player]
+bossbar set ${ns}:timer players ${P}
 bossbar set ${ns}:timer max ${gt}
 bossbar set ${ns}:timer value ${gt}
 bossbar set ${ns}:timer color yellow
 
 scoreboard players set #game game_state 1
-title @a[tag=player] title {"text":"陣取り","bold":true,"color":"gold"}
-title @a[tag=player] subtitle {"text":"丘を制圧せよ！","color":"yellow"}` });
+title ${P} title {"text":"陣取り","bold":true,"color":"gold"}
+title ${P} subtitle {"text":"丘を制圧せよ！","color":"yellow"}` });
 
     files.push({ path: `data/${ns}/function/game_loop.mcfunction`, content:
 `# ═══ 陣取り ゲームループ ═══
 
 # カウントダウン
-execute if score #timer pre_count matches 60 run title @a[tag=player] title {"text":"3","bold":true,"color":"light_purple"}
-execute if score #timer pre_count matches 40 run title @a[tag=player] title {"text":"2","bold":true,"color":"yellow"}
-execute if score #timer pre_count matches 20 run title @a[tag=player] title {"text":"1","bold":true,"color":"red"}
-execute if score #timer pre_count matches 1 run title @a[tag=player] title {"text":"占領開始！","bold":true,"color":"green"}
+execute if score #timer pre_count matches 60 run title ${P} title {"text":"3","bold":true,"color":"light_purple"}
+execute if score #timer pre_count matches 40 run title ${P} title {"text":"2","bold":true,"color":"yellow"}
+execute if score #timer pre_count matches 20 run title ${P} title {"text":"1","bold":true,"color":"red"}
+execute if score #timer pre_count matches 1 run title ${P} title {"text":"占領開始！","bold":true,"color":"green"}
 execute if score #timer pre_count matches 1.. run scoreboard players remove #timer pre_count 1
 
 # タイマー
@@ -5468,8 +5470,8 @@ execute store result bossbar ${ns}:timer value run scoreboard players get #timer
 
 # ── 丘の上の判定（タグ "hill_zone" のマーカー周辺3ブロック） ──
 # 事前に /summon marker <x> <y> <z> {Tags:["hill_zone"]} を配置
-scoreboard players set @a[tag=player] on_hill 0
-execute as @a[tag=player] at @s if entity @e[tag=hill_zone,distance=..5] run scoreboard players set @s on_hill 1
+scoreboard players set ${P} on_hill 0
+execute as ${P} at @s if entity @e[tag=hill_zone,distance=..5] run scoreboard players set @s on_hill 1
 
 # 毎秒ポイント加算
 execute if score #timer pre_count matches 0 if score #timer timer_tick matches 0 as @a[tag=team_a_tag,scores={on_hill=1}] run scoreboard players add #team_a hill_score 1
@@ -5484,12 +5486,12 @@ execute if score #team_b hill_score matches ${ts}.. run function ${ns}:win_b
 execute if score #timer pre_count matches 0 if score #timer timer_sec matches 0 run function ${ns}:win_check` });
 
     files.push({ path: `data/${ns}/function/win_a.mcfunction`, content:
-`title @a[tag=player] title {"text":"${tA}の勝利！","bold":true,"color":"${settings.colorA || 'red'}"}
+`title ${P} title {"text":"${tA}の勝利！","bold":true,"color":"${settings.colorA || 'red'}"}
 execute as @a[tag=team_a_tag] at @s run playsound minecraft:ui.toast.challenge_complete master @s
 function ${ns}:end` });
 
     files.push({ path: `data/${ns}/function/win_b.mcfunction`, content:
-`title @a[tag=player] title {"text":"${tB}の勝利！","bold":true,"color":"${settings.colorB || 'blue'}"}
+`title ${P} title {"text":"${tB}の勝利！","bold":true,"color":"${settings.colorB || 'blue'}"}
 execute as @a[tag=team_b_tag] at @s run playsound minecraft:ui.toast.challenge_complete master @s
 function ${ns}:end` });
 
@@ -5497,20 +5499,20 @@ function ${ns}:end` });
 `# 時間切れ: スコアが多いチームの勝利
 execute if score #team_a hill_score > #team_b hill_score run function ${ns}:win_a
 execute if score #team_b hill_score > #team_a hill_score run function ${ns}:win_b
-execute if score #team_a hill_score = #team_b hill_score run tellraw @a[tag=player] {"text":"引き分け！","color":"yellow","bold":true}
+execute if score #team_a hill_score = #team_b hill_score run tellraw ${P} {"text":"引き分け！","color":"yellow","bold":true}
 execute if score #team_a hill_score = #team_b hill_score run function ${ns}:end` });
 
     files.push({ path: `data/${ns}/function/end.mcfunction`, content:
 `scoreboard players set #game game_state 0
 bossbar remove ${ns}:timer
-gamemode adventure @a[tag=player]
-clear @a[tag=player]
-effect clear @a[tag=player]
+gamemode adventure ${P}
+clear ${P}
+effect clear ${P}
 tag @a remove team_a_tag
 tag @a remove team_b_tag
 team empty team_a
 team empty team_b
-tellraw @a[tag=player] {"text":"ゲームリセット完了","color":"gray"}` });
+tellraw ${P} {"text":"ゲームリセット完了","color":"gray"}` });
 
   } else if (gameType === 'zombie_survival') {
     const maxW = settings.maxWaves || 10;
@@ -5535,12 +5537,12 @@ say [ゾンビサバイバル] 読み込み完了！` });
     files.push({ path: `data/${ns}/function/start.mcfunction`, content:
 `# ═══ ゾンビサバイバル 開始 ═══
 # 事前: tag @a add player
-clear @a[tag=player]
-effect clear @a[tag=player]
-scoreboard players set @a[tag=player] alive 1
-scoreboard players set @a[tag=player] deaths 0
-scoreboard players set @a[tag=player] kills 0
-gamemode adventure @a[tag=player]
+clear ${P}
+effect clear ${P}
+scoreboard players set ${P} alive 1
+scoreboard players set ${P} deaths 0
+scoreboard players set ${P} kills 0
+gamemode adventure ${P}
 
 scoreboard players set #wave wave 0
 scoreboard players set #wave_mobs wave_mobs 0
@@ -5549,28 +5551,28 @@ scoreboard players set #timer timer_sec ${gt}
 scoreboard players set #timer pre_count 60
 
 bossbar add ${ns}:timer ""
-bossbar set ${ns}:timer players @a[tag=player]
+bossbar set ${ns}:timer players ${P}
 bossbar set ${ns}:timer max ${gt}
 bossbar set ${ns}:timer value ${gt}
 bossbar set ${ns}:timer color green
 
 # 装備付与
-give @a[tag=player] iron_sword
-give @a[tag=player] bow
-give @a[tag=player] arrow 32
+give ${P} iron_sword
+give ${P} bow
+give ${P} arrow 32
 
 scoreboard players set #game game_state 1
-title @a[tag=player] title {"text":"ゾンビサバイバル","bold":true,"color":"dark_green"}
-title @a[tag=player] subtitle {"text":"生き残れ！","color":"green"}` });
+title ${P} title {"text":"ゾンビサバイバル","bold":true,"color":"dark_green"}
+title ${P} subtitle {"text":"生き残れ！","color":"green"}` });
 
     files.push({ path: `data/${ns}/function/game_loop.mcfunction`, content:
 `# ═══ ゾンビサバイバル ゲームループ ═══
 
 # カウントダウン
-execute if score #timer pre_count matches 60 run title @a[tag=player] title {"text":"3","bold":true,"color":"light_purple"}
-execute if score #timer pre_count matches 40 run title @a[tag=player] title {"text":"2","bold":true,"color":"yellow"}
-execute if score #timer pre_count matches 20 run title @a[tag=player] title {"text":"1","bold":true,"color":"red"}
-execute if score #timer pre_count matches 1 run title @a[tag=player] title {"text":"サバイバル開始！","bold":true,"color":"green"}
+execute if score #timer pre_count matches 60 run title ${P} title {"text":"3","bold":true,"color":"light_purple"}
+execute if score #timer pre_count matches 40 run title ${P} title {"text":"2","bold":true,"color":"yellow"}
+execute if score #timer pre_count matches 20 run title ${P} title {"text":"1","bold":true,"color":"red"}
+execute if score #timer pre_count matches 1 run title ${P} title {"text":"サバイバル開始！","bold":true,"color":"green"}
 execute if score #timer pre_count matches 1.. run scoreboard players remove #timer pre_count 1
 
 # タイマー
@@ -5581,9 +5583,9 @@ execute store result bossbar ${ns}:timer value run scoreboard players get #timer
 
 # 死亡検知
 execute as @a[tag=player,scores={deaths=1..}] run scoreboard players set @s alive 0
-execute as @a[tag=player,scores={deaths=1..}] run tellraw @a[tag=player] [{"selector":"@s","color":"red"},{"text":" がやられた！","color":"gray"}]
+execute as @a[tag=player,scores={deaths=1..}] run tellraw ${P} [{"selector":"@s","color":"red"},{"text":" がやられた！","color":"gray"}]
 execute as @a[tag=player,scores={alive=0}] run gamemode spectator @s
-scoreboard players set @a[tag=player] deaths 0
+scoreboard players set ${P} deaths 0
 
 # ── ウェーブ管理（残りモブ0で次ウェーブ） ──
 execute store result score #wave_mobs wave_mobs run execute if entity @e[tag=${ns}_zombie]
@@ -5609,9 +5611,9 @@ scoreboard players add #wave wave 1
 
 # ウェーブ数に応じてゾンビ召喚数を増加
 # 基本${zpw}体 + ウェーブ数×2
-tellraw @a[tag=player] ["",{"text":"Wave ","color":"dark_green","bold":true},{"score":{"name":"#wave","objective":"wave"},"color":"green","bold":true},{"text":" 開始！","color":"yellow"}]
-title @a[tag=player] title ["",{"text":"Wave ","color":"dark_green"},{"score":{"name":"#wave","objective":"wave"},"color":"green"}]
-playsound minecraft:entity.wither.spawn master @a[tag=player]
+tellraw ${P} ["",{"text":"Wave ","color":"dark_green","bold":true},{"score":{"name":"#wave","objective":"wave"},"color":"green","bold":true},{"text":" 開始！","color":"yellow"}]
+title ${P} title ["",{"text":"Wave ","color":"dark_green"},{"score":{"name":"#wave","objective":"wave"},"color":"green"}]
+playsound minecraft:entity.wither.spawn master ${P}
 
 # ゾンビ召喚（プレイヤーの近くにランダム配置）
 # 実際のゲームではここを調整してください
@@ -5623,27 +5625,27 @@ execute at @a[tag=player,scores={alive=1},limit=1,sort=random] run summon zombie
 
     files.push({ path: `data/${ns}/function/win.mcfunction`, content:
 `# ═══ サバイバル成功！ ═══
-title @a[tag=player] title {"text":"サバイバル成功！","bold":true,"color":"gold"}
-title @a[tag=player] subtitle {"text":"全ウェーブクリア！","color":"green"}
-tellraw @a[tag=player] {"text":"═══ 生存者の勝利！ ═══","color":"gold","bold":true}
+title ${P} title {"text":"サバイバル成功！","bold":true,"color":"gold"}
+title ${P} subtitle {"text":"全ウェーブクリア！","color":"green"}
+tellraw ${P} {"text":"═══ 生存者の勝利！ ═══","color":"gold","bold":true}
 execute as @a[tag=player,scores={alive=1}] at @s run playsound minecraft:ui.toast.challenge_complete master @s
 function ${ns}:end` });
 
     files.push({ path: `data/${ns}/function/game_over.mcfunction`, content:
 `# ═══ ゲームオーバー ═══
-title @a[tag=player] title {"text":"ゲームオーバー","bold":true,"color":"red"}
-title @a[tag=player] subtitle ["",{"text":"Wave ","color":"gray"},{"score":{"name":"#wave","objective":"wave"},"color":"yellow"},{"text":" まで到達","color":"gray"}]
-tellraw @a[tag=player] {"text":"═══ 全滅... ═══","color":"red","bold":true}
+title ${P} title {"text":"ゲームオーバー","bold":true,"color":"red"}
+title ${P} subtitle ["",{"text":"Wave ","color":"gray"},{"score":{"name":"#wave","objective":"wave"},"color":"yellow"},{"text":" まで到達","color":"gray"}]
+tellraw ${P} {"text":"═══ 全滅... ═══","color":"red","bold":true}
 function ${ns}:end` });
 
     files.push({ path: `data/${ns}/function/end.mcfunction`, content:
 `scoreboard players set #game game_state 0
 bossbar remove ${ns}:timer
 kill @e[tag=${ns}_zombie]
-gamemode adventure @a[tag=player]
-clear @a[tag=player]
-effect clear @a[tag=player]
-scoreboard players set @a[tag=player] alive 0
+gamemode adventure ${P}
+clear ${P}
+effect clear ${P}
+scoreboard players set ${P} alive 0
 tag @a remove player
 tellraw @a {"text":"ゲームリセット完了","color":"gray"}` });
 
@@ -5668,10 +5670,10 @@ say [建築バトル] 読み込み完了！` });
     files.push({ path: `data/${ns}/function/start.mcfunction`, content:
 `# ═══ 建築バトル 開始 ═══
 # 事前: tag @a add player
-clear @a[tag=player]
-effect clear @a[tag=player]
-scoreboard players set @a[tag=player] votes 0
-gamemode creative @a[tag=player]
+clear ${P}
+effect clear ${P}
+scoreboard players set ${P} votes 0
+gamemode creative ${P}
 
 scoreboard players set #phase phase 1
 scoreboard players set #timer timer_tick 0
@@ -5679,24 +5681,24 @@ scoreboard players set #timer timer_sec ${bt}
 scoreboard players set #timer pre_count 60
 
 bossbar add ${ns}:timer ""
-bossbar set ${ns}:timer players @a[tag=player]
+bossbar set ${ns}:timer players ${P}
 bossbar set ${ns}:timer max ${bt}
 bossbar set ${ns}:timer value ${bt}
 bossbar set ${ns}:timer color yellow
 
 scoreboard players set #game game_state 1
-title @a[tag=player] title {"text":"建築バトル","bold":true,"color":"gold"}
-title @a[tag=player] subtitle {"text":"建築時間: ${bt}秒","color":"yellow"}` });
+title ${P} title {"text":"建築バトル","bold":true,"color":"gold"}
+title ${P} subtitle {"text":"建築時間: ${bt}秒","color":"yellow"}` });
 
     files.push({ path: `data/${ns}/function/game_loop.mcfunction`, content:
 `# ═══ 建築バトル ゲームループ ═══
 
 # カウントダウン
-execute if score #timer pre_count matches 60 run title @a[tag=player] title {"text":"3","bold":true,"color":"light_purple"}
-execute if score #timer pre_count matches 40 run title @a[tag=player] title {"text":"2","bold":true,"color":"yellow"}
-execute if score #timer pre_count matches 20 run title @a[tag=player] title {"text":"1","bold":true,"color":"red"}
-execute if score #timer pre_count matches 1 if score #phase phase matches 1 run title @a[tag=player] title {"text":"建築開始！","bold":true,"color":"green"}
-execute if score #timer pre_count matches 1 if score #phase phase matches 2 run title @a[tag=player] title {"text":"投票開始！","bold":true,"color":"aqua"}
+execute if score #timer pre_count matches 60 run title ${P} title {"text":"3","bold":true,"color":"light_purple"}
+execute if score #timer pre_count matches 40 run title ${P} title {"text":"2","bold":true,"color":"yellow"}
+execute if score #timer pre_count matches 20 run title ${P} title {"text":"1","bold":true,"color":"red"}
+execute if score #timer pre_count matches 1 if score #phase phase matches 1 run title ${P} title {"text":"建築開始！","bold":true,"color":"green"}
+execute if score #timer pre_count matches 1 if score #phase phase matches 2 run title ${P} title {"text":"投票開始！","bold":true,"color":"aqua"}
 execute if score #timer pre_count matches 1.. run scoreboard players remove #timer pre_count 1
 
 # タイマー
@@ -5718,7 +5720,7 @@ execute if score #phase phase matches 2 if score #timer pre_count matches 0 if s
     files.push({ path: `data/${ns}/function/start_vote.mcfunction`, content:
 `# ═══ 投票フェーズ開始 ═══
 scoreboard players set #phase phase 2
-gamemode adventure @a[tag=player]
+gamemode adventure ${P}
 
 scoreboard players set #timer timer_tick 0
 scoreboard players set #timer timer_sec ${vt}
@@ -5727,25 +5729,25 @@ bossbar set ${ns}:timer max ${vt}
 bossbar set ${ns}:timer value ${vt}
 bossbar set ${ns}:timer color aqua
 
-title @a[tag=player] title {"text":"建築終了！","bold":true,"color":"red"}
-title @a[tag=player] subtitle {"text":"投票が始まります...","color":"yellow"}
-tellraw @a[tag=player] {"text":"投票するには /trigger vote_trigger set <番号> を使ってください","color":"aqua"}` });
+title ${P} title {"text":"建築終了！","bold":true,"color":"red"}
+title ${P} subtitle {"text":"投票が始まります...","color":"yellow"}
+tellraw ${P} {"text":"投票するには /trigger vote_trigger set <番号> を使ってください","color":"aqua"}` });
 
     files.push({ path: `data/${ns}/function/result.mcfunction`, content:
 `# ═══ 結果発表 ═══
-title @a[tag=player] title {"text":"結果発表！","bold":true,"color":"gold"}
-tellraw @a[tag=player] {"text":"═══ 建築バトル結果 ═══","color":"gold","bold":true}
-execute as @a[tag=player] run tellraw @a[tag=player] [{"selector":"@s"},{"text":": ","color":"gray"},{"score":{"name":"@s","objective":"votes"},"color":"white"},{"text":"票","color":"gray"}]
+title ${P} title {"text":"結果発表！","bold":true,"color":"gold"}
+tellraw ${P} {"text":"═══ 建築バトル結果 ═══","color":"gold","bold":true}
+execute as ${P} run tellraw ${P} [{"selector":"@s"},{"text":": ","color":"gray"},{"score":{"name":"@s","objective":"votes"},"color":"white"},{"text":"票","color":"gray"}]
 function ${ns}:end` });
 
     files.push({ path: `data/${ns}/function/end.mcfunction`, content:
 `scoreboard players set #game game_state 0
 bossbar remove ${ns}:timer
-gamemode adventure @a[tag=player]
-clear @a[tag=player]
-effect clear @a[tag=player]
+gamemode adventure ${P}
+clear ${P}
+effect clear ${P}
 tag @a remove player
-tellraw @a[tag=player] {"text":"ゲームリセット完了","color":"gray"}` });
+tellraw ${P} {"text":"ゲームリセット完了","color":"gray"}` });
 
   } else if (gameType === 'capture_flag') {
     const tA = settings.teamA || '赤チーム';
@@ -5790,40 +5792,40 @@ tag @a[tag=player,tag=!team_a_pick] add team_b_tag
 tag @a[tag=team_a_pick] add team_a_tag
 tag @a remove team_a_pick
 
-clear @a[tag=player]
-effect clear @a[tag=player]
+clear ${P}
+effect clear ${P}
 scoreboard players set #team_a captures 0
 scoreboard players set #team_b captures 0
-scoreboard players set @a[tag=player] has_flag 0
-scoreboard players set @a[tag=player] deaths 0
-gamemode adventure @a[tag=player]
+scoreboard players set ${P} has_flag 0
+scoreboard players set ${P} deaths 0
+gamemode adventure ${P}
 
 scoreboard players set #timer timer_tick 0
 scoreboard players set #timer timer_sec ${gt}
 scoreboard players set #timer pre_count 60
 
 bossbar add ${ns}:timer ""
-bossbar set ${ns}:timer players @a[tag=player]
+bossbar set ${ns}:timer players ${P}
 bossbar set ${ns}:timer max ${gt}
 bossbar set ${ns}:timer value ${gt}
 bossbar set ${ns}:timer color yellow
 
-give @a[tag=player] iron_sword
-give @a[tag=player] bow
-give @a[tag=player] arrow 16
+give ${P} iron_sword
+give ${P} bow
+give ${P} arrow 16
 
 scoreboard players set #game game_state 1
-title @a[tag=player] title {"text":"旗取り(CTF)","bold":true,"color":"gold"}
-title @a[tag=player] subtitle {"text":"相手の旗を奪え！","color":"yellow"}` });
+title ${P} title {"text":"旗取り(CTF)","bold":true,"color":"gold"}
+title ${P} subtitle {"text":"相手の旗を奪え！","color":"yellow"}` });
 
     files.push({ path: `data/${ns}/function/game_loop.mcfunction`, content:
 `# ═══ 旗取り(CTF) ゲームループ ═══
 
 # カウントダウン
-execute if score #timer pre_count matches 60 run title @a[tag=player] title {"text":"3","bold":true,"color":"light_purple"}
-execute if score #timer pre_count matches 40 run title @a[tag=player] title {"text":"2","bold":true,"color":"yellow"}
-execute if score #timer pre_count matches 20 run title @a[tag=player] title {"text":"1","bold":true,"color":"red"}
-execute if score #timer pre_count matches 1 run title @a[tag=player] title {"text":"開戦！","bold":true,"color":"green"}
+execute if score #timer pre_count matches 60 run title ${P} title {"text":"3","bold":true,"color":"light_purple"}
+execute if score #timer pre_count matches 40 run title ${P} title {"text":"2","bold":true,"color":"yellow"}
+execute if score #timer pre_count matches 20 run title ${P} title {"text":"1","bold":true,"color":"red"}
+execute if score #timer pre_count matches 1 run title ${P} title {"text":"開戦！","bold":true,"color":"green"}
 execute if score #timer pre_count matches 1.. run scoreboard players remove #timer pre_count 1
 
 # タイマー
@@ -5835,12 +5837,12 @@ execute store result bossbar ${ns}:timer value run scoreboard players get #timer
 # ── 旗の取得判定 ──
 # チームAが敵旗(flag_b)を取得
 execute as @a[tag=team_a_tag,scores={has_flag=0}] at @s if entity @e[tag=flag_b,distance=..3] run scoreboard players set @s has_flag 1
-execute as @a[tag=team_a_tag,scores={has_flag=0}] at @s if entity @e[tag=flag_b,distance=..3] run tellraw @a[tag=player] [{"selector":"@s","color":"${settings.colorA || 'red'}"},{"text":" が旗を奪った！","color":"yellow"}]
-execute as @a[tag=team_a_tag,scores={has_flag=0}] at @s if entity @e[tag=flag_b,distance=..3] run playsound minecraft:entity.experience_orb.pickup master @a[tag=player]
+execute as @a[tag=team_a_tag,scores={has_flag=0}] at @s if entity @e[tag=flag_b,distance=..3] run tellraw ${P} [{"selector":"@s","color":"${settings.colorA || 'red'}"},{"text":" が旗を奪った！","color":"yellow"}]
+execute as @a[tag=team_a_tag,scores={has_flag=0}] at @s if entity @e[tag=flag_b,distance=..3] run playsound minecraft:entity.experience_orb.pickup master ${P}
 
 # チームBが敵旗(flag_a)を取得
 execute as @a[tag=team_b_tag,scores={has_flag=0}] at @s if entity @e[tag=flag_a,distance=..3] run scoreboard players set @s has_flag 1
-execute as @a[tag=team_b_tag,scores={has_flag=0}] at @s if entity @e[tag=flag_a,distance=..3] run tellraw @a[tag=player] [{"selector":"@s","color":"${settings.colorB || 'blue'}"},{"text":" が旗を奪った！","color":"yellow"}]
+execute as @a[tag=team_b_tag,scores={has_flag=0}] at @s if entity @e[tag=flag_a,distance=..3] run tellraw ${P} [{"selector":"@s","color":"${settings.colorB || 'blue'}"},{"text":" が旗を奪った！","color":"yellow"}]
 
 # ── 旗を自陣に持ち帰り判定 ──
 execute as @a[tag=team_a_tag,scores={has_flag=1}] at @s if entity @e[tag=base_a,distance=..3] run function ${ns}:capture_a
@@ -5848,8 +5850,8 @@ execute as @a[tag=team_b_tag,scores={has_flag=1}] at @s if entity @e[tag=base_b,
 
 # ── 旗持ちが死亡したら旗ドロップ ──
 execute as @a[tag=player,scores={has_flag=1,deaths=1..}] run scoreboard players set @s has_flag 0
-execute as @a[tag=player,scores={has_flag=1,deaths=1..}] run tellraw @a[tag=player] [{"selector":"@s"},{"text":" が旗を落とした！","color":"red"}]
-scoreboard players set @a[tag=player] deaths 0
+execute as @a[tag=player,scores={has_flag=1,deaths=1..}] run tellraw ${P} [{"selector":"@s"},{"text":" が旗を落とした！","color":"red"}]
+scoreboard players set ${P} deaths 0
 
 # 旗持ちにエフェクト（光る）
 effect give @a[tag=player,scores={has_flag=1}] glowing 2 0 true
@@ -5866,44 +5868,44 @@ execute if score #timer pre_count matches 0 if score #timer timer_sec matches 0 
 `# チームAの奪取成功
 scoreboard players add #team_a captures 1
 scoreboard players set @s has_flag 0
-title @a[tag=player] title {"text":"${tA}が奪取！","bold":true,"color":"${settings.colorA || 'red'}"}
+title ${P} title {"text":"${tA}が奪取！","bold":true,"color":"${settings.colorA || 'red'}"}
 playsound minecraft:ui.toast.challenge_complete master @a[tag=team_a_tag]` });
 
     files.push({ path: `data/${ns}/function/capture_b.mcfunction`, content:
 `# チームBの奪取成功
 scoreboard players add #team_b captures 1
 scoreboard players set @s has_flag 0
-title @a[tag=player] title {"text":"${tB}が奪取！","bold":true,"color":"${settings.colorB || 'blue'}"}
+title ${P} title {"text":"${tB}が奪取！","bold":true,"color":"${settings.colorB || 'blue'}"}
 playsound minecraft:ui.toast.challenge_complete master @a[tag=team_b_tag]` });
 
     files.push({ path: `data/${ns}/function/win_a.mcfunction`, content:
-`title @a[tag=player] title {"text":"${tA}の勝利！","bold":true,"color":"${settings.colorA || 'red'}"}
+`title ${P} title {"text":"${tA}の勝利！","bold":true,"color":"${settings.colorA || 'red'}"}
 execute as @a[tag=team_a_tag] at @s run playsound minecraft:ui.toast.challenge_complete master @s
 function ${ns}:end` });
 
     files.push({ path: `data/${ns}/function/win_b.mcfunction`, content:
-`title @a[tag=player] title {"text":"${tB}の勝利！","bold":true,"color":"${settings.colorB || 'blue'}"}
+`title ${P} title {"text":"${tB}の勝利！","bold":true,"color":"${settings.colorB || 'blue'}"}
 execute as @a[tag=team_b_tag] at @s run playsound minecraft:ui.toast.challenge_complete master @s
 function ${ns}:end` });
 
     files.push({ path: `data/${ns}/function/win_check.mcfunction`, content:
 `execute if score #team_a captures > #team_b captures run function ${ns}:win_a
 execute if score #team_b captures > #team_a captures run function ${ns}:win_b
-execute if score #team_a captures = #team_b captures run tellraw @a[tag=player] {"text":"引き分け！","color":"yellow","bold":true}
+execute if score #team_a captures = #team_b captures run tellraw ${P} {"text":"引き分け！","color":"yellow","bold":true}
 execute if score #team_a captures = #team_b captures run function ${ns}:end` });
 
     files.push({ path: `data/${ns}/function/end.mcfunction`, content:
 `scoreboard players set #game game_state 0
 bossbar remove ${ns}:timer
-gamemode adventure @a[tag=player]
-clear @a[tag=player]
-effect clear @a[tag=player]
-scoreboard players set @a[tag=player] has_flag 0
+gamemode adventure ${P}
+clear ${P}
+effect clear ${P}
+scoreboard players set ${P} has_flag 0
 tag @a remove team_a_tag
 tag @a remove team_b_tag
 team empty team_a
 team empty team_b
-tellraw @a[tag=player] {"text":"ゲームリセット完了","color":"gray"}` });
+tellraw ${P} {"text":"ゲームリセット完了","color":"gray"}` });
 
   } else if (gameType === 'tnt_run') {
     const fallY = settings.fallY || 0;
@@ -5926,33 +5928,33 @@ say [TNTラン] 読み込み完了！
 `# ═══ TNTラン 開始 ═══
 # 事前: tag @a add player
 # フロア構造: TNTの上にサンド/砂利を配置（複数層）
-clear @a[tag=player]
-effect clear @a[tag=player]
-scoreboard players set @a[tag=player] alive 1
-gamemode adventure @a[tag=player]
+clear ${P}
+effect clear ${P}
+scoreboard players set ${P} alive 1
+gamemode adventure ${P}
 
 scoreboard players set #timer timer_tick 0
 scoreboard players set #timer timer_sec ${gt}
 scoreboard players set #timer pre_count 60
 
 bossbar add ${ns}:timer ""
-bossbar set ${ns}:timer players @a[tag=player]
+bossbar set ${ns}:timer players ${P}
 bossbar set ${ns}:timer max ${gt}
 bossbar set ${ns}:timer value ${gt}
 bossbar set ${ns}:timer color red
 
 scoreboard players set #game game_state 1
-title @a[tag=player] title {"text":"TNTラン","bold":true,"color":"red"}
-title @a[tag=player] subtitle {"text":"走れ！止まるな！","color":"yellow"}` });
+title ${P} title {"text":"TNTラン","bold":true,"color":"red"}
+title ${P} subtitle {"text":"走れ！止まるな！","color":"yellow"}` });
 
     files.push({ path: `data/${ns}/function/game_loop.mcfunction`, content:
 `# ═══ TNTラン ゲームループ ═══
 
 # カウントダウン
-execute if score #timer pre_count matches 60 run title @a[tag=player] title {"text":"3","bold":true,"color":"light_purple"}
-execute if score #timer pre_count matches 40 run title @a[tag=player] title {"text":"2","bold":true,"color":"yellow"}
-execute if score #timer pre_count matches 20 run title @a[tag=player] title {"text":"1","bold":true,"color":"red"}
-execute if score #timer pre_count matches 1 run title @a[tag=player] title {"text":"走れ！","bold":true,"color":"red"}
+execute if score #timer pre_count matches 60 run title ${P} title {"text":"3","bold":true,"color":"light_purple"}
+execute if score #timer pre_count matches 40 run title ${P} title {"text":"2","bold":true,"color":"yellow"}
+execute if score #timer pre_count matches 20 run title ${P} title {"text":"1","bold":true,"color":"red"}
+execute if score #timer pre_count matches 1 run title ${P} title {"text":"走れ！","bold":true,"color":"red"}
 execute if score #timer pre_count matches 1.. run scoreboard players remove #timer pre_count 1
 
 # タイマー
@@ -5967,7 +5969,7 @@ execute if score #timer pre_count matches 0 as @a[tag=player,scores={alive=1}] a
 # ── 落下検知（Y=${fallY}以下で脱落） ──
 execute as @a[tag=player,scores={alive=1}] at @s if entity @s[y=-64,dy=${fallY + 64}] run scoreboard players set @s alive 0
 execute as @a[tag=player,scores={alive=0}] run gamemode spectator @s
-execute as @a[tag=player,scores={alive=0}] run tellraw @a[tag=player] [{"selector":"@s","color":"red"},{"text":" が落ちた！","color":"gray"}]
+execute as @a[tag=player,scores={alive=0}] run tellraw ${P} [{"selector":"@s","color":"red"},{"text":" が落ちた！","color":"gray"}]
 execute as @a[tag=player,scores={alive=0}] run scoreboard players set @s alive -1
 
 # 生存者カウント
@@ -5989,18 +5991,18 @@ execute at @s run setblock ~ ~-1 ~ air replace` });
 
     files.push({ path: `data/${ns}/function/win.mcfunction`, content:
 `# ═══ 勝者決定 ═══
-execute as @a[tag=player,scores={alive=1}] run title @a[tag=player] title [{"selector":"@s","bold":true,"color":"gold"},{"text":"の勝利！","bold":true,"color":"yellow"}]
+execute as @a[tag=player,scores={alive=1}] run title ${P} title [{"selector":"@s","bold":true,"color":"gold"},{"text":"の勝利！","bold":true,"color":"yellow"}]
 execute as @a[tag=player,scores={alive=1}] at @s run playsound minecraft:ui.toast.challenge_complete master @s
-execute unless entity @a[tag=player,scores={alive=1}] run title @a[tag=player] title {"text":"全員落下！","bold":true,"color":"red"}
+execute unless entity @a[tag=player,scores={alive=1}] run title ${P} title {"text":"全員落下！","bold":true,"color":"red"}
 function ${ns}:end` });
 
     files.push({ path: `data/${ns}/function/end.mcfunction`, content:
 `scoreboard players set #game game_state 0
 bossbar remove ${ns}:timer
-gamemode adventure @a[tag=player]
-clear @a[tag=player]
-effect clear @a[tag=player]
-scoreboard players set @a[tag=player] alive 0
+gamemode adventure ${P}
+clear ${P}
+effect clear ${P}
+scoreboard players set ${P} alive 0
 tag @a remove player
 tellraw @a {"text":"ゲームリセット完了","color":"gray"}` });
   }
@@ -7572,19 +7574,19 @@ function McRichTextEditor({ value, onChange, compact }) {
 
 const QUICK_COMMANDS = [
   { label: 'say', icon: '💬', tpl: 'say メッセージ', desc: 'チャットメッセージ' },
-  { label: 'give', icon: '🎒', tpl: 'give @a[tag=player] minecraft:diamond 1', desc: 'アイテム付与' },
-  { label: 'tp', icon: '🌀', tpl: 'tp @a[tag=player] ~ ~ ~', desc: 'テレポート' },
-  { label: 'effect', icon: '✨', tpl: 'effect give @a[tag=player] speed 10 0', desc: 'エフェクト' },
-  { label: 'title', icon: '📺', tpl: 'title @a[tag=player] title {"text":"タイトル","color":"gold","bold":true}', desc: 'タイトル表示' },
-  { label: 'playsound', icon: '🔊', tpl: 'playsound minecraft:entity.experience_orb.pickup master @a[tag=player]', desc: 'サウンド' },
+  { label: 'give', icon: '🎒', tpl: 'give @a minecraft:diamond 1', desc: 'アイテム付与' },
+  { label: 'tp', icon: '🌀', tpl: 'tp @a ~ ~ ~', desc: 'テレポート' },
+  { label: 'effect', icon: '✨', tpl: 'effect give @a speed 10 0', desc: 'エフェクト' },
+  { label: 'title', icon: '📺', tpl: 'title @a title {"text":"タイトル","color":"gold","bold":true}', desc: 'タイトル表示' },
+  { label: 'playsound', icon: '🔊', tpl: 'playsound minecraft:entity.experience_orb.pickup master @a', desc: 'サウンド' },
   { label: 'scoreboard', icon: '📊', tpl: 'scoreboard players add @s score 1', desc: 'スコア操作' },
   { label: 'summon', icon: '👾', tpl: 'summon minecraft:zombie ~ ~ ~', desc: 'エンティティ召喚' },
   { label: 'kill', icon: '💀', tpl: 'kill @e[type=!player,distance=..30]', desc: 'エンティティ削除' },
   { label: 'tag', icon: '🏷️', tpl: 'tag @s add mytag', desc: 'タグ操作' },
-  { label: 'execute', icon: '⚡', tpl: 'execute as @a[tag=player] at @s run ', desc: '条件実行' },
+  { label: 'execute', icon: '⚡', tpl: 'execute as @a at @s run ', desc: '条件実行' },
   { label: 'function', icon: '📂', tpl: 'function namespace:path/name', desc: '関数呼出し' },
   { label: '#コメント', icon: '📝', tpl: '# ===== コメント =====', desc: 'コメント行' },
-  { label: 'gamemode', icon: '🎮', tpl: 'gamemode adventure @a[tag=player]', desc: 'ゲームモード' },
+  { label: 'gamemode', icon: '🎮', tpl: 'gamemode adventure @a', desc: 'ゲームモード' },
   { label: 'setblock', icon: '🧱', tpl: 'setblock ~ ~ ~ minecraft:stone', desc: 'ブロック配置' },
   { label: 'fill', icon: '📐', tpl: 'fill ~-5 ~ ~-5 ~5 ~3 ~5 minecraft:air', desc: 'ブロック充填' },
 ];
@@ -7816,7 +7818,7 @@ const SNIPPET_TEMPLATES = [
     '# ===== タイマーシステム =====','bossbar add namespace:timer "残り時間"','bossbar set namespace:timer max 300','bossbar set namespace:timer color yellow','bossbar set namespace:timer style notched_10','bossbar set namespace:timer players @a','bossbar set namespace:timer visible true','','# タイマー減算 (毎tick呼び出し)','scoreboard players remove #timer timer 1','execute store result bossbar namespace:timer value run scoreboard players get #timer timer','','# 時間切れチェック','execute if score #timer timer matches ..0 run function namespace:time_up',
   ]},
   { id:'pvp_setup', name:'PVP初期化', icon:'⚔️', desc:'チーム分け＋装備配布', lines:[
-    '# ===== PVP初期化 =====','team add red "赤チーム"','team modify red color red','team modify red friendlyFire false','team add blue "青チーム"','team modify blue color blue','team modify blue friendlyFire false','','# 装備配布','clear @a[tag=player]','gamemode adventure @a[tag=player]','give @a[tag=player] minecraft:iron_sword 1','give @a[tag=player] minecraft:bow 1','give @a[tag=player] minecraft:arrow 32','give @a[tag=player] minecraft:iron_chestplate 1','','# エフェクト','effect give @a[tag=player] saturation 999999 0 true',
+    '# ===== PVP初期化 =====','team add red "赤チーム"','team modify red color red','team modify red friendlyFire false','team add blue "青チーム"','team modify blue color blue','team modify blue friendlyFire false','','# 装備配布','clear @a','gamemode adventure @a','give @a minecraft:iron_sword 1','give @a minecraft:bow 1','give @a minecraft:arrow 32','give @a minecraft:iron_chestplate 1','','# エフェクト','effect give @a saturation 999999 0 true',
   ]},
   { id:'lobby', name:'ロビー帰還', icon:'🏠', desc:'ゲーム終了→ロビー', lines:[
     '# ===== ロビー帰還 =====','title @a title {"text":"ゲーム終了！","color":"gold","bold":true}','title @a subtitle {"text":"ロビーに戻ります...","color":"yellow"}','playsound minecraft:ui.toast.challenge_complete master @a','','# 3秒後にテレポート','schedule function namespace:lobby_tp 60t','','# ステート変更','scoreboard players set #game state 0',
@@ -9707,7 +9709,7 @@ function SettingsPanel({ project, setProject, onClose, guideMode, setGuideMode }
 function MinigameWizard({ namespace, onComplete, onClose, targetVersion }) {
   const [step, setStep] = useState(0);
   const [selectedType, setSelectedType] = useState('tag_game');
-  const [settings, setSettings] = useState({ gameTime: 300, teamA: '鬼', teamB: '逃走者', colorA: 'red', colorB: 'blue', targetKills: 10, fallY: 50, targetItem: 'minecraft:diamond' });
+  const [settings, setSettings] = useState({ gameTime: 300, teamA: '鬼', teamB: '逃走者', colorA: 'red', colorB: 'blue', targetKills: 10, fallY: 50, targetItem: 'minecraft:diamond', playerTag: '' });
 
   const gameType = MINIGAME_TYPES.find(t => t.id === selectedType);
 
@@ -9774,6 +9776,17 @@ function MinigameWizard({ namespace, onComplete, onClose, targetVersion }) {
                   onChange={e => setSettings(s => ({ ...s, gameTime: parseInt(e.target.value) || 300 }))}
                 />
                 <p className="text-[10px] text-mc-muted mt-1">{settings.gameTime}秒 = {Math.floor(settings.gameTime / 60)}分{settings.gameTime % 60}秒</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-mc-muted mb-1">プレイヤータグ（任意）</label>
+                <input className="w-full bg-mc-dark border border-mc-border rounded px-3 py-2 text-sm font-mono focus:border-mc-info focus:outline-none"
+                  placeholder="空欄 = @a（全プレイヤー）"
+                  value={settings.playerTag}
+                  onChange={e => setSettings(s => ({ ...s, playerTag: e.target.value.replace(/\s/g, '') }))} />
+                <p className="text-[10px] text-mc-muted mt-1">
+                  {settings.playerTag ? `セレクター: @a[tag=${settings.playerTag}]` : 'セレクター: @a（タグなし、全プレイヤー対象）'}
+                </p>
               </div>
 
               {(selectedType === 'tag_game' || selectedType === 'pvp_arena') && (
@@ -12205,7 +12218,7 @@ const GUIDE_PAGES = [
       ]},
       { type:'text', text:'セレクター引数: [ ] の中に条件を書くと、対象を絞り込めます。' },
       { type:'commandList', items:[
-        { cmd:'@a[tag=player]', desc:'「player」タグを持つ全プレイヤー', color:'#4caf50' },
+        { cmd:'@a[tag=mytag]', desc:'「mytag」タグを持つ全プレイヤー', color:'#4caf50' },
         { cmd:'@e[type=zombie,distance=..10]', desc:'半径10ブロック以内の全ゾンビ', color:'#f44336' },
         { cmd:'@a[scores={point=10..}]', desc:'「point」スコアが10以上の全プレイヤー', color:'#4fc3f7' },
         { cmd:'@e[type=!player,limit=5,sort=nearest]', desc:'プレイヤー以外で最寄り5体', color:'#ab47bc' },
