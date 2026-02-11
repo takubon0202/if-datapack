@@ -6845,7 +6845,7 @@ function FileTreeNode({ file, files, depth, selectedId, expanded, onSelect, onTo
 // CODE EDITOR with syntax highlighting overlay
 // ════════════════════════════════════════════════════════════
 
-function CodeEditor({ file, onChange, targetVersion, guideMode = false }) {
+function CodeEditor({ file, onChange, targetVersion, guideMode = false, onToggleGuide }) {
   const textareaRef = useRef(null);
   const preRef = useRef(null);
   const lineNumRef = useRef(null);
@@ -7229,13 +7229,22 @@ function CodeEditor({ file, onChange, targetVersion, guideMode = false }) {
       )}
       {/* Command Guide Panel */}
       {guideMode && isMcfunction && (() => {
-        const cmd = cursorLineText.trim().split(/\s+/)[0]?.replace(/^\//,'');
+        const trimLine = cursorLineText.trim();
+        const cmd = trimLine.split(/\s+/)[0]?.replace(/^\//,'');
         const guide = cmd && COMMAND_GUIDE[cmd];
+        if (!guide && !trimLine) return (
+          <div className="bg-mc-dark/90 border-t border-mc-border/30 text-[10px] px-3 py-1.5 anim-fade flex items-center justify-between">
+            <div><span className="text-mc-info">📖 ガイド:</span> <span className="text-mc-muted">コマンドを入力すると引数のヒントが表示されます。Tab で補完、Ctrl+K でパレット</span></div>
+            {onToggleGuide && <button onClick={onToggleGuide} className="text-mc-muted/50 hover:text-mc-info text-[9px] px-1">ガイドOFF</button>}
+          </div>
+        );
         if (!guide) return null;
-        const tokens = cursorLineText.trim().split(/\s+/);
+        const tokens = trimLine.split(/\s+/);
         const curArgIdx = Math.max(0, tokens.length - 2);
+        const curArg = guide.a[curArgIdx];
+        const typeHints = { selector:'@a=全員 @s=自分 @p=最寄り @e=全体 @r=ランダム', item:'アイテムID (例: diamond)', entity:'エンティティID (例: zombie)', effect:'エフェクトID (例: speed)', pos:'座標: 絶対=数値 / 相対=~ / ローカル=^', int:'整数', float:'数値(小数OK)', json:'JSON', nbt:'NBTデータ', enum:'選択肢' };
         return (
-          <div className="bg-mc-dark/90 border-t border-mc-border/30 text-[10px] max-h-32 overflow-y-auto px-3 py-1.5 anim-fade">
+          <div className="bg-mc-dark/90 border-t border-mc-border/30 text-[10px] max-h-36 overflow-y-auto px-3 py-1.5 anim-fade">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-mc-info font-semibold text-[11px]">📖 {cmd}</span>
               <span className="text-mc-muted">{guide.d}</span>
@@ -7243,15 +7252,23 @@ function CodeEditor({ file, onChange, targetVersion, guideMode = false }) {
             <div className="flex flex-wrap gap-1 mb-1">
               {guide.a.map((arg, i) => (
                 <span key={i} className={`px-1.5 py-0.5 rounded border text-[9px] ${i === curArgIdx ? 'border-mc-info bg-mc-info/15 text-mc-info' : 'border-mc-border/30 text-mc-muted'}`}>
-                  <span className="opacity-60">{arg.t} </span>{arg.n}{i === curArgIdx && <span className="text-mc-info ml-1">← 入力中</span>}
+                  <span className="opacity-60">{arg.t} </span>{arg.n}{arg.o ? ` (${arg.o.slice(0,3).join('/')})` : ''}{i === curArgIdx && <span className="text-mc-info ml-1">← 入力中</span>}
                 </span>
               ))}
             </div>
+            {curArg && (
+              <div className="flex items-center gap-1 mb-0.5 pl-2">
+                <span className="text-mc-info text-[9px] font-semibold">→ {curArg.n}:</span>
+                <span className="text-mc-muted text-[9px]">{curArg.d}</span>
+                {curArg.o && <span className="text-mc-muted/50 text-[8px] font-mono">[{curArg.o.join(' | ')}]</span>}
+                {!curArg.o && typeHints[curArg.t] && <span className="text-mc-muted/50 text-[8px]">{typeHints[curArg.t]}</span>}
+              </div>
+            )}
             <div className="text-mc-success/80 font-mono text-[9px]">▶ {guide.p.replace(/\{(\w+)\}/g, (_, k) => {
               const idx = guide.a.findIndex(a => a.n === k);
               return idx >= 0 && tokens[idx + 1] ? tokens[idx + 1] : `[${k}]`;
             })}</div>
-            {guide.ex.length > 0 && <div className="text-mc-muted/60 mt-0.5 text-[9px]">例: {guide.ex[0]}</div>}
+            {tokens.length <= 2 && guide.ex.length > 0 && <div className="text-mc-muted/60 mt-0.5 text-[9px]">例: {guide.ex[0]}</div>}
           </div>
         );
       })()}
@@ -7702,7 +7719,7 @@ const SNIPPET_TEMPLATES = [
   ]},
 ];
 
-function IntegratedMcfEditor({ file, onChange, targetVersion, namespace, guideMode = false }) {
+function IntegratedMcfEditor({ file, onChange, targetVersion, namespace, guideMode = false, onToggleGuide }) {
   const textareaRef = useRef(null);
   const preRef = useRef(null);
   const lineNumRef = useRef(null);
@@ -8009,27 +8026,51 @@ function IntegratedMcfEditor({ file, onChange, targetVersion, namespace, guideMo
           {guideMode && (() => {
             const ls = content.split('\n');
             const curLine = ls[cursorInfo.line - 1] || '';
-            const cmd = curLine.trim().split(/\s+/)[0]?.replace(/^\//,'');
+            const trimLine = curLine.trim();
+            const cmd = trimLine.split(/\s+/)[0]?.replace(/^\//,'');
             const guide = cmd && COMMAND_GUIDE[cmd];
+            if (!guide && !trimLine) return (
+              <div style={{background:'#0d0d1a',borderTop:'1px solid #1a1a3a',padding:'5px 10px',fontSize:10,flexShrink:0}}>
+                <span style={{color:'#4fc3f7'}}>📖 ガイド:</span> <span style={{color:'#888'}}>コマンドを入力すると引数のヒントが表示されます。Tab で補完、Ctrl+K でパレット検索</span>
+              </div>
+            );
             if (!guide) return null;
-            const tokens = curLine.trim().split(/\s+/);
+            const tokens = trimLine.split(/\s+/);
             const curArgIdx = Math.max(0, tokens.length - 2);
+            const curArg = guide.a[curArgIdx];
+            // 引数タイプに応じたヒント
+            const typeHints = { selector:'@a=全員, @s=自分, @p=最寄り, @e=全エンティティ, @r=ランダム', item:'アイテムIDを入力 (例: diamond, golden_apple)', entity:'エンティティIDを入力 (例: zombie, armor_stand)', effect:'エフェクトIDを入力 (例: speed, strength)', pos:'座標を入力 — 絶対:数値 / 相対:~数値 / ローカル:^数値', int:'整数値を入力 (例: 1, 30, 100)', float:'数値を入力 (小数OK: 1.5, 0.3)', string:'テキストを入力', json:'JSONテキスト (例: {"text":"Hello","color":"green"})', nbt:'NBTデータ (例: {Health:20,NoAI:1b})', enum:'選択肢から入力' };
             return (
-              <div style={{background:'#0d0d1a',borderTop:'1px solid #1a1a3a',padding:'3px 10px',fontSize:10,flexShrink:0,display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-                <span style={{color:'#4fc3f7',fontWeight:700,fontFamily:'monospace'}}>📖 {cmd}</span>
-                <span style={{color:'#777'}}>{guide.d}</span>
-                {guide.a.map((arg, i) => (
-                  <span key={i} style={{padding:'0 4px',borderRadius:2,fontSize:9,
-                    border: i === curArgIdx ? '1px solid #4fc3f7' : '1px solid #222',
-                    background: i === curArgIdx ? '#4fc3f715' : 'transparent',
-                    color: i === curArgIdx ? '#4fc3f7' : '#555'}}>
-                    {arg.n}
-                  </span>
-                ))}
-                <span style={{color:'#4ec9b0',fontFamily:'monospace',fontSize:9,marginLeft:'auto'}}>▶ {guide.p.replace(/\{(\w+)\}/g, (_, k) => {
-                  const idx = guide.a.findIndex(a => a.n === k);
-                  return idx >= 0 && tokens[idx + 1] ? tokens[idx + 1] : `[${k}]`;
-                })}</span>
+              <div style={{background:'#0d0d1a',borderTop:'1px solid #1a1a3a',padding:'4px 10px',fontSize:10,flexShrink:0}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                  <span style={{color:'#4fc3f7',fontWeight:700,fontFamily:'monospace'}}>📖 {cmd}</span>
+                  <span style={{color:'#777'}}>{guide.d}</span>
+                  {guide.a.map((arg, i) => (
+                    <span key={i} style={{padding:'0 4px',borderRadius:2,fontSize:9,
+                      border: i === curArgIdx ? '1px solid #4fc3f7' : '1px solid #222',
+                      background: i === curArgIdx ? '#4fc3f715' : 'transparent',
+                      color: i === curArgIdx ? '#4fc3f7' : '#555'}}>
+                      {arg.n}{arg.o ? ` (${arg.o.slice(0,3).join('/')})` : ''}
+                    </span>
+                  ))}
+                  <span style={{color:'#4ec9b0',fontFamily:'monospace',fontSize:9,marginLeft:'auto'}}>▶ {guide.p.replace(/\{(\w+)\}/g, (_, k) => {
+                    const idx = guide.a.findIndex(a => a.n === k);
+                    return idx >= 0 && tokens[idx + 1] ? tokens[idx + 1] : `[${k}]`;
+                  })}</span>
+                </div>
+                {curArg && (
+                  <div style={{display:'flex',alignItems:'center',gap:6,marginTop:2,paddingLeft:20}}>
+                    <span style={{color:'#4fc3f7',fontSize:9,fontWeight:600}}>→ {curArg.n}:</span>
+                    <span style={{color:'#aaa',fontSize:9}}>{curArg.d}</span>
+                    {curArg.o && <span style={{color:'#666',fontSize:8,fontFamily:'monospace'}}>[{curArg.o.join(' | ')}]</span>}
+                    {!curArg.o && typeHints[curArg.t] && <span style={{color:'#666',fontSize:8}}>{typeHints[curArg.t]}</span>}
+                  </div>
+                )}
+                {tokens.length === 1 && guide.ex && guide.ex[0] && (
+                  <div style={{marginTop:2,paddingLeft:20,fontSize:9,color:'#555'}}>
+                    例: <span style={{color:'#888',fontFamily:'monospace'}}>{guide.ex[0]}</span>
+                  </div>
+                )}
               </div>
             );
           })()}
@@ -8044,8 +8085,8 @@ function IntegratedMcfEditor({ file, onChange, targetVersion, namespace, guideMo
             </span>
             <span>行 {cursorInfo.line}, 列 {cursorInfo.col}</span>
             <span>{cmdCount} コマンド</span>
-            <span style={{marginLeft:'auto',color: guideMode ? '#4fc3f7' : '#555',cursor:'default'}} title={guideMode ? 'ガイドモード ON (設定で切替)' : 'ガイドモード OFF (設定で切替)'}>
-              {guideMode ? '📖 ガイド' : 'ガイド OFF'}
+            <span onClick={onToggleGuide} style={{marginLeft:'auto',color: guideMode ? '#4fc3f7' : '#555',cursor:'pointer',padding:'0 4px',borderRadius:3,border: guideMode ? '1px solid #4fc3f740' : '1px solid transparent'}} title={guideMode ? 'クリックでガイドOFF' : 'クリックでガイドON'}>
+              {guideMode ? '📖 ガイド ON' : '📖 ガイド OFF'}
             </span>
             <span>mcfunction</span>
             <span>UTF-8</span>
@@ -12008,6 +12049,225 @@ const GUIDE_PAGES = [
       { type:'tip', text:'このガイドはいつでも「ガイド」ボタンから開けます。困ったら何度でも見返してください！' },
     ],
   },
+  // --- ここからコマンド学習ガイド ---
+  {
+    id: 'cmd_basics',
+    title: 'コマンドの基礎',
+    subtitle: 'mcfunctionファイルの書き方を一から学ぼう',
+    icon: 'minecraft:writable_book',
+    color: '#4fc3f7',
+    content: [
+      { type:'text', text:'データパックの中心は「コマンド」です。コマンドは、ゲーム内で何かを実行する指示文です。チャットで / を付けて入力するものと同じですが、.mcfunction ファイルでは / は不要です。' },
+      { type:'commandList', items:[
+        { cmd:'say Hello World', desc:'チャットにメッセージを表示する — 最もシンプルなコマンド', color:'#4caf50' },
+        { cmd:'give @s diamond 1', desc:'自分にダイヤモンドを1個与える — <対象> <アイテム> <数量>', color:'#4fc3f7' },
+        { cmd:'effect give @a speed 30 1', desc:'全員に30秒間のスピードLv2を付与 — エフェクトの基本', color:'#ab47bc' },
+        { cmd:'tp @s 0 64 0', desc:'自分を座標(0, 64, 0)にテレポート — 座標指定の基本', color:'#ff9800' },
+      ]},
+      { type:'text', text:'コマンドの基本構造: コマンド名 → 対象（誰に） → 何を → どうする' },
+      { type:'features', items:[
+        { icon:'minecraft:command_block', title:'コマンド名', desc:'give, effect, tp, summon など実行する動作', color:'#4fc3f7' },
+        { icon:'minecraft:player_head', title:'対象 (セレクター)', desc:'@a (全員), @s (自分), @p (最寄り) で対象を指定', color:'#ff9800' },
+        { icon:'minecraft:diamond', title:'引数', desc:'アイテム名・座標・数値など、コマンドに渡す情報', color:'#66bb6a' },
+        { icon:'minecraft:book', title:'コメント', desc:'# で始まる行はコメント（メモ）。実行されません', color:'#999' },
+      ]},
+      { type:'tip', text:'.mcfunctionファイルでは1行に1コマンドを書きます。# で始まる行はコメント（説明メモ）になります。' },
+      { type:'warning', text:'よくあるミス: .mcfunction では先頭の / は不要です！/ を付けるとエラーになります。チャットでは / が必要ですが、ファイルでは省略します。' },
+    ],
+  },
+  {
+    id: 'selectors_guide',
+    title: 'セレクター完全ガイド',
+    subtitle: '@ マークの後の文字で「誰を対象にするか」を決める',
+    icon: 'minecraft:player_head',
+    color: '#ff9800',
+    content: [
+      { type:'text', text:'セレクターは「誰を対象にするか」を指定する記号です。@の後に1文字で対象が変わります。' },
+      { type:'features', items:[
+        { icon:'minecraft:player_head', title:'@a — 全プレイヤー', desc:'サーバー内の全プレイヤーが対象になります', color:'#4caf50' },
+        { icon:'minecraft:compass', title:'@p — 最寄りのプレイヤー', desc:'コマンドの実行位置から一番近いプレイヤー1人', color:'#4fc3f7' },
+        { icon:'minecraft:ender_pearl', title:'@r — ランダムなプレイヤー', desc:'プレイヤーの中からランダムに1人を選びます', color:'#ab47bc' },
+        { icon:'minecraft:armor_stand', title:'@s — 実行者自身', desc:'コマンドを実行したエンティティ（自分自身）', color:'#ff9800' },
+        { icon:'minecraft:zombie_head', title:'@e — 全エンティティ', desc:'モブ・防具立てなど全てのエンティティ（プレイヤー含む）', color:'#f44336' },
+        { icon:'minecraft:spyglass', title:'@n — 最寄りエンティティ', desc:'1.21+で追加。プレイヤー以外も含む最寄り1体', color:'#fdd835' },
+      ]},
+      { type:'text', text:'セレクター引数: [ ] の中に条件を書くと、対象を絞り込めます。' },
+      { type:'commandList', items:[
+        { cmd:'@a[tag=player]', desc:'「player」タグを持つ全プレイヤー', color:'#4caf50' },
+        { cmd:'@e[type=zombie,distance=..10]', desc:'半径10ブロック以内の全ゾンビ', color:'#f44336' },
+        { cmd:'@a[scores={point=10..}]', desc:'「point」スコアが10以上の全プレイヤー', color:'#4fc3f7' },
+        { cmd:'@e[type=!player,limit=5,sort=nearest]', desc:'プレイヤー以外で最寄り5体', color:'#ab47bc' },
+        { cmd:'@a[gamemode=survival]', desc:'サバイバルモードの全プレイヤー', color:'#ff9800' },
+      ]},
+      { type:'tip', text:'引数はカンマで区切って複数指定できます。tag, type, distance, limit, sort が最もよく使います。' },
+      { type:'warning', text:'@e はプレイヤーも含みます！モブだけを対象にしたい場合は @e[type=!player] と書きましょう。' },
+    ],
+  },
+  {
+    id: 'coordinates_guide',
+    title: '座標の使い方',
+    subtitle: '3種類の座標を使い分けよう — 絶対・相対・ローカル',
+    icon: 'minecraft:map',
+    color: '#66bb6a',
+    content: [
+      { type:'text', text:'Minecraftの座標は X(東西), Y(上下), Z(南北) の3つの数値です。座標の指定方法は3種類あります。' },
+      { type:'features', items:[
+        { icon:'minecraft:compass', title:'絶対座標（数値のみ）', desc:'0 64 0 → ワールドの固定位置を直接指定', color:'#4fc3f7' },
+        { icon:'minecraft:ender_pearl', title:'相対座標（~ チルダ）', desc:'~ ~2 ~ → 現在位置からの相対距離（+2ブロック上）', color:'#ff9800' },
+        { icon:'minecraft:spyglass', title:'ローカル座標（^ キャレット）', desc:'^ ^ ^5 → 視線方向に5ブロック前（向きに依存）', color:'#ab47bc' },
+      ]},
+      { type:'commandList', items:[
+        { cmd:'tp @s 100 64 200', desc:'絶対座標: X=100, Y=64, Z=200 にテレポート', color:'#4fc3f7' },
+        { cmd:'tp @s ~ ~10 ~', desc:'相対座標: 今の位置から10ブロック上にテレポート', color:'#ff9800' },
+        { cmd:'tp @s ~ ~ ~5', desc:'相対座標: 今の位置から南に5ブロック移動', color:'#ff9800' },
+        { cmd:'summon creeper ~ ~ ~3', desc:'相対座標: 自分の3ブロック南にクリーパーを出す', color:'#66bb6a' },
+        { cmd:'particle flame ^ ^ ^2', desc:'ローカル座標: 顔の前方2ブロックにパーティクル', color:'#ab47bc' },
+      ]},
+      { type:'text', text:'Y座標の目安: 海面=Y63, ダイヤ鉱石=Y-60～16, ネザー天井=Y128, ビルド上限=Y320' },
+      { type:'tip', text:'~ だけ書くと「今の位置と同じ」（= ~0）です。~ ~1 ~ は「1ブロック上」を意味します。' },
+      { type:'warning', text:'~ と ^ は混ぜて使えません！ ~5 ~ ^3 はエラーになります。3つとも同じ種類で揃えてください。' },
+    ],
+  },
+  {
+    id: 'scoreboard_guide',
+    title: 'スコアボード入門',
+    subtitle: 'スコアで数値を管理して、ゲームのロジックを作ろう',
+    icon: 'minecraft:experience_bottle',
+    color: '#4fc3f7',
+    content: [
+      { type:'text', text:'スコアボードは「プレイヤーごとに数値を記録する仕組み」です。タイマー、ポイント、フラグなど様々な用途に使えます。' },
+      { type:'steps', items:[
+        { num:'1', icon:'minecraft:writable_book', title:'目的(objective)を作る', desc:'scoreboard objectives add point dummy "ポイント"' },
+        { num:'2', icon:'minecraft:experience_bottle', title:'値を設定する', desc:'scoreboard players set @a point 0  ← 全員のpointを0に' },
+        { num:'3', icon:'minecraft:golden_apple', title:'値を増減する', desc:'scoreboard players add @s point 1  ← 自分のpointを+1' },
+        { num:'4', icon:'minecraft:spyglass', title:'値を確認する', desc:'scoreboard players get @s point  ← 自分のpointを表示' },
+        { num:'5', icon:'minecraft:name_tag', title:'サイドバーに表示', desc:'scoreboard objectives setdisplay sidebar point  ← 常時表示' },
+      ]},
+      { type:'text', text:'よく使う基準(criteria):' },
+      { type:'features', items:[
+        { icon:'minecraft:paper', title:'dummy', desc:'コマンドでのみ変化。最も汎用的（ポイント、フラグ等）', color:'#4fc3f7' },
+        { icon:'minecraft:diamond_sword', title:'playerKillCount', desc:'プレイヤーキル数で自動増加', color:'#f44336' },
+        { icon:'minecraft:skull_banner_pattern', title:'deathCount', desc:'死亡回数で自動増加', color:'#999' },
+        { icon:'minecraft:redstone', title:'trigger', desc:'プレイヤー自身が /trigger で操作可能', color:'#ff9800' },
+      ]},
+      { type:'commandList', items:[
+        { cmd:'execute if score @s point matches 10.. run say 10点達成！', desc:'ポイントが10以上なら実行する条件分岐', color:'#66bb6a' },
+        { cmd:'scoreboard players operation @s point += @s kills', desc:'killsの値をpointに加算（演算）', color:'#ab47bc' },
+      ]},
+      { type:'tip', text:'dummy がオールマイティで一番使います。タイマー・フラグ・カウンターなど何にでも使えます。' },
+    ],
+  },
+  {
+    id: 'tag_execute_guide',
+    title: 'タグと execute',
+    subtitle: 'エンティティの分類と条件付き実行をマスターしよう',
+    icon: 'minecraft:name_tag',
+    color: '#ab47bc',
+    content: [
+      { type:'text', text:'タグ: エンティティに「ラベル」を付ける機能です。セレクターで [tag=xxx] を使って、タグを持つエンティティだけを対象にできます。' },
+      { type:'commandList', items:[
+        { cmd:'tag @s add runner', desc:'自分に「runner」タグを追加', color:'#4caf50' },
+        { cmd:'tag @s remove runner', desc:'自分から「runner」タグを削除', color:'#f44336' },
+        { cmd:'tag @s list', desc:'自分のタグ一覧を表示', color:'#4fc3f7' },
+        { cmd:'give @a[tag=runner] leather_boots', desc:'runnerタグを持つプレイヤーにブーツを付与', color:'#ff9800' },
+        { cmd:'execute as @a[tag=!runner] run say 鬼です', desc:'runnerタグを持たない人がメッセージ送信', color:'#ab47bc' },
+      ]},
+      { type:'text', text:'execute: 最も強力なコマンド。「誰として」「どこで」「どんな条件で」コマンドを実行するかを指定できます。' },
+      { type:'features', items:[
+        { icon:'minecraft:player_head', title:'as <対象>', desc:'「誰として」実行するかを変更。@sが変わる', color:'#4fc3f7' },
+        { icon:'minecraft:compass', title:'at <対象>', desc:'「どの位置で」実行するかを変更。~ ~ ~が変わる', color:'#ff9800' },
+        { icon:'minecraft:redstone', title:'if <条件>', desc:'条件が真のときだけ実行する（スコア判定、エンティティ存在等）', color:'#66bb6a' },
+        { icon:'minecraft:barrier', title:'unless <条件>', desc:'条件が偽のときだけ実行する（ifの逆）', color:'#f44336' },
+        { icon:'minecraft:ender_pearl', title:'in <ディメンション>', desc:'指定ディメンションで実行（overworld/the_nether/the_end）', color:'#ab47bc' },
+        { icon:'minecraft:chest', title:'store result', desc:'コマンドの実行結果をスコアやNBTに保存', color:'#fdd835' },
+      ]},
+      { type:'commandList', items:[
+        { cmd:'execute as @a at @s run particle flame ~ ~1 ~', desc:'全プレイヤーの頭上にパーティクル', color:'#4caf50' },
+        { cmd:'execute if entity @e[type=zombie,distance=..5] run say ゾンビが近い！', desc:'近くにゾンビがいれば警告', color:'#f44336' },
+        { cmd:'execute as @a if score @s timer matches 0 run title @s title {"text":"スタート！","color":"green"}', desc:'タイマーが0の人にタイトル表示', color:'#ff9800' },
+      ]},
+      { type:'tip', text:'execute は「as → at → if/unless → run」の順に書くのが基本パターンです。run の後に実行したいコマンドを書きます。' },
+      { type:'warning', text:'as と at は別物です！as は「誰として（@sが変わる）」、at は「どこで（座標が変わる）」です。モブの位置でコマンドを実行するなら両方必要: execute as @e at @s run ...' },
+    ],
+  },
+  {
+    id: 'practice_steps',
+    title: '実践: データパック構築ステップ',
+    subtitle: 'ゼロから完成まで — この順番で進めれば迷わない！',
+    icon: 'minecraft:golden_pickaxe',
+    color: '#fdd835',
+    content: [
+      { type:'text', text:'データパックを一から作る場合の推奨手順です。このツールのウィザードで自動生成した後に、カスタマイズする際にも参考になります。' },
+      { type:'steps', items:[
+        { num:'1', icon:'minecraft:crafting_table', title:'プロジェクト初期設定', desc:'名前・名前空間・バージョンを決める。tick.json と load.json テンプレートを選ぶ' },
+        { num:'2', icon:'minecraft:command_block', title:'load関数を作る', desc:'初期化処理を書く: scoreboard objectives add, team add, gamerule 設定など' },
+        { num:'3', icon:'minecraft:clock', title:'tick関数を作る', desc:'毎秒実行したい処理: タイマー減算、スコア判定、エリア判定など' },
+        { num:'4', icon:'minecraft:diamond_sword', title:'ゲーム開始関数', desc:'start.mcfunction: チーム振り分け、tp、アイテム配布、スコアリセット' },
+        { num:'5', icon:'minecraft:golden_apple', title:'ゲーム進行関数', desc:'条件分岐でイベント発生: if score → 報酬、if entity → 敵出現など' },
+        { num:'6', icon:'minecraft:firework_rocket', title:'ゲーム終了関数', desc:'end.mcfunction: 勝者判定、タイトル表示、スコアリセット、初期化' },
+        { num:'7', icon:'minecraft:writable_book', title:'テスト & 調整', desc:'/reload → /function で実行テスト。tellraw でデバッグ出力' },
+      ]},
+      { type:'text', text:'典型的なファイル構成例:' },
+      { type:'folderTree', title:'ミニゲーム型データパック例', items:[
+        { depth:0, name:'data/mygame/', icon:'📁' },
+        { depth:1, name:'function/', icon:'📁' },
+        { depth:2, name:'load.mcfunction (初期化)', icon:'⚡' },
+        { depth:2, name:'tick.mcfunction (毎tick処理)', icon:'🔄' },
+        { depth:2, name:'start.mcfunction (ゲーム開始)', icon:'▶️' },
+        { depth:2, name:'end.mcfunction (ゲーム終了)', icon:'⏹️' },
+        { depth:2, name:'join.mcfunction (参加処理)', icon:'➕' },
+        { depth:2, name:'utils/', icon:'📁' },
+        { depth:3, name:'reset.mcfunction (リセット)', icon:'🔄' },
+        { depth:3, name:'timer.mcfunction (タイマー)', icon:'⏱️' },
+      ]},
+      { type:'commandList', items:[
+        { cmd:'# load.mcfunction の例', desc:'ゲーム初期化 — リロード時に1回実行', color:'#66bb6a' },
+        { cmd:'scoreboard objectives add timer dummy', desc:'タイマー用スコアボードを作成', color:'#4fc3f7' },
+        { cmd:'scoreboard objectives add point dummy "ポイント"', desc:'ポイント用スコアボードを作成', color:'#4fc3f7' },
+        { cmd:'team add red "赤チーム"', desc:'赤チームを作成', color:'#f44336' },
+        { cmd:'team add blue "青チーム"', desc:'青チームを作成', color:'#4fc3f7' },
+        { cmd:'team modify red color red', desc:'赤チームの色を設定', color:'#f44336' },
+        { cmd:'team modify blue color blue', desc:'青チームの色を設定', color:'#4fc3f7' },
+        { cmd:'gamerule sendCommandFeedback false', desc:'コマンド実行ログを非表示に', color:'#999' },
+        { cmd:'tellraw @a {"text":"データパック読込完了！","color":"green"}', desc:'読み込み完了メッセージ', color:'#66bb6a' },
+      ]},
+      { type:'tip', text:'まずはウィザードでミニゲームを自動生成して、そのコードを読んで学ぶのが最速です！理解できたら少しずつ書き換えてみましょう。' },
+    ],
+  },
+  {
+    id: 'cmd_categories',
+    title: 'コマンドカテゴリ一覧',
+    subtitle: '目的別にコマンドを探そう — 何をしたいかで選ぶ',
+    icon: 'minecraft:book',
+    color: '#e91e63',
+    content: [
+      { type:'text', text:'「何がしたいか」から使うコマンドを見つけましょう。データパックでよく使うコマンドをカテゴリ別に紹介します。' },
+      { type:'features', items:[
+        { icon:'minecraft:diamond_sword', title:'アイテム系', desc:'give (付与) / clear (除去) / item replace (スロット操作) / loot (ルートテーブル)', color:'#4caf50' },
+        { icon:'minecraft:ender_pearl', title:'移動・配置系', desc:'tp (テレポート) / summon (召喚) / setblock (ブロック) / fill (範囲ブロック)', color:'#4fc3f7' },
+        { icon:'minecraft:potion', title:'エフェクト系', desc:'effect give/clear (状態効果) / attribute (ステータス変更) / damage (ダメージ)', color:'#ab47bc' },
+        { icon:'minecraft:name_tag', title:'表示・演出系', desc:'title (タイトル) / tellraw (装飾メッセージ) / bossbar (ボスバー) / particle (パーティクル)', color:'#ff9800' },
+        { icon:'minecraft:redstone', title:'制御・ロジック系', desc:'execute (条件実行) / scoreboard (スコア管理) / tag (ラベル) / function (関数呼出)', color:'#f44336' },
+        { icon:'minecraft:grass_block', title:'ゲーム管理系', desc:'gamemode / gamerule / difficulty / weather / time / worldborder', color:'#795548' },
+        { icon:'minecraft:shield', title:'チーム・協力系', desc:'team (チーム管理) / bossbar (共有UI) / schedule (遅延実行)', color:'#607d8b' },
+        { icon:'minecraft:clock', title:'タイミング系', desc:'schedule (遅延実行) / tick.json (毎tick) / load.json (初回実行)', color:'#fdd835' },
+      ]},
+      { type:'text', text:'初心者がまず覚えるべきコマンド TOP 10:' },
+      { type:'commandList', items:[
+        { cmd:'1. give', desc:'アイテムを渡す — 報酬配布に必須', color:'#4caf50' },
+        { cmd:'2. tp', desc:'テレポート — ゲーム開始時のスポーン移動', color:'#4fc3f7' },
+        { cmd:'3. effect', desc:'状態効果 — スピード/耐性/暗視など', color:'#ab47bc' },
+        { cmd:'4. scoreboard', desc:'スコア管理 — ポイント/タイマーの記録', color:'#f44336' },
+        { cmd:'5. execute', desc:'条件実行 — 「もし〇〇なら」の制御', color:'#ff9800' },
+        { cmd:'6. tag', desc:'タグ管理 — チーム分け/状態フラグ', color:'#66bb6a' },
+        { cmd:'7. title', desc:'タイトル表示 — 大きなテキスト演出', color:'#fdd835' },
+        { cmd:'8. tellraw', desc:'装飾メッセージ — カラフルなチャット', color:'#e91e63' },
+        { cmd:'9. function', desc:'関数呼出 — 他のファイルを実行', color:'#795548' },
+        { cmd:'10. summon', desc:'エンティティ召喚 — モブ/防具立て出現', color:'#607d8b' },
+      ]},
+      { type:'tip', text:'このツールの「コマンドビルダー」タブで、これら全てをボタンで組み立てられます！引数を覚える必要はありません。' },
+    ],
+  },
 ];
 
 function VisualGuide({ onClose }) {
@@ -13183,7 +13443,7 @@ export default function App() {
 
                 // mcfunction → IntegratedMcfEditor (VS Code + command builder hybrid, always)
                 if (isMcfunction) {
-                  return <IntegratedMcfEditor file={selectedFile} onChange={handleFileContentChange} targetVersion={project.targetVersion} namespace={project.namespace} guideMode={guideMode} />;
+                  return <IntegratedMcfEditor file={selectedFile} onChange={handleFileContentChange} targetVersion={project.targetVersion} namespace={project.namespace} guideMode={guideMode} onToggleGuide={() => setGuideMode(g => !g)} />;
                 }
 
                 // Recipe JSON → SplitJsonEditor with RecipeVisualEditor
@@ -13205,7 +13465,7 @@ export default function App() {
                 }
 
                 // Other files → standard CodeEditor
-                return <CodeEditor file={selectedFile} onChange={handleFileContentChange} targetVersion={project.targetVersion} guideMode={guideMode} />;
+                return <CodeEditor file={selectedFile} onChange={handleFileContentChange} targetVersion={project.targetVersion} guideMode={guideMode} onToggleGuide={() => setGuideMode(g => !g)} />;
               })() : (
                 <GalleryLanding onMinigame={() => setShowMinigameWizard(true)} onSystem={() => setShowSystemWizard(true)} onBuilder={() => setActiveTab('builder')} onGuide={() => setShowGuide(true)} />
               )
