@@ -12073,6 +12073,7 @@ const GUIDE_PAGES = [
       ]},
       { type:'tip', text:'.mcfunctionファイルでは1行に1コマンドを書きます。# で始まる行はコメント（説明メモ）になります。' },
       { type:'warning', text:'よくあるミス: .mcfunction では先頭の / は不要です！/ を付けるとエラーになります。チャットでは / が必要ですが、ファイルでは省略します。' },
+      { type:'tip', text:'行末に \\ を書くと次の行に続けることができます（1.20.2+）。長いコマンドを見やすく改行できます。' },
     ],
   },
   {
@@ -12101,6 +12102,7 @@ const GUIDE_PAGES = [
       ]},
       { type:'tip', text:'引数はカンマで区切って複数指定できます。tag, type, distance, limit, sort が最もよく使います。' },
       { type:'warning', text:'@e はプレイヤーも含みます！モブだけを対象にしたい場合は @e[type=!player] と書きましょう。' },
+      { type:'tip', text:'tp や data merge のように「対象が1体だけ」のコマンドで @a を使うとエラーになることがあります。その場合は @a[limit=1] や @p を使いましょう。' },
     ],
   },
   {
@@ -12231,6 +12233,7 @@ const GUIDE_PAGES = [
         { cmd:'gamerule sendCommandFeedback false', desc:'コマンド実行ログを非表示に', color:'#999' },
         { cmd:'tellraw @a {"text":"データパック読込完了！","color":"green"}', desc:'読み込み完了メッセージ', color:'#66bb6a' },
       ]},
+      { type:'warning', text:'load関数はプレイヤーがワールドに入る前に実行されます！load.mcfunction で @a を使った tellraw や title は、タイミング次第で見えないことがあります。表示系は start 関数に書きましょう。' },
       { type:'tip', text:'まずはウィザードでミニゲームを自動生成して、そのコードを読んで学ぶのが最速です！理解できたら少しずつ書き換えてみましょう。' },
     ],
   },
