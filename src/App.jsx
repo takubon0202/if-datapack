@@ -4435,7 +4435,7 @@ async function generateZip(project, files) {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 // ════════════════════════════════════════════════════════════
@@ -12787,10 +12787,12 @@ export default function App() {
       saveProjectsList([entry]);
       setShowWizard(true);
       // Show guide on first ever visit
-      if (!localStorage.getItem('dp_guide_seen')) {
-        setShowGuide(true);
-        localStorage.setItem('dp_guide_seen', '1');
-      }
+      try {
+        if (!localStorage.getItem('dp_guide_seen')) {
+          setShowGuide(true);
+          localStorage.setItem('dp_guide_seen', '1');
+        }
+      } catch {}
     }
     setInitialized(true);
   }, []);
@@ -13164,7 +13166,12 @@ export default function App() {
     if (errs.length > 0) {
       if (!confirm(`${errs.length}件のエラーがあります。それでもダウンロードしますか？`)) return;
     }
-    await generateZip(project, files);
+    try {
+      await generateZip(project, files);
+    } catch (err) {
+      console.error('ZIP generation error:', err);
+      alert(`ZIPの生成に失敗しました: ${err.message}`);
+    }
   };
 
   const handleReset = () => {
@@ -13223,7 +13230,7 @@ export default function App() {
       pathContents = stripTopFolder(pathContents);
     } catch (err) {
       console.error('Import error:', err);
-      setErrors(prev => [...prev.slice(-10), { line: 0, msg: `インポートエラー: ${err.message}`, type: 'error' }]);
+      alert(`インポートエラー: ${err.message}`);
       return;
     }
 
