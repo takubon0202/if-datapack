@@ -3295,9 +3295,15 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
   }
 
   // Check execute: must end with 'run <command>' (only warn if > 3 tokens and no 'run')
+  // BUT: execute ending with if/unless conditions is valid (returns success/fail without run)
   if (cmd === 'execute' && tokens.length >= 4 && !trimmed.includes(' run ') && !trimmed.endsWith(' run')) {
-    // Only warn, not error — user might still be typing
-    return { line: lineNum, msg: 'execute に "run" がありません — execute ... run <コマンド> の形式で書いてください', type: 'warning' };
+    // Allow execute chains ending with condition subcommands (if/unless) — these return success/fail
+    const hasCondition = /\b(if|unless)\s+\S+/.test(trimmed);
+    // Allow execute chains ending with store (stores a result)
+    const hasStore = /\bstore\s+\S+/.test(trimmed);
+    if (!hasCondition && !hasStore) {
+      return { line: lineNum, msg: 'execute に "run" がありません — execute ... run <コマンド> の形式で書いてください', type: 'warning' };
+    }
   }
   // Check execute run with nothing after
   if (cmd === 'execute' && /\brun\s*$/.test(trimmed)) {
@@ -3348,13 +3354,17 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
     }
   }
 
-  // Check for mixed coordinate types (^ and ~ mixed)
-  const coordMatches = trimmed.match(/[~^][^\s]*/g);
-  if (coordMatches && coordMatches.length >= 2) {
-    const hasRelative = coordMatches.some(c => c.startsWith('~'));
-    const hasLocal = coordMatches.some(c => c.startsWith('^'));
-    if (hasRelative && hasLocal) {
-      return { line: lineNum, msg: '~(相対座標)と^(ローカル座標)が混在しています — どちらか一方に統一してください', type: 'error' };
+  // Check for mixed coordinate types (^ and ~ mixed) — only for non-execute commands
+  // execute chains can legitimately use different coordinate types across subcommands
+  // e.g. execute positioned ~ ~ ~ run tp @s ^ ^ ^1
+  if (cmd !== 'execute') {
+    const coordMatches = trimmed.match(/[~^][^\s]*/g);
+    if (coordMatches && coordMatches.length >= 2) {
+      const hasRelative = coordMatches.some(c => c.startsWith('~'));
+      const hasLocal = coordMatches.some(c => c.startsWith('^'));
+      if (hasRelative && hasLocal) {
+        return { line: lineNum, msg: '~(相対座標)と^(ローカル座標)が混在しています — どちらか一方に統一してください', type: 'error' };
+      }
     }
   }
 
@@ -3366,14 +3376,28 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
     }
     if (sub === 'objectives') {
       const action = tokens[2]?.toLowerCase();
+      const validActions = new Set(['list', 'add', 'remove', 'setdisplay', 'modify']);
+      if (action && !validActions.has(action)) {
+        return { line: lineNum, msg: `scoreboard objectives のサブコマンドが不正: "${action}" — list/add/remove/setdisplay/modify`, type: 'warning' };
+      }
       if (action === 'add' && tokens.length < 5) {
         return { line: lineNum, msg: 'scoreboard objectives add: 引数不足 — scoreboard objectives add <名前> <基準> [表示名]', type: 'error' };
+      }
+      if (action === 'remove' && tokens.length < 4) {
+        return { line: lineNum, msg: 'scoreboard objectives remove: 引数不足 — scoreboard objectives remove <名前>', type: 'error' };
       }
     }
     if (sub === 'players') {
       const action = tokens[2]?.toLowerCase();
+      const validActions = new Set(['list', 'get', 'set', 'add', 'remove', 'reset', 'enable', 'operation', 'display', 'numberformat']);
+      if (action && !validActions.has(action)) {
+        return { line: lineNum, msg: `scoreboard players のサブコマンドが不正: "${action}" — list/get/set/add/remove/reset/enable/operation`, type: 'warning' };
+      }
       if ((action === 'set' || action === 'add' || action === 'remove') && tokens.length < 5) {
         return { line: lineNum, msg: `scoreboard players ${action}: 引数不足 — scoreboard players ${action} <対象> <目的> <値>`, type: 'error' };
+      }
+      if ((action === 'get' || action === 'enable') && tokens.length < 5) {
+        return { line: lineNum, msg: `scoreboard players ${action}: 引数不足 — scoreboard players ${action} <対象> <目的>`, type: 'error' };
       }
       if (action === 'operation' && tokens.length < 7) {
         return { line: lineNum, msg: 'scoreboard players operation: 引数不足 — scoreboard players operation <対象> <目的> <演算子> <ソース対象> <ソース目的>', type: 'error' };
@@ -3442,8 +3466,8 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
     const jsonStart = trimmed.indexOf('{', trimmed.indexOf(cmd));
     if (jsonStart >= 0) {
       const jsonPart = trimmed.substring(jsonStart);
-      // Check for common JSON mistakes
-      if (jsonPart.includes("'text'") || jsonPart.includes("'color'")) {
+      // Check for common JSON mistakes — only flag single-quoted keys, not values
+      if (/'\s*text\s*'\s*:/.test(jsonPart) || /'\s*color\s*'\s*:/.test(jsonPart) || /'\s*bold\s*'\s*:/.test(jsonPart)) {
         return { line: lineNum, msg: 'JSONではシングルクォート(\')ではなくダブルクォート(")を使用してください', type: 'error',
           fix: { label: "' → \" に変換", apply: (l) => l.replace(/'/g, '"') } };
       }
@@ -3473,18 +3497,20 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
         return { line: lineNum, msg: 'limit=0 は無効です — 1以上の数値を指定してください', type: 'error' };
       }
       // Check for duplicate selector keys
+      // Note: type, gamemode, name CAN be duplicated with negation (e.g. type=!zombie,type=!skeleton)
       const keyMatches = inner.match(/([a-z_]+)\s*=/g);
       if (keyMatches) {
         const keys = keyMatches.map(k => k.replace(/\s*=/, ''));
-        const noDupKeys = ['distance', 'limit', 'sort', 'type', 'gamemode', 'name', 'level'];
+        const noDupKeys = ['distance', 'limit', 'sort', 'level'];
         for (const k of noDupKeys) {
           if (keys.filter(kk => kk === k).length > 1) {
-            return { line: lineNum, msg: `セレクター引数 "${k}" が重複しています — 同じ引数を2回指定できません (tag/scores除く)`, type: 'warning' };
+            return { line: lineNum, msg: `セレクター引数 "${k}" が重複しています — 同じ引数を2回指定できません`, type: 'warning' };
           }
         }
       }
-      // Check for unknown selector args
-      const allKeys = inner.match(/([a-z_]+)\s*=/g);
+      // Check for unknown selector args — strip scores={...} and advancements={...} inner content first
+      const cleanedInner = inner.replace(/scores\s*=\s*\{[^}]*\}/g, 'scores={}').replace(/advancements\s*=\s*\{[^}]*\}/g, 'advancements={}');
+      const allKeys = cleanedInner.match(/([a-z_]+)\s*=/g);
       if (allKeys) {
         const validKeys = new Set(['tag','scores','distance','type','name','limit','sort','level','gamemode','nbt','x','y','z','dx','dy','dz','predicate','x_rotation','y_rotation','team','advancements']);
         for (const km of allKeys) {
@@ -3544,11 +3570,17 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
     }
   }
 
-  // Validate schedule time format
-  if (cmd === 'schedule' && tokens.length >= 4) {
-    const timeArg = tokens[3];
-    if (timeArg && !/^\d+[tsd]?$/.test(timeArg) && timeArg !== 'append' && timeArg !== 'replace') {
-      return { line: lineNum, msg: `schedule の時間形式が不正: "${timeArg}" — 例: 20t(ティック), 1s(秒), 1d(日)`, type: 'warning' };
+  // Validate schedule subcommand and time format
+  if (cmd === 'schedule' && tokens.length >= 2) {
+    const sub = tokens[1]?.toLowerCase();
+    if (sub !== 'function' && sub !== 'clear') {
+      return { line: lineNum, msg: `schedule のサブコマンドは "function" か "clear" です（"${sub}" は不正）`, type: 'warning' };
+    }
+    if (sub === 'function' && tokens.length >= 4) {
+      const timeArg = tokens[3];
+      if (timeArg && !/^\d+[tsd]?$/.test(timeArg) && timeArg !== 'append' && timeArg !== 'replace') {
+        return { line: lineNum, msg: `schedule の時間形式が不正: "${timeArg}" — 例: 20t(ティック), 1s(秒), 1d(日)`, type: 'warning' };
+      }
     }
   }
 
