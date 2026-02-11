@@ -4488,14 +4488,14 @@ async function importFromFileList(fileList) {
     const isBinary = ['png', 'jpg', 'jpeg', 'gif', 'nbt', 'dat'].includes(ext);
     let content;
     if (isBinary) {
-      if (ext === 'png') {
-        const base64 = await new Promise((res, rej) => {
+      if (['png', 'jpg', 'jpeg', 'gif'].includes(ext)) {
+        const mimeMap = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif' };
+        content = await new Promise((res, rej) => {
           const r = new FileReader();
           r.onload = () => res(r.result);
           r.onerror = () => rej(new Error(`読み取りエラー: ${file.name}`));
           r.readAsDataURL(file);
         });
-        content = base64;
       } else {
         content = `[バイナリファイル: ${file.name}]`;
       }
@@ -4505,6 +4505,100 @@ async function importFromFileList(fileList) {
     pathContents.push({ path: relativePath, content });
   }
   return pathContents;
+}
+
+// Recursively read directory entries from drag & drop using webkitGetAsEntry API
+function readEntryAsFile(entry) {
+  return new Promise((resolve, reject) => {
+    entry.file(resolve, reject);
+  });
+}
+
+function readDirectoryEntries(dirReader) {
+  return new Promise((resolve, reject) => {
+    dirReader.readEntries(resolve, reject);
+  });
+}
+
+async function traverseEntry(entry, basePath, results) {
+  if (entry.isFile) {
+    try {
+      const file = await readEntryAsFile(entry);
+      const fullPath = basePath ? `${basePath}/${entry.name}` : entry.name;
+      if (fullPath.includes('.DS_Store') || fullPath.includes('__MACOSX')) return;
+      const ext = entry.name.split('.').pop()?.toLowerCase();
+      const isBinary = ['png', 'jpg', 'jpeg', 'gif', 'nbt', 'dat'].includes(ext);
+      let content;
+      if (isBinary) {
+        if (['png', 'jpg', 'jpeg', 'gif'].includes(ext)) {
+          content = await new Promise((res, rej) => {
+            const r = new FileReader();
+            r.onload = () => res(r.result);
+            r.onerror = () => rej(new Error(`読み取りエラー: ${entry.name}`));
+            r.readAsDataURL(file);
+          });
+        } else {
+          content = `[バイナリファイル: ${entry.name}]`;
+        }
+      } else {
+        content = await readFileAsText(file);
+      }
+      results.push({ path: fullPath, content });
+    } catch (err) {
+      console.warn(`ファイル読取スキップ: ${entry.name}`, err);
+    }
+  } else if (entry.isDirectory) {
+    const dirReader = entry.createReader();
+    let allEntries = [];
+    // readEntries may return partial results, need to call repeatedly
+    let batch;
+    do {
+      batch = await readDirectoryEntries(dirReader);
+      allEntries = allEntries.concat(Array.from(batch));
+    } while (batch.length > 0);
+    const dirPath = basePath ? `${basePath}/${entry.name}` : entry.name;
+    for (const child of allEntries) {
+      await traverseEntry(child, dirPath, results);
+    }
+  }
+}
+
+async function importFromDataTransfer(dataTransfer) {
+  const items = dataTransfer.items;
+  if (!items || items.length === 0) return [];
+
+  // Check for single ZIP file first (by name, not MIME - more reliable)
+  const firstFile = dataTransfer.files?.[0];
+  if (dataTransfer.files?.length === 1 && firstFile?.name?.toLowerCase().endsWith('.zip')) {
+    return await importFromZip(firstFile);
+  }
+
+  // Try webkitGetAsEntry for folder support
+  const entries = [];
+  for (let i = 0; i < items.length; i++) {
+    const entry = items[i].webkitGetAsEntry?.() || items[i].getAsEntry?.();
+    if (entry) entries.push(entry);
+  }
+
+  if (entries.length > 0) {
+    const results = [];
+    for (const entry of entries) {
+      await traverseEntry(entry, '', results);
+    }
+    if (results.length > 0) return results;
+  }
+
+  // Fallback: use dataTransfer.files (no folder structure for plain D&D)
+  const files = [];
+  for (let i = 0; i < dataTransfer.files.length; i++) {
+    files.push(dataTransfer.files[i]);
+  }
+  if (files.length === 0) return [];
+  // Check again for zip in case the entry approach missed it
+  if (files.length === 1 && files[0].name.toLowerCase().endsWith('.zip')) {
+    return await importFromZip(files[0]);
+  }
+  return await importFromFileList(files);
 }
 
 function detectDatapackInfo(pathContents) {
@@ -4595,24 +4689,8 @@ function ImportModal({ onImport, onClose }) {
     e.preventDefault(); setDragging(false);
     setLoading(true); setError(null); setPreview(null);
     try {
-      const items = e.dataTransfer.items;
-      if (items && items.length === 1 && items[0].type.includes('zip')) {
-        const file = items[0].getAsFile();
-        const pathContents = await importFromZip(file);
-        await processFiles(pathContents);
-      } else if (items) {
-        const allFiles = [];
-        for (let i = 0; i < e.dataTransfer.files.length; i++) {
-          allFiles.push(e.dataTransfer.files[i]);
-        }
-        if (allFiles.length === 1 && allFiles[0].name.endsWith('.zip')) {
-          const pathContents = await importFromZip(allFiles[0]);
-          await processFiles(pathContents);
-        } else {
-          const pathContents = await importFromFileList(allFiles);
-          await processFiles(pathContents);
-        }
-      }
+      const pathContents = await importFromDataTransfer(e.dataTransfer);
+      await processFiles(pathContents);
     } catch (err) { setError(`インポートエラー: ${err.message}`); }
     setLoading(false);
   };
@@ -4651,8 +4729,8 @@ function ImportModal({ onImport, onClose }) {
             ) : (
               <div className="flex flex-col items-center gap-2">
                 <UploadCloud size={32} className="text-mc-muted" />
-                <span className="text-sm text-mc-text">ZIPファイルをドロップ、またはクリックして選択</span>
-                <span className="text-xs text-mc-muted">データパックのZIPファイルをインポートできます</span>
+                <span className="text-sm text-mc-text">ZIP / フォルダをドロップ、またはクリックして選択</span>
+                <span className="text-xs text-mc-muted">データパックのZIPファイルやフォルダをドロップでインポート</span>
               </div>
             )}
           </div>
@@ -13137,32 +13215,16 @@ export default function App() {
     e.preventDefault();
     setSidebarDragOver(false);
     const dt = e.dataTransfer;
-    if (!dt || !dt.files || dt.files.length === 0) return;
+    if (!dt) return;
 
-    const droppedFiles = dt.files;
     let pathContents = [];
-
-    // Check if it's a single ZIP file
-    if (droppedFiles.length === 1 && droppedFiles[0].name.endsWith('.zip')) {
-      try {
-        pathContents = await importFromZip(droppedFiles[0]);
-        pathContents = stripTopFolder(pathContents);
-      } catch (err) {
-        console.error('ZIP import error:', err);
-        return;
-      }
-    } else {
-      // Multiple files / folder
-      try {
-        pathContents = await importFromFileList(droppedFiles);
-        // If all files share a common top folder via webkitRelativePath, strip it
-        if (droppedFiles[0]?.webkitRelativePath) {
-          pathContents = stripTopFolder(pathContents);
-        }
-      } catch (err) {
-        console.error('File import error:', err);
-        return;
-      }
+    try {
+      pathContents = await importFromDataTransfer(dt);
+      pathContents = stripTopFolder(pathContents);
+    } catch (err) {
+      console.error('Import error:', err);
+      setErrors(prev => [...prev.slice(-10), { line: 0, msg: `インポートエラー: ${err.message}`, type: 'error' }]);
+      return;
     }
 
     if (pathContents.length === 0) return;
@@ -13170,11 +13232,12 @@ export default function App() {
     // If current project has no files, treat as full import (new project setup)
     if (files.length === 0) {
       const info = detectDatapackInfo(pathContents);
-      // Update project info if detected
-      if (info.name) setProject(prev => ({ ...prev, name: info.name }));
-      if (info.namespace) setProject(prev => ({ ...prev, namespace: info.namespace }));
-      if (info.description) setProject(prev => ({ ...prev, description: info.description }));
-      if (info.targetVersion) setProject(prev => ({ ...prev, targetVersion: info.targetVersion }));
+      const updates = {};
+      if (info.name) updates.name = info.name;
+      if (info.namespace) updates.namespace = info.namespace;
+      if (info.description) updates.description = info.description;
+      if (info.targetVersion) updates.targetVersion = info.targetVersion;
+      if (Object.keys(updates).length > 0) setProject(prev => ({ ...prev, ...updates }));
       const newFiles = addFilesFromPaths([], pathContents.map(p => ({ path: p.path, content: p.content })));
       setFiles(newFiles);
       const allIds = new Set();
