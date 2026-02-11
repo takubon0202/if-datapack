@@ -3309,8 +3309,9 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
     if (runMatch) {
       const runCmd = runMatch[1].toLowerCase();
       // 'run' の後に execute サブコマンドを書いてしまうミス
-      const execSubs = new Set(['as', 'at', 'if', 'unless', 'positioned', 'rotated', 'facing', 'in', 'store', 'anchored', 'align', 'on', 'summon']);
-      if (execSubs.has(runCmd)) {
+      // 注: 'summon' はexecuteサブコマンドかつ独立コマンドなので除外
+      const execOnlySubs = new Set(['as', 'at', 'if', 'unless', 'positioned', 'rotated', 'facing', 'in', 'store', 'anchored', 'align', 'on']);
+      if (execOnlySubs.has(runCmd)) {
         return { line: lineNum, msg: `"run ${runCmd}" — "run" の後にはコマンドを書いてください。"${runCmd}" は execute サブコマンドです`, type: 'error',
           fix: { label: `"run" を削除して "${runCmd}" を直接使用`, apply: (l) => l.replace(/\brun\s+/, '') } };
       }
