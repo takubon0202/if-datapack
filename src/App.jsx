@@ -1436,6 +1436,22 @@ const MC_AUTO = {
     { l: 'get', d: 'データ取得' }, { l: 'merge', d: 'データ統合' },
     { l: 'modify', d: 'データ変更' }, { l: 'remove', d: 'データ削除' },
   ],
+  'data.get': [
+    { l: 'entity', d: 'エンティティのNBT取得' }, { l: 'block', d: 'ブロックのNBT取得' },
+    { l: 'storage', d: 'ストレージのデータ取得' },
+  ],
+  'data.merge': [
+    { l: 'entity', d: 'エンティティにNBT統合' }, { l: 'block', d: 'ブロックにNBT統合' },
+    { l: 'storage', d: 'ストレージにデータ統合' },
+  ],
+  'data.modify': [
+    { l: 'entity', d: 'エンティティNBT変更' }, { l: 'block', d: 'ブロックNBT変更' },
+    { l: 'storage', d: 'ストレージデータ変更' },
+  ],
+  'data.remove': [
+    { l: 'entity', d: 'エンティティNBT削除' }, { l: 'block', d: 'ブロックNBT削除' },
+    { l: 'storage', d: 'ストレージデータ削除' },
+  ],
   title: [
     { l: 'title', d: 'タイトル表示' }, { l: 'subtitle', d: 'サブタイトル' },
     { l: 'actionbar', d: 'アクションバー' }, { l: 'clear', d: 'クリア' },
@@ -1637,6 +1653,34 @@ const MC_AUTO = {
   'item.modify': [
     { l: 'entity', d: 'エンティティのアイテム変更', v: '1.17' },
     { l: 'block', d: 'ブロックのアイテム変更', v: '1.17' },
+  ],
+  'locate.structure': [
+    { l: 'minecraft:village_plains', d: '平原の村' }, { l: 'minecraft:village_desert', d: '砂漠の村' },
+    { l: 'minecraft:mansion', d: '森の洋館' }, { l: 'minecraft:monument', d: '海底神殿' },
+    { l: 'minecraft:stronghold', d: '要塞' }, { l: 'minecraft:fortress', d: 'ネザー要塞' },
+    { l: 'minecraft:bastion_remnant', d: '砦の遺跡' }, { l: 'minecraft:end_city', d: 'エンドシティ' },
+    { l: 'minecraft:mineshaft', d: '廃坑' }, { l: 'minecraft:buried_treasure', d: '埋もれた宝' },
+    { l: 'minecraft:shipwreck', d: '難破船' }, { l: 'minecraft:ruined_portal', d: '荒廃したポータル' },
+    { l: 'minecraft:ancient_city', d: '古代都市', v: '1.19' },
+    { l: 'minecraft:trail_ruins', d: 'トレイル遺跡', v: '1.20' },
+    { l: 'minecraft:trial_chambers', d: 'トライアルチャンバー', v: '1.21' },
+  ],
+  'locate.biome': [
+    { l: 'minecraft:plains', d: '平原' }, { l: 'minecraft:desert', d: '砂漠' },
+    { l: 'minecraft:forest', d: '森林' }, { l: 'minecraft:taiga', d: 'タイガ' },
+    { l: 'minecraft:swamp', d: '湿地' }, { l: 'minecraft:jungle', d: 'ジャングル' },
+    { l: 'minecraft:snowy_plains', d: '雪原' }, { l: 'minecraft:dark_forest', d: '暗い森' },
+    { l: 'minecraft:mushroom_fields', d: 'キノコ島' }, { l: 'minecraft:badlands', d: '荒野' },
+    { l: 'minecraft:cherry_grove', d: 'サクラの林', v: '1.20' },
+    { l: 'minecraft:deep_dark', d: 'ディープダーク', v: '1.19' },
+    { l: 'minecraft:lush_caves', d: '繁茂した洞窟' },
+    { l: 'minecraft:dripstone_caves', d: '鍾乳洞' },
+    { l: 'minecraft:pale_garden', d: 'ペイルガーデン', v: '1.21.4' },
+    { l: 'minecraft:nether_wastes', d: 'ネザー荒地' },
+    { l: 'minecraft:soul_sand_valley', d: 'ソウルサンドの谷' },
+    { l: 'minecraft:crimson_forest', d: '真紅の森' },
+    { l: 'minecraft:warped_forest', d: '歪んだ森' },
+    { l: 'minecraft:basalt_deltas', d: '玄武岩デルタ' },
   ],
   _attributes: [
     { l: 'generic.max_health', d: '最大HP' }, { l: 'generic.follow_range', d: '追跡範囲' },
@@ -2599,6 +2643,14 @@ const SPECIAL_TYPE_COMPLETIONS = {
     'sidebar.team.dark_green','sidebar.team.dark_aqua','sidebar.team.dark_purple','sidebar.team.gold','sidebar.team.gray','sidebar.team.dark_gray'],
   score_operation: ['+=','-=','*=','/=','%=','<','>','><','='],
   clone_mode: ['replace','masked','filtered','force','move','normal'],
+  item_slot: ['weapon.mainhand','weapon.offhand','armor.head','armor.chest','armor.legs','armor.feet',
+    'container.0','container.1','container.2','container.3','container.4','container.5',
+    'container.6','container.7','container.8','hotbar.0','hotbar.1','hotbar.2','hotbar.3',
+    'hotbar.4','hotbar.5','hotbar.6','hotbar.7','hotbar.8',
+    'inventory.0','inventory.1','inventory.2','inventory.3','inventory.4',
+    'enderchest.0','horse.saddle','horse.chest','horse.armor','horse.0','horse.1',
+    'villager.0','villager.1','villager.2','villager.3','villager.4',
+    'villager.5','villager.6','villager.7'],
   mc_color: ['red','blue','green','yellow','aqua','white','black','dark_red','dark_blue','dark_green','dark_aqua',
     'dark_purple','gold','gray','dark_gray','light_purple','reset'],
   team_option: ['color','friendlyFire','seeFriendlyInvisibles','nametagVisibility','deathMessageVisibility','collisionRule','prefix','suffix'],
@@ -2870,10 +2922,49 @@ function getAutocompleteSuggestions(lineText, cursorCol, targetVersion) {
       const slots = SPECIAL_TYPE_COMPLETIONS.display_slot || [];
       return slots.filter(s => s.startsWith(cw)).map(s => ({ l: s, d: '表示スロット' }));
     }
+    if (sub1 === 'objectives' && sub2 === 'add' && completed.length === 4) {
+      const criteria = SPECIAL_TYPE_COMPLETIONS.criteria || [];
+      return criteria.filter(s => s.startsWith(cw)).map(s => ({ l: s, d: '目的の基準' }));
+    }
     if (sub1 === 'players' && sub2 === 'operation' && completed.length === 5) {
       const ops = SPECIAL_TYPE_COMPLETIONS.score_operation || [];
       return ops.filter(s => s.startsWith(cw)).map(s => ({ l: s, d: 'スコア演算' }));
     }
+  }
+
+  // locate structure/biome: show list after subtype
+  if (cmd === 'locate' && completed.length === 2) {
+    const sub = completed[1]?.toLowerCase();
+    if (sub === 'structure') {
+      const items = filterByVersion(MC_AUTO['locate.structure'] || [], targetVersion);
+      if (!currentWord) return items.slice(0, 15);
+      return items.filter(s => s.l.toLowerCase().includes(cw));
+    }
+    if (sub === 'biome') {
+      const items = filterByVersion(MC_AUTO['locate.biome'] || [], targetVersion);
+      if (!currentWord) return items.slice(0, 15);
+      return items.filter(s => s.l.toLowerCase().includes(cw));
+    }
+  }
+
+  // item replace entity <target> <slot>: show slot names
+  if (cmd === 'item' && completed.length >= 2 && completed[1]?.toLowerCase() === 'replace') {
+    if (completed.length === 4) {
+      const slots = SPECIAL_TYPE_COMPLETIONS.item_slot || [];
+      return slots.filter(s => s.startsWith(cw)).map(s => ({ l: s, d: 'スロット名' }));
+    }
+  }
+
+  // advancement grant/revoke <target> <mode>: show modes
+  if (cmd === 'advancement' && completed.length === 3) {
+    const modes = ['everything','only','from','through','until'];
+    return modes.filter(s => s.startsWith(cw)).map(s => ({ l: s, d: '進捗モード' }));
+  }
+
+  // damage <target> <amount> <type>: show damage types
+  if (cmd === 'damage' && completed.length === 3) {
+    const types = SPECIAL_TYPE_COMPLETIONS.damage_type || [];
+    return types.filter(s => s.includes(cw)).map(s => ({ l: s, d: 'ダメージタイプ' }));
   }
 
   // bossbar set <id> <property> [value]: property at pos 3, value at pos 4
@@ -3092,6 +3183,28 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
     return { line: lineNum, msg: `マクロ($)は 1.20.2 以降で使用可能です（現在: ${targetVersion}）`, type: 'error' };
   }
 
+  // Legacy/removed command detection with migration suggestions
+  const LEGACY_COMMANDS = {
+    entitydata: { replacement: 'data merge entity', msg: '"entitydata" は削除されました — "data merge entity" を使ってください' },
+    testfor: { replacement: 'execute if entity', msg: '"testfor" は削除されました — "execute if entity" を使ってください' },
+    testforblock: { replacement: 'execute if block', msg: '"testforblock" は削除されました — "execute if block" を使ってください' },
+    testforblocks: { replacement: 'execute if blocks', msg: '"testforblocks" は削除されました — "execute if blocks" を使ってください' },
+    blockdata: { replacement: 'data merge block', msg: '"blockdata" は削除されました — "data merge block" を使ってください' },
+    stats: { replacement: 'execute store', msg: '"stats" は削除されました — "execute store" を使ってください' },
+    toggledownfall: { replacement: 'weather', msg: '"toggledownfall" は削除されました — "weather clear/rain/thunder" を使ってください' },
+  };
+  if (LEGACY_COMMANDS[cmd]) {
+    const lc = LEGACY_COMMANDS[cmd];
+    return { line: lineNum, msg: lc.msg, type: 'error',
+      fix: { label: `${lc.replacement} に変更`, apply: (l) => l.replace(new RegExp(`\\b${cmd}\\b`, 'i'), lc.replacement) } };
+  }
+
+  // 'scoreboard players tag' → 'tag' migration
+  if (cmd === 'scoreboard' && tokens[1]?.toLowerCase() === 'players' && tokens[2]?.toLowerCase() === 'tag') {
+    return { line: lineNum, msg: '"scoreboard players tag" は削除されました — "tag" コマンドを使ってください', type: 'error',
+      fix: { label: '"tag" コマンドに変更', apply: (l) => l.replace(/scoreboard\s+players\s+tag\s*/i, 'tag ') } };
+  }
+
   // Check if command exists at all
   if (!MC_ALL_COMMANDS.has(cmd)) {
     // Try to suggest the closest known command
@@ -3195,6 +3308,12 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
     const runMatch = trimmed.match(/\brun\s+(\S+)/);
     if (runMatch) {
       const runCmd = runMatch[1].toLowerCase();
+      // 'run' の後に execute サブコマンドを書いてしまうミス
+      const execSubs = new Set(['as', 'at', 'if', 'unless', 'positioned', 'rotated', 'facing', 'in', 'store', 'anchored', 'align', 'on', 'summon']);
+      if (execSubs.has(runCmd)) {
+        return { line: lineNum, msg: `"run ${runCmd}" — "run" の後にはコマンドを書いてください。"${runCmd}" は execute サブコマンドです`, type: 'error',
+          fix: { label: `"run" を削除して "${runCmd}" を直接使用`, apply: (l) => l.replace(/\brun\s+/, '') } };
+      }
       if (!MC_ALL_COMMANDS.has(runCmd)) {
         const similar = MC_AUTO._root.find(c => {
           let diff = 0;
@@ -3209,6 +3328,25 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
     }
   }
 
+  // Detect connected coordinates without spaces (e.g. ~1~2~3 → ~1 ~2 ~3)
+  const connectedCoordMatch = trimmed.match(/([~^]-?\d*\.?\d+)([~^]-?\d*\.?\d+)([~^]-?\d*\.?\d+)/);
+  if (connectedCoordMatch) {
+    const fixed = `${connectedCoordMatch[1]} ${connectedCoordMatch[2]} ${connectedCoordMatch[3]}`;
+    return { line: lineNum, msg: `座標にスペースがありません: "${connectedCoordMatch[0]}" → "${fixed}"`, type: 'error',
+      fix: { label: 'スペースを挿入', apply: (l) => l.replace(connectedCoordMatch[0], fixed) } };
+  }
+
+  // Detect comma-separated coordinates (e.g. 1,2,3 → 1 2 3)
+  if ((cmd === 'tp' || cmd === 'teleport' || cmd === 'setblock' || cmd === 'fill' || cmd === 'summon' || cmd === 'clone' || cmd === 'particle') && tokens.length >= 2) {
+    for (let i = 1; i < tokens.length; i++) {
+      const commaCoord = tokens[i].match(/^(-?\d+\.?\d*),(-?\d+\.?\d*),(-?\d+\.?\d*)$/);
+      if (commaCoord) {
+        return { line: lineNum, msg: `座標はカンマではなくスペースで区切ります: "${tokens[i]}" → "${commaCoord[1]} ${commaCoord[2]} ${commaCoord[3]}"`, type: 'error',
+          fix: { label: 'カンマ → スペースに変換', apply: (l) => l.replace(tokens[i], `${commaCoord[1]} ${commaCoord[2]} ${commaCoord[3]}`) } };
+      }
+    }
+  }
+
   // Check for mixed coordinate types (^ and ~ mixed)
   const coordMatches = trimmed.match(/[~^][^\s]*/g);
   if (coordMatches && coordMatches.length >= 2) {
@@ -3219,11 +3357,33 @@ function validateMcfunctionLine(line, lineNum, targetVersion) {
     }
   }
 
-  // Validate scoreboard subcommand structure
+  // Validate scoreboard subcommand structure + argument count
   if (cmd === 'scoreboard' && tokens.length >= 2) {
     const sub = tokens[1]?.toLowerCase();
     if (sub !== 'objectives' && sub !== 'players') {
       return { line: lineNum, msg: `scoreboard のサブコマンドは "objectives" か "players" です（"${sub}" は不正）`, type: 'warning' };
+    }
+    if (sub === 'objectives') {
+      const action = tokens[2]?.toLowerCase();
+      if (action === 'add' && tokens.length < 5) {
+        return { line: lineNum, msg: 'scoreboard objectives add: 引数不足 — scoreboard objectives add <名前> <基準> [表示名]', type: 'error' };
+      }
+    }
+    if (sub === 'players') {
+      const action = tokens[2]?.toLowerCase();
+      if ((action === 'set' || action === 'add' || action === 'remove') && tokens.length < 5) {
+        return { line: lineNum, msg: `scoreboard players ${action}: 引数不足 — scoreboard players ${action} <対象> <目的> <値>`, type: 'error' };
+      }
+      if (action === 'operation' && tokens.length < 7) {
+        return { line: lineNum, msg: 'scoreboard players operation: 引数不足 — scoreboard players operation <対象> <目的> <演算子> <ソース対象> <ソース目的>', type: 'error' };
+      }
+      if (action === 'operation' && tokens.length >= 6) {
+        const op = tokens[5];
+        const validOps = new Set(['+=', '-=', '*=', '/=', '%=', '=', '<', '>', '><']);
+        if (!validOps.has(op)) {
+          return { line: lineNum, msg: `scoreboard players operation: 不正な演算子 "${op}" — 使用可能: +=, -=, *=, /=, %=, =, <, >, ><`, type: 'error' };
+        }
+      }
     }
   }
 
